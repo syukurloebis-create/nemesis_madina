@@ -1,0 +1,10 @@
+{
+  "status": "COMPLETED",
+  "date": "2026-06-01T19:33:09+07:00",
+  "tests": {
+    "websocket": true,
+    "realtime": true,
+    "scale": true
+  },
+  "reports": "reports/websocket_tests/"
+}

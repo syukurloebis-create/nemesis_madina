@@ -1,0 +1,3 @@
+NEMESIS V8+ Schema Version: 1.0
+Migration: 001_initial_schema, 002_event_store_schema
+Tables: events, snapshots, cases, evidence_files, custody_chain, users, audit_log

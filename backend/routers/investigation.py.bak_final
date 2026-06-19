@@ -1,0 +1,159 @@
+from fastapi import APIRouter, HTTPException, Depends, Query
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+from backend.database import get_db
+from datetime import datetime, timedelta
+
+router = APIRouter(prefix="/api/v1/investigation", tags=["investigation"])
+
+@router.get("/cases")
+async def get_investigation_cases(db: AsyncSession = Depends(get_db)):
+    """Get all investigation cases with priority"""
+    try:
+        result = await db.execute(text("""
+            SELECT 
+                c.id,
+                c.title,
+                c.risk_score,
+                c.risk_level,
+                c.workflow_stage,
+                c.status,
+                c.created_at,
+                c.assigned_to,
+                COUNT(e.id) as evidence_count,
+                COUNT(CASE WHEN e.status = 'verified' THEN 1 END) as verified_count,
+                (
+                    SELECT COUNT(*) 
+                    FROM recommendations r 
+                    WHERE r.case_id::text = c.id::text 
+                    AND r.status = 'PENDING'
+                ) as pending_recommendations
+            FROM cases c
+            LEFT JOIN evidence e ON c.id::text = e.case_id
+            GROUP BY c.id
+            ORDER BY c.risk_score DESC, c.created_at ASC
+        """))
+        rows = result.fetchall()
+        return [
+            {
+                "id": row[0],
+                "title": row[1],
+                "risk_score": float(row[2]) if row[2] else 0,
+                "risk_level": row[3] or "LOW",
+                "workflow_stage": row[4] or "REPORTED",
+                "status": row[5] or "OPEN",
+                "created_at": row[6].isoformat() if row[6] else None,
+                "assigned_to": row[7],
+                "evidence_count": row[8] or 0,
+                "verified_count": row[9] or 0,
+                "pending_recommendations": row[10] or 0,
+                "sla_status": get_sla_status(row[4], row[6])
+            }
+            for row in rows
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/stats")
+async def get_investigation_stats(db: AsyncSession = Depends(get_db)):
+    """Get investigation statistics"""
+    try:
+        result = await db.execute(text("SELECT COUNT(*) FROM cases WHERE status = 'OPEN'"))
+        total_cases = result.scalar() or 0
+        
+        result = await db.execute(text("""
+            SELECT COUNT(*) FROM cases 
+            WHERE workflow_stage IN ('SCREENING', 'ASSESSMENT', 'INVESTIGATION', 'FINDING_REVIEW')
+            AND status = 'OPEN'
+        """))
+        active = result.scalar() or 0
+        
+        result = await db.execute(text("""
+            SELECT COUNT(*) FROM cases 
+            WHERE workflow_stage IN ('SCREENING', 'ASSESSMENT', 'INVESTIGATION')
+            AND created_at < NOW() - INTERVAL '14 days'
+            AND status = 'OPEN'
+        """))
+        overdue = result.scalar() or 0
+        
+        result = await db.execute(text("""
+            SELECT COUNT(*) FROM cases 
+            WHERE risk_score >= 80 AND status = 'OPEN'
+        """))
+        critical = result.scalar() or 0
+        
+        return {
+            "total_cases": total_cases,
+            "active": active,
+            "overdue": overdue,
+            "critical": critical
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/risk-trend")
+async def get_risk_trend(
+    days: int = Query(30, ge=7, le=90),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get risk trend data for charts"""
+    try:
+        # Gunakan string concatenation untuk interval
+        interval_str = f"{days} days"
+        result = await db.execute(
+            text("""
+                SELECT 
+                    DATE(created_at) as date,
+                    COUNT(*) as total_cases,
+                    ROUND(AVG(risk_score), 2) as avg_risk,
+                    MAX(risk_score) as max_risk,
+                    COUNT(CASE WHEN risk_score >= 80 THEN 1 END) as critical_count,
+                    COUNT(CASE WHEN risk_score >= 60 AND risk_score < 80 THEN 1 END) as high_count
+                FROM cases
+                WHERE created_at >= NOW() - INTERVAL :interval
+                GROUP BY DATE(created_at)
+                ORDER BY date ASC
+            """),
+            {"interval": interval_str}
+        )
+        rows = result.fetchall()
+        return [
+            {
+                "date": row[0].isoformat() if row[0] else None,
+                "total_cases": row[1] or 0,
+                "avg_risk": float(row[2]) if row[2] else 0,
+                "max_risk": float(row[3]) if row[3] else 0,
+                "critical_count": row[4] or 0,
+                "high_count": row[5] or 0
+            }
+            for row in rows
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+def get_sla_status(stage: str, created_at):
+    """Calculate SLA status based on stage"""
+    if not stage or not created_at:
+        return "UNKNOWN"
+    
+    days_old = (datetime.now() - created_at).days
+    
+    if stage in ['REPORTED', 'SCREENING']:
+        if days_old > 7:
+            return "OVERDUE"
+        elif days_old > 5:
+            return "AT_RISK"
+        else:
+            return "ON_TRACK"
+    elif stage in ['ASSESSMENT', 'INVESTIGATION']:
+        if days_old > 14:
+            return "OVERDUE"
+        elif days_old > 10:
+            return "AT_RISK"
+        else:
+            return "ON_TRACK"
+    else:
+        if days_old > 7:
+            return "OVERDUE"
+        else:
+            return "ON_TRACK"

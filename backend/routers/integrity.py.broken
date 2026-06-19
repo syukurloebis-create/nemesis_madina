@@ -1,0 +1,80 @@
+from fastapi import APIRouter
+from fastapi import HTTPException
+
+from backend.infrastructure.database.pool import create_pool
+
+from backend.core.events.lineage_verifier import (
+    get_lineage_verifier
+)
+
+from backend.core.events.replay_validator import (
+    ReplayValidator
+)
+
+router = APIRouter(
+    prefix="/integrity",
+    tags=["integrity"]
+)
+
+
+@router.get("/{aggregate_id}")
+async def verify_integrity(
+    aggregate_id: str
+):
+    pool = await create_pool()
+
+    verifier = get_lineage_verifier(pool)
+
+    return await verifier.verify_aggregate_chain(
+        aggregate_id
+    )
+
+@router.get("/summary/overview")
+async def integrity_summary():
+    pool = await create_pool()
+
+    async with pool.acquire() as conn:
+
+        aggregates = await conn.fetchval(
+            """
+            SELECT COUNT(DISTINCT aggregate_id)
+            FROM event_lineage
+            """
+        )
+
+        events = await conn.fetchval(
+            """
+            SELECT COUNT(*)
+            FROM event_lineage
+            """
+        )
+
+    return {
+        "status": "ok",
+        "total_aggregates": aggregates,
+        "total_events": events
+    }
+
+@router.get("/replay/{aggregate_id}")
+async def replay_validation(
+    aggregate_id: str
+):
+    pool = await create_pool()
+
+    async with pool.acquire() as conn:
+
+        rows = await conn.fetch(
+            """
+            SELECT *
+            FROM event_lineage
+            WHERE aggregate_id = $1
+            ORDER BY sequence_num
+            """,
+            aggregate_id
+        )
+
+    events = [dict(r) for r in rows]
+
+    return ReplayValidator.validate(
+        events
+    )

@@ -1,0 +1,197 @@
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
+import logging
+
+# Database
+from backend.infrastructure.database import engine, Base
+
+# Routers - Import semua router yang dibutuhkan
+from backend.routers import cases as cases_router
+from backend.routers import auth as auth_router
+from backend.routers import rebuild as rebuild_router
+from backend.routers import replay as replay_router
+from backend.routers import historical as historical_router
+from backend.routers import snapshots as snapshot_router
+from backend.routers import integrity as integrity_router
+from backend.routers import reports as reports_router
+from backend.routers import upload_processor as upload_processor_router
+from backend.routers import vendors as vendors_router
+from backend.routers import governance as governance_router
+from backend.routers import metrics as metrics_router
+from backend.routers import trust_metrics as trust_metrics_router
+from backend.routers import replay_metrics as replay_metrics_router
+from backend.routers import risk_metrics as risk_metrics_router
+from backend.routers import alert as alert_router
+from backend.routers import entities as entities_router
+from backend.routers import events as events_router
+
+# Procurement router (tanpa auth untuk testing)
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    logger.info("Starting NEMESIS V8+ API...")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    logger.info("Database ready")
+    yield
+    # Shutdown
+    logger.info("Shutting down...")
+
+app = FastAPI(
+    title="Nemesis Madina V8",
+    description="Platform Audit & Inspeksi untuk Aparat Penegak Hukum",
+    version="8.0.0",
+    lifespan=lifespan
+)
+
+# CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Root endpoint
+@app.get("/")
+async def root():
+    return {"message": "NEMESIS V8+ API is running", "status": "healthy"}
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
+
+# Register routers
+app.include_router(cases_router.router)
+app.include_router(auth_router.router)
+app.include_router(rebuild_router.router)
+app.include_router(replay_router.router)
+app.include_router(historical_router.router)
+app.include_router(snapshot_router.router)
+app.include_router(integrity_router.router)
+app.include_router(reports_router.router)
+app.include_router(upload_processor_router.router)
+app.include_router(vendors_router.router)
+app.include_router(governance_router.router)
+app.include_router(metrics_router.router)
+app.include_router(trust_metrics_router.router)
+app.include_router(replay_metrics_router.router)
+app.include_router(risk_metrics_router.router)
+app.include_router(alert_router.router)
+app.include_router(entities_router.router)
+app.include_router(events_router.router)
+app.include_router(procurement_api.router)  # Procurement API tanpa auth
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# ============ PROCUREMENT DIRECT ENDPOINTS ============
+from sqlalchemy import text
+from backend.infrastructure.database import AsyncSessionLocal
+
+@app.get("/procurement/stats")
+async def get_procurement_stats():
+    """Get procurement statistics"""
+    try:
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(text("""
+                SELECT 
+                    COUNT(*) as total_records,
+                    COALESCE(SUM(amount), 0) as total_amount,
+                    COUNT(DISTINCT vendor) as unique_vendors
+                FROM procurement_records
+            """))
+            row = result.fetchone()
+            return {
+                "total_records": row[0],
+                "total_amount": float(row[1]) if row[1] else 0,
+                "unique_vendors": row[2],
+                "success": True
+            }
+    except Exception as e:
+        return {"success": False, "error": str(e), "total_records": 0, "total_amount": 0, "unique_vendors": 0}
+
+@app.get("/procurement/list")
+async def get_procurement_list(limit: int = 100):
+    """Get procurement records list"""
+    try:
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(text("""
+                SELECT id, procurement_id, title, vendor, amount, date
+                FROM procurement_records
+                ORDER BY date DESC
+                LIMIT :limit
+            """), {"limit": limit})
+            
+            records = []
+            for row in result.fetchall():
+                records.append({
+                    "id": row[0],
+                    "procurement_id": row[1],
+                    "title": row[2],
+                    "vendor": row[3],
+                    "amount": float(row[4]) if row[4] else 0,
+                    "date": str(row[5]) if row[5] else None
+                })
+            return {"records": records, "count": len(records), "success": True}
+    except Exception as e:
+        return {"records": [], "count": 0, "success": False, "error": str(e)}
+
+@app.get("/procurement/vendors")
+async def get_procurement_vendors():
+    """Get vendor analysis"""
+    try:
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(text("""
+                SELECT 
+                    vendor,
+                    COUNT(*) as contract_count,
+                    COALESCE(SUM(amount), 0) as total_amount
+                FROM procurement_records
+                WHERE vendor IS NOT NULL AND vendor != ''
+                GROUP BY vendor
+                ORDER BY total_amount DESC
+            """))
+            
+            vendors = []
+            for row in result.fetchall():
+                vendors.append({
+                    "vendor": row[0],
+                    "contract_count": row[1],
+                    "total_amount": float(row[2]) if row[2] else 0
+                })
+            return {"vendors": vendors, "total": len(vendors), "success": True}
+    except Exception as e:
+        return {"vendors": [], "total": 0, "success": False, "error": str(e)}
+
+@app.get("/procurement/table")
+async def get_procurement_table():
+    """Get procurement table info"""
+    try:
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(text("""
+                SELECT 
+                    COUNT(*) as total,
+                    MIN(amount) as min_amount,
+                    MAX(amount) as max_amount,
+                    AVG(amount) as avg_amount
+                FROM procurement_records
+            """))
+            row = result.fetchone()
+            return {
+                "table_exists": True,
+                "total_records": row[0],
+                "min_amount": float(row[1]) if row[1] else 0,
+                "max_amount": float(row[2]) if row[2] else 0,
+                "avg_amount": float(row[3]) if row[3] else 0
+            }
+    except Exception as e:
+        return {"table_exists": False, "error": str(e)}

@@ -1,0 +1,16 @@
+{
+  "postgresql_status": {
+    "tables": 26,
+    "key_tables_present": [
+      "event_lineage", "evidence_store", "decision_trace",
+      "investigation_case", "entity_edges", "replay_checkpoints"
+    ],
+    "readiness": "85%"
+  },
+  "priority_1": "Canonical Hash Chain (2-3 days)",
+  "priority_2": "Integrity Verification API (1-2 days)",
+  "priority_3": "Evidence-to-Case Link (2-3 days)",
+  "priority_4": "Entity Graph Intelligence (3-5 days)",
+  "priority_5": "Audit Report Generator (3-5 days)",
+  "estimated_total_days": 15
+}

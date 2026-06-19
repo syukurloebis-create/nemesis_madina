@@ -1,0 +1,189 @@
+import axios from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 30000,
+});
+
+// Interceptors
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('access_token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// ============ PROCUREMENT ============
+export const getProcurementStats = () => api.get('/procurement/stats');
+export const getProcurementVendors = (limit = 100) => api.get(`/procurement/vendors?limit=${limit}`);
+export const getVendorDetail = (name: string) => api.get(`/procurement/vendors/${encodeURIComponent(name)}/details`);
+export const getRUPData = () => api.get('/api/rup-data');
+export const getRUPStats = () => api.get('/api/rup-stats');
+export const getRupData = () => api.get('/api/rup-data');
+export const getRupStats = () => api.get('/api/rup-stats');
+
+// ============ CASES ============
+export const getCases = () => api.get('/cases/');
+export const getCase = (id: string) => api.get(`/cases/${id}`);
+export const getCaseStats = () => api.get('/cases/stats');
+export const createCase = (data: any) => api.post('/cases/', data);
+export const updateCase = (id: string, data: any) => api.put(`/cases/${id}`, data);
+
+// ============ EVIDENCE ============
+export const getEvidence = (caseId: string) => api.get(`/evidence/case/${caseId}`);
+export const getEvidenceDetail = (id: string) => api.get(`/evidence/${id}`);
+export const verifyEvidence = (id: string) => api.get(`/evidence/${id}/verify`);
+export const getCustodyHistory = (id: string) => api.get(`/custody/${id}/history`);
+export const getCurrentCustody = (id: string) => api.get(`/custody/${id}/current`);
+export const uploadEvidence = (caseId: string, file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return api.post(`/evidence/upload?case_id=${caseId}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+};
+
+// ============ EVENTS ============
+export const getEvents = (caseId: string) => api.get(`/events/${caseId}`);
+export const getEventTimeline = (caseId: string) => api.get(`/events/${caseId}/timeline`);
+export const getEventStats = () => api.get('/events/stats/total');
+
+// ============ INTEGRITY ============
+export const verifyCaseIntegrity = (caseId: string) => api.get(`/integrity/verify/${caseId}`);
+export const verifyAllIntegrity = () => api.get('/integrity/verify-all');
+
+// ============ TEMPORAL ============
+export const getTemporalState = (caseId: string, timestamp?: string) => 
+  api.get(`/temporal/case/${caseId}/state${timestamp ? `?timestamp=${timestamp}` : ''}`);
+export const getTemporalCompare = (caseId: string, t1: string, t2: string) => 
+  api.get(`/temporal/case/${caseId}/compare?timestamp1=${t1}&timestamp2=${t2}`);
+export const getTemporalChain = (caseId: string) => api.get(`/temporal/case/${caseId}/chain`);
+
+// ============ GRAPH ============
+export const getGraphEntities = () => api.get('/graph/entities');
+export const getGraphRelationships = () => api.get('/graph/relationships');
+
+// ============ ADMIN ============
+export const getAuditLog = () => api.get('/admin/audit-log');
+export const getUsers = () => api.get('/admin/users');
+export const updateUserRole = (userId: string, role: string) => api.put(`/admin/users/${userId}/role`, { role });
+
+// ============ EXPORT ============
+export const exportCase = (caseId: string) => api.post(`/export/case/${caseId}`);
+
+// ============ AUTH ============
+export const login = (username: string, password: string) => api.post('/auth/login', { username, password });
+export const refreshToken = () => api.post('/auth/refresh');
+export const logout = () => {
+  localStorage.removeItem('access_token');
+  window.location.href = '/login';
+};
+
+// ============ SYSTEM ============
+export const getSystemInfo = () => api.get('/system/info');
+export const getHealth = () => api.get('/health');
+
+// ============ EXPORT SEMUA FUNGSI KE DALAM OBJECT API ============
+// Ini untuk memenuhi kebutuhan komponen yang memanggil api.xxx()
+const apiService = {
+  getProcurementStats,
+  getProcurementVendors,
+  getVendorDetail,
+  getRUPData,
+  getRUPStats,
+  getRupData,
+  getRupStats,
+  getCases,
+  getCase,
+  getCaseStats,
+  createCase,
+  updateCase,
+  getEvidence,
+  getEvidenceDetail,
+  verifyEvidence,
+  getCustodyHistory,
+  getCurrentCustody,
+  uploadEvidence,
+  getEvents,
+  getEventTimeline,
+  getEventStats,
+  verifyCaseIntegrity,
+  verifyAllIntegrity,
+  getTemporalState,
+  getTemporalCompare,
+  getTemporalChain,
+  getGraphEntities,
+  getGraphRelationships,
+  getAuditLog,
+  getUsers,
+  updateUserRole,
+  exportCase,
+  login,
+  refreshToken,
+  logout,
+  getSystemInfo,
+  getHealth,
+};
+
+export default apiService;
+export { apiService as api };
+
+// Dashboard Metrics
+export const getDashboardMetrics = () => api.get('/metrics/dashboard');
+export const getChainIntegrity = () => api.get('/metrics/integrity/chain');
+export const getCasesTimeline = (days: number = 30) => api.get(`/metrics/timeline/kasus?hari=${days}`);
+export const getRecentAlerts = (limit: number = 10) => api.get(`/metrics/alerts/terkini?limit=${limit}`);
+
+// Graph Intelligence
+export const getGraphStats = () => api.get('/graph/stats');
+export const getGraphCollusion = () => api.get('/graph/collusion');
+export const getVendorGraphDetail = (vendorName: string) => api.get(`/graph/vendor/${encodeURIComponent(vendorName)}`);
+
+// Historical & Forensic
+export const getCaseTimeline = (caseId: string, limit: number = 50) => 
+  api.get(`/replay/case/${caseId}/timeline?limit=${limit}`);
+export const getCaseHistory = (caseId: string) => 
+  api.get(`/replay/case/${caseId}/history`);
+export const getCaseStateAtTime = (caseId: string, timestamp: string) => 
+  api.get(`/historical/case/${caseId}/state-at-time?timestamp=${timestamp}`);
+export const compareCaseVersions = (caseId: string, versionA: number, versionB: number) => 
+  api.get(`/replay/case/${caseId}/compare?version_a=${versionA}&version_b=${versionB}`);
+
+// Evidence Custody
+export const getCustodyChain = (caseId: string) => 
+  api.get(`/evidence/case/${caseId}/custody`);
+
+// RUP Filter Functions
+export const getRUPTahun = () => {
+  return api.get('/rup/years');
+};
+
+export const getRUPStatus = () => {
+  return api.get('/rup/statuses');
+};
+
+export const exportRUP = (params?: any) => {
+  return api.get('/rup/export', { params, responseType: 'blob' });
+};
+
+// RUP Methods
+export const getRUPStats = () => api.get('/rup/stats');
+export const getRUPData = (params?: any) => api.get('/rup/data', { params });
+export const getRUPTahun = () => api.get('/rup/years');
+export const getRUPStatus = () => api.get('/rup/statuses');
+export const exportRUP = (params?: any) => api.get('/rup/export', { params, responseType: 'blob' });

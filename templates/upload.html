@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Data RUP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .card .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        
+        .upload-area.drag-over {
+            border-color: #667eea;
+            background: #f0f2ff;
+        }
+        
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .file-info {
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #666;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .btn-upload {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            width: 100%;
+            transition: opacity 0.3s ease;
+        }
+        
+        .btn-upload:hover {
+            opacity: 0.9;
+        }
+        
+        .btn-upload:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .message.warning {
+            background: #fed7aa;
+            color: #92400e;
+            border: 1px solid #fdba74;
+        }
+        
+        .error-list {
+            margin-top: 20px;
+            background: #fff5f5;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .error-list h4 {
+            color: #991b1b;
+            margin-bottom: 10px;
+        }
+        
+        .error-item {
+            padding: 5px 0;
+            font-size: 0.85em;
+            color: #991b1b;
+            border-bottom: 1px solid #fecaca;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        .requirements {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .requirements h4 {
+            margin-bottom: 10px;
+            color: #374151;
+        }
+        
+        .requirements ul {
+            padding-left: 20px;
+            color: #6b7280;
+            font-size: 0.85em;
+        }
+        
+        .requirements li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h2>📤 Upload Data RUP</h2>
+            <div class="subtitle">Upload file CSV atau Excel untuk menyimpan data ke database</div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="message {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            {% if errors %}
+            <div class="error-list">
+                <h4>⚠️ Terdapat {{ errors|length }} masalah:</h4>
+                {% for error in errors %}
+                <div class="error-item">{{ error }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                <div class="upload-area" id="dropZone">
+                    <div class="upload-icon">📁</div>
+                    <div>Drag & drop file atau klik untuk memilih</div>
+                    <div class="file-info">Support: CSV, Excel (.xlsx, .xls) | Max: 50MB</div>
+                    <input type="file" name="file" id="fileInput" accept=".csv,.xlsx,.xls">
+                </div>
+                <button type="submit" class="btn-upload" id="uploadBtn">Upload Data</button>
+            </form>
+            
+            <div class="requirements">
+                <h4>📋 Format File yang Diperlukan:</h4>
+                <ul>
+                    <li><strong>nama_paket</strong> - Nama paket pengadaan</li>
+                    <li><strong>pagu</strong> - Nilai pagu (angka)</li>
+                    <li><strong>jenis</strong> - Jenis pengadaan (Barang/Jasa/Jasa Konsultansi/dll)</li>
+                    <li><strong>tahun</strong> - Tahun anggaran</li>
+                    <li><strong>kategori</strong> - Kategori usaha</li>
+                    <li><strong>metode</strong> - Metode pengadaan</li>
+                    <li><strong>bulan</strong> - Bulan pelaksanaan</li>
+                    <li><strong>lokasi</strong> - Lokasi kegiatan</li>
+                    <li><strong>instansi</strong> - Instansi pelaksana</li>
+                    <li><strong>nomor_id</strong> - ID unik paket</li>
+                </ul>
+            </div>
+            
+            <a href="{{ url_for('index') }}" class="back-link">← Kembali ke Beranda</a>
+        </div>
+    </div>
+    
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        
+        dropZone.addEventListener('click', () => fileInput.click());
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                updateFileInfo(files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                updateFileInfo(e.target.files[0]);
+            }
+        });
+        
+        function updateFileInfo(file) {
+            const fileInfo = document.querySelector('.file-info');
+            if (fileInfo) {
+                fileInfo.innerHTML = `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            }
+        }
+        
+        uploadBtn.addEventListener('click', () => {
+            if (!fileInput.files.length) {
+                alert('Pilih file terlebih dahulu!');
+                return;
+            }
+            uploadBtn.textContent = 'Memproses...';
+            uploadBtn.disabled = true;
+            document.getElementById('uploadForm').submit();
+        });
+    </script>
+</body>
+</html>

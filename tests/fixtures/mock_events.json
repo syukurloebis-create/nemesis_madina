@@ -1,0 +1,25 @@
+{
+  "events": [
+    {
+      "event_id": "mock_001",
+      "event_type": "user.login",
+      "source": "web",
+      "timestamp": "2024-01-01T10:00:00Z",
+      "payload": {"user_id": "user_123", "ip": "192.168.1.1"}
+    },
+    {
+      "event_id": "mock_002",
+      "event_type": "evidence.created",
+      "source": "system",
+      "timestamp": "2024-01-01T10:05:00Z",
+      "payload": {"evidence_id": "ev_001", "hash": "abc123"}
+    },
+    {
+      "event_id": "mock_003",
+      "event_type": "anomaly.detected",
+      "source": "ml",
+      "timestamp": "2024-01-01T10:10:00Z",
+      "payload": {"score": 0.85, "severity": "high"}
+    }
+  ]
+}

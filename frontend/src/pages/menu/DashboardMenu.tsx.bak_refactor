@@ -1,0 +1,63 @@
+// DashboardMenu.tsx - ONLY Executive Intelligence
+import React from 'react';
+import { useDashboardData } from '../../hooks/useDashboardData';
+import { ErrorBoundary } from '../../components/common/ErrorBoundary';
+import { AIStatusBar } from '../../components/intelligence/AIStatusBar';
+import { AIRiskScore } from '../../components/intelligence/AIRiskScore';
+import { IntelligenceKPICards } from '../../components/intelligence/IntelligenceKPICards';
+import { EnhancedNetworkGraph } from '../../components/network/EnhancedNetworkGraph';
+
+interface DashboardMenuProps {
+  caseId: string;
+  evidenceId: string;
+}
+
+export const DashboardMenu: React.FC<DashboardMenuProps> = ({ caseId, evidenceId }) => {
+  const { loading, error, data } = useDashboardData(caseId);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent mx-auto" />
+          <p className="text-dark-muted mt-4">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center">
+        <p className="text-red-400 font-semibold">Error: {error}</p>
+      </div>
+    );
+  }
+
+  const { executive, cases, evidence, keyActors } = data;
+
+  return (
+    <div className="space-y-6">
+      {/* LAYER 1: EXECUTIVE INTELLIGENCE */}
+      <AIStatusBar data={{ executive, cases, evidence, keyActors }} />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <AIRiskScore riskScore={executive?.risk_level?.score || 0} />
+        </div>
+        <div className="lg:col-span-4 animate-slide-up" style={{ animationDelay: '0.15s' }}>
+          <IntelligenceKPICards data={{ executive, cases, evidence, keyActors }} />
+        </div>
+      </div>
+
+      {/* LAYER 2: NETWORK GRAPH ONLY */}
+      <div>
+        <ErrorBoundary fallback={<div className="glass-card p-4 text-red-500">Graph Error</div>}>
+          <EnhancedNetworkGraph actors={keyActors} height={400} />
+        </ErrorBoundary>
+      </div>
+    </div>
+  );
+};
+
+export default DashboardMenu;

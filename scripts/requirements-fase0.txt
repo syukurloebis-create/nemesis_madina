@@ -1,0 +1,6 @@
+# NEMESIS FASE 0 - Python Dependencies
+# Install dengan: pip install -r requirements-fase0.txt
+
+psutil>=5.9.0
+GPUtil>=1.4.0
+asyncpg>=0.29.0

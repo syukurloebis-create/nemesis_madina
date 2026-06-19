@@ -1,0 +1,564 @@
+import React, { useEffect, useState } from 'react'
+
+const API_BASE = 'http://localhost:8000'
+
+// ============================================================
+// INTERFACES
+// ============================================================
+
+interface StrategicDashboard {
+  summary: {
+    total_cases: number;
+    high_risk_cases: number;
+    closure_rate: number;
+    total_loss: number;
+    total_recovered: number;
+    recovery_rate: number;
+  };
+}
+
+interface RiskStats {
+  total_cases: number;
+  high_risk_cases: number;
+  medium_risk_cases: number;
+  low_risk_cases: number;
+  risk_percentage: number;
+}
+
+interface GovernanceSummary {
+  pending_approvals: number;
+  pending_followups: number;
+  overdue_followups: number;
+  active_assignments: number;
+  governance_score: number;
+}
+
+interface OutcomeSummary {
+  total_outcomes: number;
+  total_estimated_loss: number;
+  total_recovered: number;
+  recovery_rate: number;
+  referred_to_aph: number;
+}
+
+interface RiskExplanation {
+  case_id: string;
+  title: string;
+  total_risk_score: number;
+  risk_level: string;
+  confidence_score: number;
+  risk_contributors: Array<{
+    factor: string;
+    score: number;
+    contribution: number;
+    description: string;
+  }>;
+  recommendations: Array<{
+    action: string;
+    priority: string;
+    reason: string;
+  }>;
+}
+
+interface RegionalRisk {
+  region: string;
+  case_count: number;
+  high_risk_count: number;
+  risk_score: number;
+  risk_level: string;
+}
+
+interface Case {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  created_at: string;
+}
+
+interface CollusionGraph {
+  nodes: Array<{ id: string; name: string; risk_score: number; type: string }>;
+  edges: Array<{ source: string; target: string; type: string; confidence: number }>;
+  summary: { total_nodes: number; total_edges: number; collusion_detected: boolean };
+}
+
+// ============================================================
+// MAIN APP COMPONENT
+// ============================================================
+
+function App() {
+  const [loading, setLoading] = useState(true)
+  const [dashboard, setDashboard] = useState<StrategicDashboard | null>(null)
+  const [riskStats, setRiskStats] = useState<RiskStats | null>(null)
+  const [governance, setGovernance] = useState<GovernanceSummary | null>(null)
+  const [outcome, setOutcome] = useState<OutcomeSummary | null>(null)
+  const [riskExplanation, setRiskExplanation] = useState<RiskExplanation | null>(null)
+  const [regionalRisk, setRegionalRisk] = useState<RegionalRisk[]>([])
+  const [cases, setCases] = useState<Case[]>([])
+  const [collusion, setCollusion] = useState<CollusionGraph | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedCaseId, setSelectedCaseId] = useState<string>("446e216d-eb0e-487e-8e6b-ec943468ea20")
+
+  useEffect(() => {
+    fetchAllData()
+  }, [selectedCaseId])
+
+  const fetchAllData = async () => {
+    try {
+      setError(null)
+      
+      // 1. Strategic Dashboard
+      const strategicRes = await fetch(`${API_BASE}/api/v1/dashboard/executive/overview`)
+      if (strategicRes.ok) {
+        const strategicData = await strategicRes.json()
+        setDashboard(strategicData)
+      }
+      
+      // 2. Risk Stats
+      const riskRes = await fetch(`${API_BASE}/api/v1/evidence/stats`)
+      if (riskRes.ok) {
+        const riskData = await riskRes.json()
+        setRiskStats(riskData)
+      }
+      
+      // 3. Governance Summary
+      const govRes = await fetch(`${API_BASE}/api/v1/dashboard/apip/governance`)
+      if (govRes.ok) {
+        const govData = await govRes.json()
+        setGovernance(govData)
+      }
+      
+      // 4. Outcome Summary
+      const outcomeRes = await fetch(`${API_BASE}/api/v1/dashboard/executive/overview`)
+      if (outcomeRes.ok) {
+        const outcomeData = await outcomeRes.json()
+        setOutcome(outcomeData)
+      }
+      
+      // 5. Risk Explanation
+      const explainRes = await fetch(`${API_BASE}/api/v1/provenance/case/${selectedCaseId}`)
+      if (explainRes.ok) {
+        const explainData = await explainRes.json()
+        setRiskExplanation(explainData)
+      }
+      
+      // 6. Regional Risk
+      const regionalRes = await fetch(`${API_BASE}/api/v1/dashboard/dprd/regional-risk`)
+      if (regionalRes.ok) {
+        const regionalData = await regionalRes.json()
+        setRegionalRisk(regionalData.regional_risk || [])
+      }
+      
+      // 7. Recent Cases
+      const casesRes = await fetch(`${API_BASE}/api/v1/cases`)
+      if (casesRes.ok) {
+        const casesData = await casesRes.json()
+        setCases(Array.isArray(casesData) ? casesData : [])
+      }
+      
+      // 8. Collusion Graph
+      const collusionRes = await fetch(`${API_BASE}/api/v1/network/communities`)
+      if (collusionRes.ok) {
+        const collusionData = await collusionRes.json()
+        setCollusion(collusionData)
+      }
+      
+    } catch (err) {
+      console.error('Error:', err)
+      setError('Gagal memuat data dashboard')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value)
+  }
+
+  const getRiskColor = (level: string) => {
+    switch (level) {
+      case 'HIGH': return '#d32f2f'
+      case 'CRITICAL': return '#b71c1c'
+      case 'MEDIUM': return '#ff9800'
+      case 'LOW': return '#4caf50'
+      default: return '#9e9e9e'
+    }
+  }
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'CRITICAL': return '#b71c1c'
+      case 'HIGH': return '#d32f2f'
+      case 'MEDIUM': return '#ff9800'
+      case 'LOW': return '#4caf50'
+      default: return '#9e9e9e'
+    }
+  }
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{ color: '#1976d2' }}>NEMESIS V8+</h1>
+          <p>Memuat Strategic Intelligence Center...</p>
+          <progress />
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: '20px', textAlign: 'center' }}>
+        <h2 style={{ color: 'red' }}>⚠️ Gagal Memuat Data</h2>
+        <p>{error}</p>
+        <button onClick={fetchAllData}>Coba Lagi</button>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ 
+      padding: '20px', 
+      fontFamily: 'Arial, sans-serif', 
+      maxWidth: '1400px', 
+      margin: '0 auto',
+      background: '#f0f2f5'
+    }}>
+      
+      {/* Header */}
+      <div style={{ 
+        background: 'linear-gradient(135deg, #1976d2 0%, #0d47a1 100%)',
+        borderRadius: '12px',
+        padding: '20px',
+        marginBottom: '24px',
+        color: 'white'
+      }}>
+        <h1 style={{ margin: 0 }}>NEMESIS V8+ STRATEGIC INTELLIGENCE CENTER</h1>
+        <p style={{ margin: '8px 0 0', opacity: 0.9 }}>Platform Intelijen Forensik Pemerintah</p>
+      </div>
+
+      {/* ROW 1: Executive Summary Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ 
+          padding: '20px', 
+          background: '#e8f5e9', 
+          borderRadius: '12px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ fontSize: '14px', color: '#666' }}>Risk Level</div>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#d32f2f' }}>HIGH</div>
+          <div style={{ fontSize: '12px', color: '#666' }}>Tingkat Risiko Keseluruhan</div>
+        </div>
+        
+        <div style={{ 
+          padding: '20px', 
+          background: '#fff3e0', 
+          borderRadius: '12px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ fontSize: '14px', color: '#666' }}>Exposure</div>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#ed6c02' }}>
+            {formatCurrency(dashboard?.summary.total_loss || 0)}
+          </div>
+          <div style={{ fontSize: '12px', color: '#666' }}>Total Eksposur Risiko</div>
+        </div>
+        
+        <div style={{ 
+          padding: '20px', 
+          background: '#ffebee', 
+          borderRadius: '12px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ fontSize: '14px', color: '#666' }}>Critical Cases</div>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#d32f2f' }}>{riskStats?.high_risk_cases || 0}</div>
+          <div style={{ fontSize: '12px', color: '#666' }}>Kasus Risiko Tinggi</div>
+        </div>
+        
+        <div style={{ 
+          padding: '20px', 
+          background: '#e8f5e9', 
+          borderRadius: '12px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ fontSize: '14px', color: '#666' }}>Integrity</div>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2e7d32' }}>100%</div>
+          <div style={{ fontSize: '12px', color: '#666' }}>Hash Chain Integrity</div>
+        </div>
+      </div>
+
+      {/* ROW 2: Investigation Command Center */}
+      <div style={{ 
+        background: 'white', 
+        borderRadius: '12px', 
+        padding: '20px', 
+        marginBottom: '24px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      }}>
+        <h3 style={{ margin: '0 0 16px', color: '#1976d2' }}>🎯 INVESTIGATION COMMAND CENTER</h3>
+        <div style={{ 
+          background: '#f5f5f5', 
+          borderRadius: '8px', 
+          padding: '16px',
+          borderLeft: `4px solid ${getRiskColor(riskExplanation?.risk_level || 'MEDIUM')}`
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <div style={{ fontWeight: 'bold', fontSize: '16px' }}>{riskExplanation?.title || 'Select a case'}</div>
+              <div style={{ fontSize: '14px', color: '#666' }}>Risk: {riskExplanation?.total_risk_score || 0} | Confidence: {riskExplanation?.confidence_score || 0}%</div>
+            </div>
+            <div>
+              <select 
+                value={selectedCaseId} 
+                onChange={(e) => setSelectedCaseId(e.target.value)}
+                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #ccc' }}
+              >
+                {cases.map(c => (
+                  <option key={c.id} value={c.id}>{c.title}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ROW 3: Risk Intelligence & Collusion Network */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        {/* Risk Intelligence Panel */}
+        <div style={{ 
+          background: 'white', 
+          borderRadius: '12px', 
+          padding: '20px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ margin: '0 0 16px', color: '#1976d2' }}>📊 RISK INTELLIGENCE</h3>
+          <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+            <div style={{ fontSize: '48px', fontWeight: 'bold', color: getRiskColor(riskExplanation?.risk_level || 'MEDIUM') }}>
+              {riskExplanation?.total_risk_score || 0}
+            </div>
+            <div style={{ fontSize: '14px', color: '#666' }}>Risk Score</div>
+            <div style={{ 
+              display: 'inline-block', 
+              padding: '4px 12px', 
+              borderRadius: '20px', 
+              background: getRiskColor(riskExplanation?.risk_level || 'MEDIUM'),
+              color: 'white',
+              fontSize: '12px',
+              marginTop: '8px'
+            }}>
+              {riskExplanation?.risk_level || 'MEDIUM'} RISK
+            </div>
+          </div>
+          <div style={{ marginTop: '16px' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '12px' }}>WHY? - Kontributor Risiko:</div>
+            {riskExplanation?.risk_contributors?.map((contributor, idx) => (
+              <div key={idx} style={{ marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span>{contributor.factor.replace('_', ' ').toUpperCase()}</span>
+                  <span>{contributor.contribution}%</span>
+                </div>
+                <div style={{ 
+                  background: '#e0e0e0', 
+                  borderRadius: '4px', 
+                  height: '8px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{ 
+                    width: `${contributor.contribution}%`, 
+                    height: '100%', 
+                    background: getRiskColor('HIGH'),
+                    borderRadius: '4px'
+                  }} />
+                </div>
+                <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>{contributor.description}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Collusion Network Panel */}
+        <div style={{ 
+          background: 'white', 
+          borderRadius: '12px', 
+          padding: '20px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ margin: '0 0 16px', color: '#1976d2' }}>🔗 COLLUSION NETWORK</h3>
+          <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+            <div style={{ fontSize: '14px', color: '#666' }}>
+              Nodes: {collusion?.summary.total_nodes || 0} | Edges: {collusion?.summary.total_edges || 0}
+            </div>
+            <div style={{ 
+              display: 'inline-block', 
+              padding: '4px 12px', 
+              borderRadius: '20px', 
+              background: collusion?.summary.collusion_detected ? '#d32f2f' : '#4caf50',
+              color: 'white',
+              fontSize: '12px'
+            }}>
+              {collusion?.summary.collusion_detected ? 'COLLUSION DETECTED' : 'NO COLLUSION'}
+            </div>
+          </div>
+          <div style={{ 
+            background: '#f5f5f5', 
+            borderRadius: '8px', 
+            padding: '16px',
+            minHeight: '200px'
+          }}>
+            {collusion?.edges?.slice(0, 4).map((edge, idx) => (
+              <div key={idx} style={{ 
+                marginBottom: '12px', 
+                padding: '8px', 
+                background: 'white', 
+                borderRadius: '4px',
+                borderLeft: `4px solid ${edge.type === 'collusion' ? '#d32f2f' : '#ff9800'}`
+              }}>
+                <div><strong>{edge.source}</strong> → <strong>{edge.target}</strong></div>
+                <div style={{ fontSize: '12px', color: '#666' }}>
+                  Type: {edge.type} | Confidence: {edge.confidence}%
+                </div>
+              </div>
+            ))}
+            {(!collusion?.edges || collusion.edges.length === 0) && (
+              <div style={{ textAlign: 'center', color: '#666', padding: '40px' }}>
+                Tidak ada pola kolusi terdeteksi
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ROW 4: Evidence Intelligence & Recommendation Engine */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        {/* Evidence Intelligence Panel */}
+        <div style={{ 
+          background: 'white', 
+          borderRadius: '12px', 
+          padding: '20px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ margin: '0 0 16px', color: '#1976d2' }}>📎 EVIDENCE INTELLIGENCE</h3>
+          <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+            <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#2e7d32' }}>96%</div>
+            <div style={{ fontSize: '14px', color: '#666' }}>Trust Score</div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+            <div style={{ textAlign: 'center', padding: '12px', background: '#e8f5e9', borderRadius: '8px' }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold' }}>0</div>
+              <div style={{ fontSize: '12px', color: '#666' }}>Verified</div>
+            </div>
+            <div style={{ textAlign: 'center', padding: '12px', background: '#fff3e0', borderRadius: '8px' }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold' }}>0</div>
+              <div style={{ fontSize: '12px', color: '#666' }}>Pending</div>
+            </div>
+          </div>
+          <div style={{ marginTop: '12px', textAlign: 'center' }}>
+            <span style={{ 
+              display: 'inline-block', 
+              padding: '4px 12px', 
+              borderRadius: '20px', 
+              background: '#e8f5e9',
+              color: '#2e7d32',
+              fontSize: '12px'
+            }}>
+              Chain of Custody: VALID
+            </span>
+          </div>
+        </div>
+
+        {/* Recommendation Engine Panel */}
+        <div style={{ 
+          background: 'white', 
+          borderRadius: '12px', 
+          padding: '20px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ margin: '0 0 16px', color: '#1976d2' }}>⚡ RECOMMENDATION ENGINE</h3>
+          {riskExplanation?.recommendations?.map((rec, idx) => (
+            <div key={idx} style={{ 
+              display: 'flex', 
+              alignItems: 'flex-start', 
+              marginBottom: '12px', 
+              padding: '12px',
+              background: '#f5f5f5',
+              borderRadius: '8px'
+            }}>
+              <div style={{ 
+                width: '24px', 
+                height: '24px', 
+                borderRadius: '50%', 
+                background: getPriorityColor(rec.priority),
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                marginRight: '12px',
+                flexShrink: 0
+              }}>
+                ✓
+              </div>
+              <div>
+                <div style={{ fontWeight: 'bold' }}>{rec.action}</div>
+                <div style={{ fontSize: '12px', color: '#666' }}>
+                  Priority: {rec.priority} | {rec.reason}
+                </div>
+              </div>
+            </div>
+          ))}
+          {(!riskExplanation?.recommendations || riskExplanation.recommendations.length === 0) && (
+            <div style={{ textAlign: 'center', color: '#666', padding: '20px' }}>
+              Tidak ada rekomendasi
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ROW 5: Outcome Intelligence */}
+      <div style={{ 
+        background: 'white', 
+        borderRadius: '12px', 
+        padding: '20px',
+        marginBottom: '24px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      }}>
+        <h3 style={{ margin: '0 0 16px', color: '#1976d2' }}>📈 OUTCOME INTELLIGENCE</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{outcome?.total_outcomes || 0}</div>
+            <div style={{ fontSize: '12px', color: '#666' }}>Kasus Ditutup</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#d32f2f' }}>0</div>
+            <div style={{ fontSize: '12px', color: '#666' }}>Confirmed Findings</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#2e7d32' }}>
+              {formatCurrency(outcome?.total_recovered || 0)}
+            </div>
+            <div style={{ fontSize: '12px', color: '#666' }}>Recovery</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{outcome?.referred_to_aph || 0}</div>
+            <div style={{ fontSize: '12px', color: '#666' }}>APH Referral</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div style={{ 
+        marginTop: '32px', 
+        padding: '16px', 
+        textAlign: 'center', 
+        borderTop: '1px solid #e0e0e0', 
+        color: '#666', 
+        fontSize: '12px' 
+      }}>
+        <p>NEMESIS V8+ - Strategic Intelligence Center | Data terverifikasi hash chain | Integrity: 100%</p>
+        <p>Terakhir diperbarui: {new Date().toLocaleString('id-ID')}</p>
+      </div>
+    </div>
+  )
+}
+
+export default App

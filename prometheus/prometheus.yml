@@ -1,0 +1,36 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'nemesis_api'
+    static_configs:
+      - targets: ['api1:8000', 'api2:8000', 'api3:8000']
+    metrics_path: '/metrics'
+
+  - job_name: 'nemesis_trust'
+    static_configs:
+      - targets: ['api1:8000', 'api2:8000', 'api3:8000']
+    metrics_path: '/trust-metrics'
+
+  - job_name: 'nemesis_replay'
+    static_configs:
+      - targets: ['api1:8000', 'api2:8000', 'api3:8000']
+    metrics_path: '/replay-metrics'
+
+  - job_name: 'nemesis_risk'
+    static_configs:
+      - targets: ['api1:8000', 'api2:8000', 'api3:8000']
+    metrics_path: '/risk-metrics'
+
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx-exporter:9113']

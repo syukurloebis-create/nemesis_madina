@@ -1,0 +1,5 @@
+ total_events | null_hashes | broken_chain 
+--------------+-------------+--------------
+        22219 |           0 |            0
+(1 row)
+

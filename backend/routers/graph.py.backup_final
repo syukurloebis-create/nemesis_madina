@@ -1,0 +1,148 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
+from typing import Dict, Any, List
+import json
+
+from backend.infrastructure.database import get_db
+
+router = APIRouter(prefix="/graph", tags=["Graph Intelligence"])
+
+@router.get("/collusion/{case_id}")
+async def get_collusion_graph(
+    case_id: str,
+    session: AsyncSession = Depends(get_db)
+) -> Dict[str, Any]:
+    """Get collusion graph data for visualization"""
+    
+    try:
+        result = await session.execute(
+            text("""
+                SELECT 
+                    source.entity_name as source,
+                    target.entity_name as target,
+                    rel.relationship_type,
+                    rel.confidence
+                FROM graph_relationships rel
+                JOIN graph_entities source ON source.id = rel.source_id
+                JOIN graph_entities target ON target.id = rel.target_id
+                WHERE rel.relationship_type IN ('collusion', 'financial')
+                LIMIT 50
+            """)
+        )
+        rows = result.fetchall()
+        
+        nodes = {}
+        edges = []
+        
+        for row in rows:
+            source = row[0]
+            target = row[1]
+            rel_type = row[2]
+            confidence = float(row[3]) if row[3] else 0
+            
+            if source not in nodes:
+                nodes[source] = {"id": source, "name": source, "type": "vendor"}
+            if target not in nodes:
+                nodes[target] = {"id": target, "name": target, "type": "vendor"}
+            
+            edges.append({
+                "source": source,
+                "target": target,
+                "type": rel_type,
+                "confidence": confidence
+            })
+        
+        return {
+            "nodes": list(nodes.values()),
+            "edges": edges,
+            "summary": {
+                "total_nodes": len(nodes),
+                "total_edges": len(edges),
+                "collusion_detected": len(edges) > 0
+            }
+        }
+    except Exception as e:
+        return {
+            "nodes": [],
+            "edges": [],
+            "summary": {
+                "total_nodes": 0,
+                "total_edges": 0,
+                "collusion_detected": False,
+                "error": str(e)
+            }
+        }
+
+@router.get("/vendor/{vendor_name}/network")
+async def get_vendor_network(
+    vendor_name: str,
+    depth: int = 2,
+    session: AsyncSession = Depends(get_db)
+) -> Dict[str, Any]:
+    """Get vendor network"""
+    
+    try:
+        result = await session.execute(
+            text("""
+                SELECT DISTINCT 
+                    CASE 
+                        WHEN source.entity_name ILIKE :vendor THEN target.entity_name
+                        ELSE source.entity_name
+                    END as connected_vendor
+                FROM graph_relationships rel
+                JOIN graph_entities source ON source.id = rel.source_id
+                JOIN graph_entities target ON target.id = rel.target_id
+                WHERE source.entity_name ILIKE :vendor 
+                   OR target.entity_name ILIKE :vendor
+                LIMIT 20
+            """),
+            {"vendor": f"%{vendor_name}%"}
+        )
+        rows = result.fetchall()
+        
+        network = [row[0] for row in rows if row[0] and row[0] != vendor_name]
+        
+        return {
+            "vendor": vendor_name,
+            "network": network,
+            "total_connections": len(network)
+        }
+    except Exception as e:
+        return {
+            "vendor": vendor_name,
+            "network": [],
+            "total_connections": 0,
+            "error": str(e)
+        }
+
+@router.get("/stats")
+async def get_graph_stats(session: AsyncSession = Depends(get_db)):
+    """Get graph statistics"""
+    
+    result = await session.execute(
+        text("""
+            SELECT 
+                COUNT(*) as total_entities,
+                COUNT(CASE WHEN entity_type = 'vendor' THEN 1 END) as total_vendors
+            FROM graph_entities
+        """)
+    )
+    entities = result.fetchone()
+    
+    result2 = await session.execute(
+        text("""
+            SELECT 
+                COUNT(*) as total_relationships,
+                COUNT(CASE WHEN relationship_type = 'collusion' THEN 1 END) as collusion_edges
+            FROM graph_relationships
+        """)
+    )
+    relationships = result2.fetchone()
+    
+    return {
+        "total_entities": entities[0] or 0,
+        "total_vendors": entities[1] or 0,
+        "total_relationships": relationships[0] or 0,
+        "collusion_edges": relationships[1] or 0
+    }

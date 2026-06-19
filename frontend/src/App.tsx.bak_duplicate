@@ -1,0 +1,205 @@
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import React, { useEffect, useState } from 'react';
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import { useAuthStore } from './stores/authStore';
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import Login from './pages/Login';
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import ExecutiveDashboard from './pages/ExecutiveDashboard';
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import ThreatCenter from './pages/ThreatCenter';
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import EntityWorkspace from './pages/EntityWorkspace';
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import GraphIntelligence from './pages/GraphIntelligence';
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import GovernanceCenter from './pages/GovernanceCenter';
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import TemporalReplay from './pages/TemporalReplay';
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import InvestigationCase from './pages/InvestigationCase';
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import Analytics from './pages/Analytics';
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import CommandCenter from './pages/CommandCenter';
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import LiveAlerts from './pages/LiveAlerts';
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import VendorList from './pages/VendorList';
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./components/LanguageSwitcher";
+import UploadData from './pages/UploadData';
+
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    checkAuth().finally(() => setChecked(true));
+  }, []);
+
+  if (isLoading || !checked) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-900">Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+const NavItem: React.FC<{ to: string; icon: string; label: string }> = ({ to, icon, label }) => (
+  <Link to={to} className="flex items-center gap-3 px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors">
+    <span className="text-xl">{icon}</span>
+    <span>{label}</span>
+  </Link>
+);
+
+const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { logout } = useAuthStore();
+
+  const navItems = [
+    { to: '/', icon: '📊', label: 'Executive Dashboard' },
+    { to: '/threat', icon: '⚠️', label: 'Threat Center' },
+    { to: '/entity', icon: '🏢', label: 'Entities' },
+    { to: '/graph', icon: '🕸️', label: 'Graph' },
+    { to: '/governance', icon: '⚖️', label: 'Governance' },
+    { to: '/temporal', icon: '⏰', label: 'Replay' },
+    { to: '/investigation', icon: '🔍', label: 'Cases' },
+    { to: '/analytics', icon: '📈', label: 'Analytics' },
+    { to: '/alerts', icon: '🚨', label: 'Alerts' },
+    { to: '/command', icon: '🎮', label: 'Command' },
+    { to: '/vendors', icon: '🏢', label: 'Vendors' },
+    { to: '/upload', icon: '📤', label: 'Upload Data' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-900">
+      {/* Mobile Header */}
+      <div className="fixed top-0 left-0 right-0 bg-gray-800 border-b border-gray-700 z-50 lg:hidden">
+        <div className="flex justify-between p-4">
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-white">☰</button>
+          <h1 className="text-white font-bold">NEMESIS V8+</h1>
+          <LanguageSwitcher />
+          <button onClick={logout} className="text-red-400">🚪</button>
+        </div>
+      </div>
+
+      {/* Sidebar */}
+      <aside className={`fixed top-0 left-0 h-full w-64 bg-gray-800 border-r border-gray-700 transform transition-transform duration-300 z-50 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 flex flex-col`}>
+        {/* Header */}
+        <div className="p-4 border-b border-gray-700 flex-shrink-0">
+          <h1 className="text-xl font-bold text-green-400">NEMESIS V8+</h1>
+          <p className="text-xs text-gray-500">Intelligence Platform</p>
+        </div>
+
+        {/* Scrollable Navigation */}
+        <nav className="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar">
+          {navItems.map((item) => (
+            <NavItem key={item.to} to={item.to} icon={item.icon} label={item.label} />
+          ))}
+        </nav>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-700 flex-shrink-0">
+          <LanguageSwitcher />
+          <button onClick={logout} className="flex items-center gap-3 px-4 py-3 text-red-400 rounded-lg hover:bg-gray-700 w-full">
+            <span>🚪</span>
+            <span>Logout</span>
+          </button>
+          <div className="mt-3 text-center">
+            <p className="text-xs text-gray-500">v8.0.0 | Forensic Ready</p>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="lg:ml-64 pt-14 lg:pt-0">
+        <div className="p-6">
+          {children}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+function App() {
+  const { isAuthenticated, checkAuth } = useAuthStore();
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    checkAuth().finally(() => setChecked(true));
+  }, []);
+
+  if (!checked) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-900">Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<Navigate to="/" replace />} />
+        <Route path="/" element={<ProtectedRoute><DashboardLayout><ExecutiveDashboard /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/threat" element={<ProtectedRoute><DashboardLayout><ThreatCenter /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/entity" element={<ProtectedRoute><DashboardLayout><EntityWorkspace /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/graph" element={<ProtectedRoute><DashboardLayout><GraphIntelligence /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/governance" element={<ProtectedRoute><DashboardLayout><GovernanceCenter /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/temporal" element={<ProtectedRoute><DashboardLayout><TemporalReplay /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/investigation" element={<ProtectedRoute><DashboardLayout><InvestigationCase /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/analytics" element={<ProtectedRoute><DashboardLayout><Analytics /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/alerts" element={<ProtectedRoute><DashboardLayout><LiveAlerts /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/command" element={<ProtectedRoute><DashboardLayout><CommandCenter /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/vendors" element={<ProtectedRoute><DashboardLayout><VendorList /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/upload" element={<ProtectedRoute><DashboardLayout><UploadData /></DashboardLayout></ProtectedRoute>} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;

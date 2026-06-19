@@ -1,0 +1,307 @@
+# routers/fraud.py - Fraud Pattern Detection endpoints
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
+from backend.database import get_db
+from typing import Optional
+import uuid
+import logging
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/api/v1/fraud", tags=["fraud"])
+
+@router.get("/patterns")
+async def get_fraud_patterns(
+    limit: int = Query(50, ge=1, le=100),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get all fraud patterns"""
+    try:
+        query = """
+            SELECT 
+                id,
+                name,
+                description,
+                category,
+                severity,
+                confidence,
+                trend,
+                status,
+                cases,
+                affected_entities,
+                detected_at,
+                updated_at,
+                evidence_count
+            FROM fraud_patterns
+            ORDER BY 
+                CASE severity 
+                    WHEN 'CRITICAL' THEN 1
+                    WHEN 'HIGH' THEN 2
+                    WHEN 'MEDIUM' THEN 3
+                    WHEN 'LOW' THEN 4
+                END,
+                confidence DESC
+            LIMIT :limit
+        """
+        result = await db.execute(text(query), {"limit": limit})
+        rows = result.fetchall()
+        
+        patterns = []
+        for row in rows:
+            # Get indicators for this pattern
+            ind_query = """
+                SELECT 
+                    id,
+                    name,
+                    description,
+                    weight,
+                    detected,
+                    confidence
+                FROM fraud_indicators
+                WHERE pattern_id = :pattern_id
+            """
+            ind_result = await db.execute(text(ind_query), {"pattern_id": str(row[0])})
+            ind_rows = ind_result.fetchall()
+            
+            indicators = [
+                {
+                    "id": str(ir[0]),
+                    "name": ir[1],
+                    "description": ir[2],
+                    "weight": float(ir[3]) if ir[3] else 0,
+                    "detected": ir[4] or False,
+                    "confidence": float(ir[5]) if ir[5] else 0
+                }
+                for ir in ind_rows
+            ]
+            
+            patterns.append({
+                "id": str(row[0]),
+                "name": row[1],
+                "description": row[2],
+                "category": row[3],
+                "severity": row[4],
+                "confidence": float(row[5]) if row[5] else 0,
+                "trend": row[6] or "STABLE",
+                "status": row[7] or "ACTIVE",
+                "cases": row[8] or [],
+                "affected_entities": row[9] or [],
+                "detected_at": row[10].isoformat() if row[10] else None,
+                "updated_at": row[11].isoformat() if row[11] else None,
+                "evidence_count": row[12] or 0,
+                "indicators": indicators
+            })
+        
+        return patterns
+    except Exception as e:
+        logger.error(f"Error getting fraud patterns: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/patterns/summary")
+async def get_fraud_pattern_summary(db: AsyncSession = Depends(get_db)):
+    """Get fraud pattern summary statistics"""
+    try:
+        # Total count
+        total_query = "SELECT COUNT(*) FROM fraud_patterns"
+        total_result = await db.execute(text(total_query))
+        total = total_result.scalar() or 0
+        
+        # By severity
+        severity_query = """
+            SELECT severity, COUNT(*) 
+            FROM fraud_patterns 
+            GROUP BY severity
+        """
+        severity_result = await db.execute(text(severity_query))
+        by_severity = {row[0]: row[1] for row in severity_result.fetchall()}
+        
+        # By status
+        status_query = """
+            SELECT status, COUNT(*) 
+            FROM fraud_patterns 
+            GROUP BY status
+        """
+        status_result = await db.execute(text(status_query))
+        by_status = {row[0]: row[1] for row in status_result.fetchall()}
+        
+        # High confidence (>70%)
+        high_conf_query = """
+            SELECT COUNT(*) FROM fraud_patterns WHERE confidence >= 70
+        """
+        high_conf_result = await db.execute(text(high_conf_query))
+        high_confidence = high_conf_result.scalar() or 0
+        
+        # Active alerts
+        active_query = """
+            SELECT COUNT(*) FROM fraud_patterns WHERE status = 'ACTIVE'
+        """
+        active_result = await db.execute(text(active_query))
+        active_alerts = active_result.scalar() or 0
+        
+        return {
+            "total": total,
+            "by_severity": {
+                "CRITICAL": by_severity.get("CRITICAL", 0),
+                "HIGH": by_severity.get("HIGH", 0),
+                "MEDIUM": by_severity.get("MEDIUM", 0),
+                "LOW": by_severity.get("LOW", 0)
+            },
+            "by_status": {
+                "ACTIVE": by_status.get("ACTIVE", 0),
+                "INVESTIGATING": by_status.get("INVESTIGATING", 0),
+                "RESOLVED": by_status.get("RESOLVED", 0),
+                "FALSE_POSITIVE": by_status.get("FALSE_POSITIVE", 0)
+            },
+            "high_confidence": high_confidence,
+            "active_alerts": active_alerts
+        }
+    except Exception as e:
+        logger.error(f"Error getting fraud pattern summary: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/patterns/{pattern_id}/indicators")
+async def get_pattern_indicators(
+    pattern_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Get indicators for a specific pattern"""
+    try:
+        query = """
+            SELECT 
+                id,
+                name,
+                description,
+                weight,
+                detected,
+                confidence
+            FROM fraud_indicators
+            WHERE pattern_id = :pattern_id
+            ORDER BY weight DESC
+        """
+        result = await db.execute(text(query), {"pattern_id": pattern_id})
+        rows = result.fetchall()
+        
+        return [
+            {
+                "id": str(row[0]),
+                "name": row[1],
+                "description": row[2],
+                "weight": float(row[3]) if row[3] else 0,
+                "detected": row[4] or False,
+                "confidence": float(row[5]) if row[5] else 0
+            }
+            for row in rows
+        ]
+    except Exception as e:
+        logger.error(f"Error getting pattern indicators: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/patterns/{pattern_id}/investigate")
+async def investigate_pattern(
+    pattern_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Start investigation for a pattern"""
+    try:
+        query = """
+            UPDATE fraud_patterns 
+            SET status = 'INVESTIGATING',
+                updated_at = NOW()
+            WHERE id = :id AND status = 'ACTIVE'
+            RETURNING id
+        """
+        result = await db.execute(text(query), {"id": pattern_id})
+        await db.commit()
+        
+        if result.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Pattern not found or already investigating")
+        
+        return {
+            "id": pattern_id,
+            "status": "INVESTIGATING",
+            "message": "Investigation started"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Error investigating pattern: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/patterns/{pattern_id}/status")
+async def update_pattern_status(
+    pattern_id: str,
+    status: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Update pattern status"""
+    try:
+        query = """
+            UPDATE fraud_patterns 
+            SET status = :status,
+                updated_at = NOW()
+            WHERE id = :id
+            RETURNING id
+        """
+        result = await db.execute(
+            text(query),
+            {"id": pattern_id, "status": status}
+        )
+        await db.commit()
+        
+        if result.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Pattern not found")
+        
+        return {
+            "id": pattern_id,
+            "status": status,
+            "message": "Status updated"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Error updating pattern status: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/patterns/{pattern_id}/status")
+async def update_pattern_status(
+    pattern_id: str,
+    status: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Update pattern status"""
+    try:
+        # Validate status
+        valid_statuses = ['ACTIVE', 'INVESTIGATING', 'RESOLVED', 'FALSE_POSITIVE']
+        if status not in valid_statuses:
+            raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
+        
+        query = """
+            UPDATE fraud_patterns 
+            SET status = :status,
+                updated_at = NOW()
+            WHERE id = :pattern_id
+            RETURNING id
+        """
+        result = await db.execute(
+            text(query),
+            {"pattern_id": pattern_id, "status": status}
+        )
+        await db.commit()
+        
+        if result.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Pattern not found")
+        
+        return {
+            "id": pattern_id,
+            "status": status,
+            "message": f"Pattern status updated to {status}"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Error updating pattern status: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

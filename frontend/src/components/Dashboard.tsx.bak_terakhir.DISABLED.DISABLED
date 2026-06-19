@@ -1,0 +1,94 @@
+import React, { useEffect, useState } from 'react';
+
+export default function Dashboard() {
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch('/api/v1/dashboard/executive/overview');
+        if (res.ok) {
+          const json = await res.json();
+          setData(json);
+        } else {
+          setError('Gagal memuat data');
+        }
+      } catch (err) {
+        setError('Error: ' + String(err));
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{ color: '#1976d2' }}>NEMESIS V8+</h1>
+          <p>Memuat dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: '20px', textAlign: 'center' }}>
+        <h2 style={{ color: 'red' }}>⚠️ Gagal Memuat Data</h2>
+        <p>{error}</p>
+        <button onClick={() => window.location.reload()}>Coba Lagi</button>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return <div style={{ padding: 40 }}>Tidak ada data</div>;
+  }
+
+  const riskLevel = data.risk_level || { critical: 0, high: 0, medium: 0, low: 0 };
+  const totalCases = riskLevel.critical + riskLevel.high + riskLevel.medium + riskLevel.low;
+  const highRisk = riskLevel.critical + riskLevel.high;
+
+  return (
+    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
+      <h1 style={{ color: '#1976d2' }}>🏛️ NEMESIS V8+</h1>
+      <h3>Strategic Intelligence Center</h3>
+      
+      <div style={{ background: 'red', color: 'white', padding: '10px', marginBottom: '10px', borderRadius: '4px' }}>
+        ✅ DASHBOARD_TSX_UPDATED - Strategic Intelligence Center
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginTop: '20px' }}>
+        <div style={{ padding: '20px', background: '#e3f2fd', borderRadius: '8px' }}>
+          <div>Total Kasus</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{totalCases}</div>
+        </div>
+        <div style={{ padding: '20px', background: '#ffebee', borderRadius: '8px' }}>
+          <div>Risiko Tinggi</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{highRisk}</div>
+        </div>
+        <div style={{ padding: '20px', background: '#fff3e0', borderRadius: '8px' }}>
+          <div>Potensi Kerugian</div>
+          <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
+            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(data.exposure || 0)}
+          </div>
+        </div>
+        <div style={{ padding: '20px', background: '#e8f5e9', borderRadius: '8px' }}>
+          <div>Pemulihan</div>
+          <div style={{ fontSize: '20px', fontWeight: 'bold' }}>
+            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(data.recovery || 0)}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ marginTop: '20px', padding: '16px', textAlign: 'center', borderTop: '1px solid #e0e0e0', color: '#666', fontSize: '12px' }}>
+        <p>NEMESIS V8+ - Strategic Intelligence Center | Data terverifikasi hash chain</p>
+        <p>Terakhir diperbarui: {data.timestamp ? new Date(data.timestamp).toLocaleString('id-ID') : '-'}</p>
+      </div>
+    </div>
+  );
+}

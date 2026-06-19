@@ -1,0 +1,75 @@
+groups:
+  - name: nemesis_alerts
+    interval: 30s
+    rules:
+      - alert: APIInstanceDown
+        expr: up{job="nemesis_api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API instance {{ $labels.instance }} is down"
+          description: "API instance has been unreachable for 1 minute"
+
+      - alert: HighRiskPackageDetected
+        expr: nemesis_risk_score > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High risk package detected"
+          description: "Package {{ $labels.package_id }} has risk score {{ $value }}"
+
+      - alert: AnomalySpike
+        expr: rate(nemesis_anomaly_detected_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Anomaly spike detected"
+          description: "{{ $value }} anomalies per second detected"
+
+      - alert: HashChainCompromised
+        expr: nemesis_hash_verification_failures_total > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Hash chain integrity compromised"
+          description: "Hash verification failed for case {{ $labels.case_id }}"
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API response time"
+          description: "95th percentile response time is {{ $value }}s"
+
+      - alert: DatabaseConnectionPoolExhausted
+        expr: pg_stat_database_numbackends{datname="nemesis_db"} > 80
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection pool exhausted"
+          description: "Active connections: {{ $value }}"
+
+      - alert: LowComplianceScore
+        expr: nemesis_compliance_score < 70
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low compliance score"
+          description: "Compliance score is {{ $value }}%"
+
+      - alert: EvidenceIntegrityFailed
+        expr: nemesis_evidence_integrity_failures_total > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Evidence integrity check failed"
+          description: "Evidence file hash mismatch detected"

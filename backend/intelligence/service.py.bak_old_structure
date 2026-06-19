@@ -1,0 +1,358 @@
+"""
+Intelligence Service - Orchestrates detection and scoring
+"""
+
+from typing import Optional, List, Dict, Any
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, desc, func
+from datetime import datetime, timezone
+import uuid
+
+from backend.database import get_db
+from backend.cases.service import CaseService
+from backend.cases.event_store import get_case_events
+from backend.intelligence.models import (
+    RiskScore, AnomalyDetection, Alert, IntelligenceReport,
+    RiskLevel, DetectionType, AlertSeverity, AlertStatus
+)
+from backend.intelligence.detectors.anomaly_detector import AnomalyDetector
+from backend.intelligence.scoring.risk_scorer import RiskScorer
+from backend.intelligence.core.event_adapter import EventAdapter
+
+
+class IntelligenceService:
+    """
+    Main service for intelligence analysis.
+    Coordinates anomaly detection, risk scoring, and alerting.
+    """
+    
+    def __init__(self, session: AsyncSession):
+        self.session = session
+        self.anomaly_detector = AnomalyDetector()
+        self.risk_scorer = RiskScorer()
+    
+    async def analyze_case(self, case_id: str, force_refresh: bool = False):
+
+        case_service = CaseService(self.session)
+        from uuid import UUID
+        case = await case_service.get_case(str(case_id))
+        print('[TRACE] CASE OK', flush=True)
+
+        events_raw = await get_case_events(self.session, case_id)
+        print(f'[TRACE] EVENTS {len(events_raw)}', flush=True)
+        events = [EventAdapter(e) for e in events_raw]
+
+        if not events:
+            return {
+                "case_id": case_id,
+                "has_events": False,
+                "message": "No events to analyze"
+            }
+    
+        event_dicts = []
+        for e in events:
+            timestamp = e.timestamp
+            if timestamp and timestamp.tzinfo is None:
+                timestamp = timestamp.replace(tzinfo=timezone.utc)
+        
+            event_dicts.append({
+                "event_type": e.event_type,
+                "data": e.data,
+                "timestamp": timestamp,
+                "event_hash": e.event_hash,
+            })
+    
+        case_service = CaseService(self.session)
+        from uuid import UUID
+        case = await case_service.get_case(str(case_id))
+        print('[TRACE] CASE OK', flush=True)
+    
+        created_at = case.created_at if case else None
+        if created_at and created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+    
+        case_data = {
+            "created_at": created_at,
+            "priority": (case.priority.value if hasattr(case.priority, "value") else case.priority) if case else "medium",
+            "status": (case.status.value if hasattr(case.status, "value") else case.status) if case else "draft",
+        }
+    
+        anomaly_result = self.anomaly_detector.analyze_case_events(event_dicts)
+        print('[TRACE] ANOMALY OK', flush=True)
+    
+        saved_anomalies = await self._save_anomalies(case_id, anomaly_result, event_dicts)
+        print('[TRACE] SAVE ANOMALY OK', flush=True)
+    
+        print('[TRACE] BEFORE RISK', flush=True)
+        risk_result = self.risk_scorer.calculate_case_risk(
+            case_data, anomaly_result, event_dicts
+        )
+    
+        risk_score = await self._save_risk_score(case_id, risk_result)
+
+        await self.session.commit()
+        print('[TRACE] COMMIT DONE', flush=True)
+        print('[TRACE] SAVE RISK OK', flush=True)
+    
+        alerts = []
+        if risk_result["risk_level"] in ["critical", "high"]:
+            alerts = await self._create_alerts(case_id, risk_result, saved_anomalies)
+    
+        return {
+            "case_id": case_id,
+            "has_events": True,
+            "total_events": len(events),
+            "anomaly_detection": {
+                "risk_score": anomaly_result["risk_score"],
+                "anomaly_count": anomaly_result["anomaly_count"],
+                "summary": anomaly_result["summary"],
+                "anomalies": anomaly_result["anomalies"][:10],
+            },
+            "risk_assessment": risk_result,
+            "alerts_created": len(alerts),
+            "analysis_timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+    
+    async def _save_anomalies(
+        self,
+        case_id: str,
+        anomaly_result: Dict,
+        events: List[Dict]
+    ) -> List[AnomalyDetection]:
+        """Save detected anomalies to database"""
+        saved = []
+        
+        for anomaly in anomaly_result.get("anomalies", []):
+            # Find related event index
+            event_id = None
+            if "index" in anomaly:
+                idx = anomaly["index"]
+                if idx < len(events):
+                    # Would need event ID mapping - simplified for now
+                    pass
+            
+            detection = AnomalyDetection(
+                id=str(uuid.uuid4()),
+                case_id=case_id,
+                detection_type=DetectionType.STATISTICAL,
+                anomaly_type=anomaly.get("type", "unknown"),
+                confidence=anomaly.get("severity", 0.5),
+                severity=anomaly.get("severity", 0.5),
+                observed_value={"value": anomaly.get("value")},
+                reason=anomaly.get("reason", ""),
+            )
+            self.session.add(detection)
+            saved.append(detection)
+        
+        await self.session.flush()
+        await self.session.commit()
+        return saved
+    
+    async def _save_risk_score(
+        self,
+        case_id: str,
+        risk_result: Dict
+    ) -> RiskScore:
+        """Save risk score to database"""
+        risk_score = RiskScore(
+            id=str(uuid.uuid4()),
+            case_id=case_id,
+            overall_score=risk_result["overall_score"],
+            risk_level=RiskLevel(risk_result["risk_level"]),
+            anomaly_score=risk_result["component_scores"]["anomaly"],
+            collusion_score=risk_result["component_scores"]["collusion"],
+            financial_score=risk_result["component_scores"]["financial"],
+            temporal_score=risk_result["component_scores"]["temporal"],
+            factors=risk_result.get("factors", []),
+            recommendations=risk_result.get("recommendations", []),
+        )
+        self.session.add(risk_score)
+        await self.session.flush()
+        await self.session.commit()
+        return risk_score
+    
+    async def _create_alerts(
+        self,
+        case_id: str,
+        risk_result: Dict,
+        anomalies: List[AnomalyDetection]
+    ) -> List[Alert]:
+        """Create alerts for high-risk cases"""
+        alerts = []
+        
+        risk_level = risk_result["risk_level"]
+        
+        if risk_level == "critical":
+            alert = Alert(
+                id=str(uuid.uuid4()),
+                case_id=case_id,
+                title="⚠️ CRITICAL RISK CASE DETECTED",
+                description=f"Case requires immediate attention. Risk score: {risk_result['overall_score']:.1f}/100",
+                severity=AlertSeverity.CRITICAL,
+                alert_type="risk_escalation",
+                triggered_by="risk_scorer",
+            )
+            self.session.add(alert)
+            alerts.append(alert)
+        
+        elif risk_level == "high":
+            alert = Alert(
+                id=str(uuid.uuid4()),
+                case_id=case_id,
+                title="High Risk Case - Review Required",
+                description=f"Case exceeds high-risk threshold. Score: {risk_result['overall_score']:.1f}/100",
+                severity=AlertSeverity.HIGH,
+                alert_type="risk_escalation",
+                triggered_by="risk_scorer",
+            )
+            self.session.add(alert)
+            alerts.append(alert)
+        
+        # Create alerts for severe anomalies
+        severe_anomalies = [a for a in anomalies if a.severity >= 0.7]
+        for anomaly in severe_anomalies[:3]:  # Max 3 anomaly alerts
+            alert = Alert(
+                id=str(uuid.uuid4()),
+                case_id=case_id,
+                anomaly_id=anomaly.id,
+                title=f"Anomaly Detected: {anomaly.anomaly_type}",
+                description=anomaly.reason or "Unusual pattern detected",
+                severity=AlertSeverity.MEDIUM,
+                alert_type="anomaly_detection",
+                triggered_by="anomaly_detector",
+            )
+            self.session.add(alert)
+            alerts.append(alert)
+        
+        await self.session.flush()
+        await self.session.commit()
+        return alerts
+    
+    async def get_risk_score(
+        self,
+        case_id: str,
+        latest: bool = True
+    ) -> Optional[Dict]:
+        """Get risk score for a case"""
+        query = select(RiskScore).where(RiskScore.case_id == case_id)
+        
+        if latest:
+            query = query.order_by(desc(RiskScore.calculated_at)).limit(1)
+        
+        result = await self.session.execute(query)
+        risk_score = result.scalar_one_or_none()
+        
+        if not risk_score:
+            return None
+        
+        return {
+            "id": risk_score.id,
+            "case_id": risk_score.case_id,
+            "overall_score": risk_score.overall_score,
+            "risk_level": risk_score.risk_level.value,
+            "component_scores": {
+                "anomaly": risk_score.anomaly_score,
+                "collusion": risk_score.collusion_score,
+                "financial": risk_score.financial_score,
+                "temporal": risk_score.temporal_score,
+            },
+            "factors": risk_score.factors,
+            "recommendations": risk_score.recommendations,
+            "calculated_at": risk_score.calculated_at.isoformat(),
+        }
+    
+    async def get_alerts(
+        self,
+        case_id: Optional[str] = None,
+        status: Optional[AlertStatus] = None,
+        severity: Optional[AlertSeverity] = None,
+        limit: int = 50
+    ) -> List[Dict]:
+        """Get alerts with filters"""
+        query = select(Alert)
+        
+        if case_id:
+            query = query.where(Alert.case_id == case_id)
+        if status:
+            query = query.where(Alert.status == status)
+        if severity:
+            query = query.where(Alert.severity == severity)
+        
+        query = query.order_by(desc(Alert.created_at)).limit(limit)
+        
+        result = await self.session.execute(query)
+        alerts = result.scalars().all()
+        
+        return [
+            {
+                "id": a.id,
+                "case_id": a.case_id,
+                "title": a.title,
+                "description": a.description,
+                "severity": a.severity.value,
+                "status": a.status.value,
+                "alert_type": a.alert_type,
+                "created_at": a.created_at.isoformat(),
+                "assigned_to": a.assigned_to,
+            }
+            for a in alerts
+        ]
+    
+    async def acknowledge_alert(self, alert_id: str, user_id: str) -> bool:
+        """Acknowledge an alert"""
+        result = await self.session.execute(
+            select(Alert).where(Alert.id == alert_id)
+        )
+        alert = result.scalar_one_or_none()
+        
+        if not alert:
+            return False
+        
+        alert.status = AlertStatus.ACKNOWLEDGED
+        alert.assigned_to = user_id
+        await self.session.flush()
+        await self.session.commit()
+        
+        return True
+    
+    async def resolve_alert(
+        self,
+        alert_id: str,
+        user_id: str,
+        resolution_note: str
+    ) -> bool:
+        """Resolve an alert"""
+        result = await self.session.execute(
+            select(Alert).where(Alert.id == alert_id)
+        )
+        alert = result.scalar_one_or_none()
+        
+        if not alert:
+            return False
+        
+        alert.status = AlertStatus.RESOLVED
+        alert.assigned_to = user_id
+        alert.resolution_note = resolution_note
+        alert.resolved_at = datetime.now()
+        await self.session.flush()
+        await self.session.commit()
+        
+        return True
+    
+    async def get_case_intelligence_summary(self, case_id: str) -> Dict:
+        """Get complete intelligence summary for a case"""
+        risk = await self.get_risk_score(case_id)
+        alerts = await self.get_alerts(case_id=case_id, limit=10)
+        
+        # Count anomalies
+        anomaly_count = await self.session.execute(
+            select(func.count()).where(AnomalyDetection.case_id == case_id)
+        )
+        
+        return {
+            "case_id": case_id,
+            "risk_assessment": risk,
+            "alerts": alerts,
+            "anomaly_count": anomaly_count.scalar() or 0,
+            "has_intelligence": risk is not None or len(alerts) > 0,
+        }

@@ -1,0 +1,112 @@
+# Nemesis Madina .gitignore
+
+# ============================================
+# Python
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+.env
+.venv
+
+# ============================================
+# IDE
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ============================================
+# Database
+# ============================================
+*.db
+*.sqlite
+*.sqlite3
+*.pgsql
+
+# ============================================
+# Logs & Reports
+# ============================================
+*.log
+*.pid
+*.seed
+*.pid.lock
+logs/
+storage/logs/
+storage/reports/
+storage/snapshots/
+storage/metrics/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ============================================
+# Docker
+# ============================================
+*.tar
+*.tar.gz
+*.zip
+
+# ============================================
+# Secrets
+# ============================================
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+secrets/
+
+# ============================================
+# Build outputs
+# ============================================
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+
+# ============================================
+# Frontend
+# ============================================
+node_modules/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/dist/
+frontend/.env.local
+
+# ============================================
+# Misc
+# ============================================
+.DS_Store
+Thumbs.db
+*.bak
+*.backup
+*.tmp
+*.temp
+*.cache
+# Storage
+storage/
+*.sql
+*.db
+coverage.xml
+*.log

@@ -1,0 +1,11 @@
+// Tambahkan collusion edge styling
+const getEdgeStyle = (actor1: Actor, actor2: Actor) => {
+  const isCollusion = actor1.community === actor2.community && 
+                      actor1.risk_score > 70 && actor2.risk_score > 70;
+  return {
+    stroke: isCollusion ? '#ef4444' : '#3b82f6',
+    strokeWidth: isCollusion ? 3 : 2,
+    animated: isCollusion,
+    style: isCollusion ? { strokeDasharray: '5,5' } : {}
+  };
+};

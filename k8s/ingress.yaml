@@ -1,0 +1,68 @@
+# NEMESIS Ingress Configuration
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nemesis-ingress
+  namespace: nemesis
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/websocket-services: nemesis-websocket
+spec:
+  tls:
+  - hosts:
+    - api.nemesis.com
+    - ws.nemesis.com
+    secretName: nemesis-tls
+  rules:
+  - host: api.nemesis.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nemesis-api
+            port:
+              number: 80
+  - host: ws.nemesis.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nemesis-websocket
+            port:
+              number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nemesis-monitoring-ingress
+  namespace: nemesis
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: monitor.nemesis.com
+    http:
+      paths:
+      - path: /prometheus
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus
+            port:
+              number: 9090
+      - path: /grafana
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000

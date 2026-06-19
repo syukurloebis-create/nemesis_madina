@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>nemesis_madina</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
+// In main.tsx - suppress Chrome extension errors
+if (typeof window !== 'undefined') {
+  const originalError = console.error;
+  console.error = (...args) => {
+    const message = args[0]?.toString() || '';
+    // Filter out Chrome extension errors
+    if (message.includes('message port closed') ||
+        message.includes('runtime.lastError') ||
+        message.includes('Extension')) {
+      return;
+    }
+    originalError.apply(console, args);
+  };
+}

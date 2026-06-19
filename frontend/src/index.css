@@ -1,0 +1,245 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   GLOBAL STYLES - NEMESIS AI COMMAND CENTER
+   ============================================================ */
+
+@layer base {
+  /* Dark theme base */
+  body {
+    @apply bg-dark-bg text-dark-text;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-dark-bg;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-dark-border rounded-full;
+    transition: all 0.3s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-600;
+  }
+
+  /* Selection color */
+  ::selection {
+    @apply bg-primary-500/30 text-white;
+  }
+}
+
+@layer components {
+  /* Glassmorphism Cards */
+  .glass-card {
+    @apply bg-dark-card backdrop-blur-md border border-dark-border rounded-xl;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .glass-card-hover {
+    @apply glass-card hover:bg-dark-cardHover transition-all duration-300 hover:border-primary-500/30 hover:shadow-lg;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-400 to-purple-500 bg-clip-text text-transparent;
+  }
+
+  /* Risk badges */
+  .badge-critical {
+    @apply px-2 py-0.5 text-xs font-medium rounded-full bg-red-500/20 text-red-400 border border-red-500/30;
+  }
+
+  .badge-high {
+    @apply px-2 py-0.5 text-xs font-medium rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30;
+  }
+
+  .badge-medium {
+    @apply px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30;
+  }
+
+  .badge-low {
+    @apply px-2 py-0.5 text-xs font-medium rounded-full bg-green-500/20 text-green-400 border border-green-500/30;
+  }
+
+  /* Status indicators */
+  .status-dot {
+    @apply w-2 h-2 rounded-full inline-block;
+  }
+
+  .status-dot-active {
+    @apply status-dot bg-green-500 animate-pulse;
+  }
+
+  .status-dot-warning {
+    @apply status-dot bg-yellow-500 animate-pulse-slow;
+  }
+
+  .status-dot-error {
+    @apply status-dot bg-red-500 animate-pulse;
+  }
+
+  /* Animations */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.5s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out forwards;
+  }
+}
+
+/* ============================================================
+   CUSTOM SCROLLBAR FOR DARK THEME
+   ============================================================ */
+
+.dark-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(42, 42, 74, 0.6) transparent;
+}
+
+.dark-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(42, 42, 74, 0.6);
+  border-radius: 9999px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(42, 42, 74, 0.8);
+}
+
+/* ============================================================
+   GLASSMORPHISM EFFECTS
+   ============================================================ */
+
+.glass-effect {
+  background: rgba(26, 31, 53, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(42, 42, 74, 0.3);
+}
+
+.glass-effect-light {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================================
+   REACT FLOW DARK MODE
+   ============================================================ */
+
+.dark .react-flow {
+  background-color: transparent !important;
+}
+
+.dark .react-flow__node {
+  background: rgba(26, 31, 53, 0.9) !important;
+  border-color: rgba(42, 42, 74, 0.6) !important;
+  color: #e5e7eb !important;
+  backdrop-filter: blur(4px);
+}
+
+.dark .react-flow__edge {
+  stroke: rgba(74, 74, 106, 0.6) !important;
+}
+
+.dark .react-flow__controls {
+  background: rgba(26, 31, 53, 0.9) !important;
+  border-color: rgba(42, 42, 74, 0.6) !important;
+  backdrop-filter: blur(8px);
+}
+
+.dark .react-flow__controls button {
+  background: rgba(26, 31, 53, 0.8) !important;
+  border-color: rgba(42, 42, 74, 0.6) !important;
+  color: #e5e7eb !important;
+}
+
+.dark .react-flow__controls button:hover {
+  background: rgba(37, 43, 69, 0.9) !important;
+}
+
+.dark .react-flow__minimap {
+  background: rgba(10, 14, 26, 0.8) !important;
+  border-color: rgba(42, 42, 74, 0.6) !important;
+}
+
+/* ============================================================
+   NOTIFICATION TOAST CUSTOMIZATION
+   ============================================================ */
+
+.Toastify__toast {
+  @apply glass-card !important;
+  @apply text-dark-text !important;
+}
+
+.Toastify__toast--success {
+  @apply border-green-500/30 !important;
+}
+
+.Toastify__toast--error {
+  @apply border-red-500/30 !important;
+}
+
+.Toastify__toast--warning {
+  @apply border-yellow-500/30 !important;
+}
+
+.Toastify__progress-bar {
+  @apply bg-primary-500 !important;
+}
+
+/* ============================================================
+   LOADING ANIMATIONS
+   ============================================================ */
+
+.loading-dots::after {
+  content: '...';
+  animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+  100% { content: ''; }
+}
+
+/* ============================================================
+   CARD TRANSITIONS
+   ============================================================ */
+
+.card-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-transition:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}

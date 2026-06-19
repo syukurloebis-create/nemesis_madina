@@ -1,0 +1,16 @@
+{
+  "case_id": "1ecd294e-5bba-42de-9b7e-1893022eea0d",
+  "generation": {
+    "total_events": 10000,
+    "total_time_seconds": 83.34399819374084,
+    "events_per_second": 119.98464456617589,
+    "latency_ms": {
+      "p50": 8.378267288208008,
+      "p95": 17.810213565826416,
+      "p99": 22.357680797576904,
+      "min": 0.0,
+      "max": 34.02853012084961
+    }
+  },
+  "gate_b_passed": true
+}

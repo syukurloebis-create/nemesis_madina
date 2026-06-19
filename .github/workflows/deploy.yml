@@ -1,0 +1,75 @@
+# NEMESIS Deployment Workflow
+name: NEMESIS Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      version:
+        description: 'Version to deploy'
+        required: false
+        default: 'latest'
+
+jobs:
+  deploy-staging:
+    if: github.event.inputs.environment == 'staging'
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Configure kubectl
+      run: |
+        mkdir -p $HOME/.kube
+        echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 --decode > $HOME/.kube/config
+    
+    - name: Deploy to staging
+      run: |
+        kubectl set image deployment/nemesis-api api=${{ secrets.DOCKER_USERNAME }}/nemesis:${{ github.event.inputs.version || github.sha }} -n staging
+        kubectl rollout status deployment/nemesis-api -n staging
+  
+  deploy-production:
+    if: github.event.inputs.environment == 'production'
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Configure kubectl
+      run: |
+        mkdir -p $HOME/.kube
+        echo "${{ secrets.KUBE_CONFIG_PROD }}" | base64 --decode > $HOME/.kube/config
+    
+    - name: Backup current deployment
+      run: |
+        kubectl get deployment nemesis-api -n production -o yaml > backup_api.yaml
+        kubectl get deployment nemesis-websocket -n production -o yaml > backup_ws.yaml
+    
+    - name: Deploy to production (blue/green)
+      run: |
+        # Deploy green version
+        kubectl apply -f k8s/deployment-green.yaml -n production
+        kubectl rollout status deployment/nemesis-api-green -n production --timeout=5m
+        
+        # Switch traffic
+        kubectl patch service nemesis-api -n production -p '{"spec":{"selector":{"version":"green"}}}'
+        
+        # Verify
+        sleep 10
+        curl -f https://api.nemesis.com/health || (kubectl rollout undo deployment/nemesis-api-green -n production && exit 1)
+        
+        # Remove blue
+        kubectl delete deployment nemesis-api-blue -n production || true
+    
+    - name: Notify deployment status
+      run: |
+        echo "Deployment to production completed successfully"

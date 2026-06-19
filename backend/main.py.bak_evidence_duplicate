@@ -1,0 +1,147 @@
+# backend/main.py - Minimal version with correct middleware
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from backend.security.auth import router as auth_router
+from backend.routers import evidence_scoring
+from backend.routers import evidence
+from backend.routers import provenance
+from backend.routers import evidence
+from backend.routers import executive
+from backend.routers import evidence
+from backend.routers import network
+from backend.routers import evidence
+from backend.routers import governance
+from backend.routers import evidence
+from backend.routers import copilot
+from backend.routers import evidence
+from backend.routers import dashboard
+from backend.routers import evidence
+from backend.routers import rup
+from backend.routers import evidence
+from backend.routers import cases
+from backend.routers import evidence
+from backend.routers import recommendations
+from backend.routers import evidence
+from backend.routers import export
+from backend.routers import evidence
+from backend.websocket.routes import router as ws_router
+from backend.routers import investigation
+from backend.routers import evidence
+
+app = FastAPI(title="NEMESIS V8+ API", version="8.0")
+
+# CORS middleware - correct syntax
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers
+app.include_router(auth_router)
+app.include_router(evidence.router)
+app.include_router(evidence_scoring.router)
+app.include_router(evidence.router)
+app.include_router(cases.router)
+app.include_router(evidence.router)
+app.include_router(recommendations.router)
+app.include_router(evidence.router)
+app.include_router(export.router)
+app.include_router(evidence.router)
+app.include_router(ws_router)
+app.include_router(evidence.router)
+app.include_router(investigation.router)
+app.include_router(evidence.router)
+app.include_router(provenance.router)
+app.include_router(evidence.router)
+app.include_router(executive.router)
+app.include_router(evidence.router)
+app.include_router(network.router)
+app.include_router(evidence.router)
+app.include_router(governance.router)
+app.include_router(evidence.router)
+app.include_router(copilot.router)
+app.include_router(evidence.router)
+app.include_router(dashboard.router)
+app.include_router(evidence.router)
+
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy", "version": "8.0", "database": "connected"}
+
+@app.get("/")
+async def root():
+    return {"message": "NEMESIS V8+ API", "version": "8.0"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# Strategic Intelligence Router
+from backend.routers import strategic
+from backend.routers import evidence
+app.include_router(strategic.router)
+app.include_router(evidence.router)
+
+# Graph Router
+from backend.routers import graph
+from backend.routers import evidence
+app.include_router(graph.router)
+app.include_router(evidence.router)
+
+# Risk Router
+from backend.routers import risk
+from backend.routers import evidence
+app.include_router(risk.router)
+app.include_router(evidence.router)
+
+# Procurement Router
+from backend.routers import procurement
+from backend.routers import evidence
+app.include_router(procurement.router)
+app.include_router(evidence.router)
+
+# Workflow Router
+from backend.routers import workflow
+from backend.routers import evidence
+app.include_router(workflow.router)
+app.include_router(evidence.router)
+
+# Outcome Router
+from backend.routers import outcome
+from backend.routers import evidence
+app.include_router(outcome.router)
+app.include_router(evidence.router)
+
+# Predictive Router
+from backend.routers import predictive
+from backend.routers import evidence
+app.include_router(predictive.router)
+app.include_router(evidence.router)
+
+# Metrics Router
+from backend.routers import metrics_id as metrics
+from backend.routers import evidence
+app.include_router(metrics.router)
+app.include_router(evidence.router)
+
+# Replay Router
+from backend.routers import replay
+from backend.routers import evidence
+app.include_router(replay.router)
+app.include_router(evidence.router)
+
+# Historical Router
+from backend.routers import historical
+from backend.routers import evidence
+app.include_router(historical.router)
+app.include_router(evidence.router)
+
+# Custody Router
+from backend.routers import custody
+from backend.routers import evidence
+app.include_router(custody.router)
+app.include_router(evidence.router)

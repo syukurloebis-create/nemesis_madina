@@ -1,0 +1,9 @@
+{
+  "nodes": [
+    {"id": "entity_001", "type": "entity", "label": "Company A"},
+    {"id": "entity_002", "type": "entity", "label": "Company B"}
+  ],
+  "edges": [
+    {"source": "entity_001", "target": "entity_002", "type": "interacts", "weight": 0.8}
+  ]
+}

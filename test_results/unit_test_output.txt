@@ -1,0 +1,67 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.7, pytest-9.0.3, pluggy-1.6.0 -- C:\Users\LENOVO\nemesis_madina\venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\LENOVO\nemesis_madina
+configfile: pytest.ini
+plugins: anyio-4.13.0, asyncio-1.4.0, cov-7.1.0, mock-3.15.1, timeout-2.4.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+timeout: 300.0s
+timeout method: thread
+timeout func_only: False
+collecting ... collected 70 items / 2 errors
+
+=================================== ERRORS ====================================
+________ ERROR collecting tests/unit/integrity/test_chain_validator.py ________
+ImportError while importing test module 'C:\Users\LENOVO\nemesis_madina\tests\unit\integrity\test_chain_validator.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+venv\Lib\site-packages\_pytest\python.py:507: in importtestmodule
+    mod = import_path(
+venv\Lib\site-packages\_pytest\pathlib.py:587: in import_path
+    importlib.import_module(module_name)
+..\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+venv\Lib\site-packages\_pytest\assertion\rewrite.py:197: in exec_module
+    exec(co, module.__dict__)
+tests\unit\integrity\test_chain_validator.py:4: in <module>
+    from backend.evidence.chain_validator import ChainValidator
+E   ImportError: cannot import name 'ChainValidator' from 'backend.evidence.chain_validator' (C:\Users\LENOVO\nemesis_madina\backend\evidence\chain_validator.py)
+________________ ERROR collecting tests/unit/test_evidence.py _________________
+ImportError while importing test module 'C:\Users\LENOVO\nemesis_madina\tests\unit\test_evidence.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+venv\Lib\site-packages\_pytest\python.py:507: in importtestmodule
+    mod = import_path(
+venv\Lib\site-packages\_pytest\pathlib.py:587: in import_path
+    importlib.import_module(module_name)
+..\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+venv\Lib\site-packages\_pytest\assertion\rewrite.py:197: in exec_module
+    exec(co, module.__dict__)
+tests\unit\test_evidence.py:6: in <module>
+    from backend.evidence import EvidenceRegistry, EvidenceHasher
+E   ImportError: cannot import name 'EvidenceRegistry' from 'backend.evidence' (C:\Users\LENOVO\nemesis_madina\backend\evidence\__init__.py)
+-- generated xml file: C:\Users\LENOVO\nemesis_madina\test_results\junit.xml --
+=========================== short test summary info ===========================
+ERROR tests/unit/integrity/test_chain_validator.py
+ERROR tests/unit/test_evidence.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!
+============================== 2 errors in 2.45s ==============================

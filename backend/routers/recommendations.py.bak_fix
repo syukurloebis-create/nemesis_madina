@@ -1,0 +1,85 @@
+from typing import Dict, Optional, List
+from fastapi import APIRouter, HTTPException
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+from backend.database import get_db
+from fastapi import Depends
+
+router = APIRouter(prefix="/api/v1/recommendations", tags=["recommendations"])
+
+@router.get("/")
+async def get_recommendations(db: AsyncSession = Depends(get_db)):
+    """Get all recommendations"""
+    try:
+        result = await db.execute(text("""
+            SELECT id, case_id, recommendation_text, priority, status, created_at
+            FROM recommendations
+            ORDER BY created_at DESC
+            LIMIT 10
+        """))
+        rows = result.fetchall()
+        return [
+            {
+                "id": row[0],
+                "case_id": row[1],
+                "recommendation_text": row[2],
+                "priority": row[3],
+                "status": row[4],
+                "created_at": row[5].isoformat() if row[5] else None
+            }
+            for row in rows
+        ]
+    except Exception as e:
+        return []  # Return empty array if table doesn't exist
+
+# ============================================================
+# RECOMMENDATIONS SUMMARY ENDPOINT
+# ============================================================
+
+@router.get("/summary", response_model=Dict[str, int])
+async def get_recommendation_summary(
+    db: Session = Depends(get_db)
+) -> Dict[str, int]:
+    """
+    Get summary of recommendations by priority level.
+    
+    Returns:
+        Dict with priority levels as keys and counts as values.
+        Example: {"CRITICAL": 2, "HIGH": 1, "MEDIUM": 1, "LOW": 0}
+    """
+    try:
+        query = """
+            SELECT 
+                priority,
+                COUNT(*) as count
+            FROM recommendations
+            WHERE status != 'COMPLETED'
+            GROUP BY priority
+        """
+        
+        result = db.execute(text(query))
+        rows = result.fetchall()
+        
+        # Initialize with all priorities
+        summary = {
+            "CRITICAL": 0,
+            "HIGH": 0,
+            "MEDIUM": 0,
+            "LOW": 0
+        }
+        
+        # Fill with actual data
+        for row in rows:
+            priority = row[0]
+            count = row[1]
+            if priority in summary:
+                summary[priority] = count
+        
+        return summary
+        
+    except Exception as e:
+        logger.error(f"Error getting recommendation summary: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error getting recommendation summary: {str(e)}"
+        )

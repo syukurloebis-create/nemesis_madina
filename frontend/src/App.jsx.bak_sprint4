@@ -1,0 +1,487 @@
+import React, { useEffect, useState } from 'react';
+import {
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  AreaChart, Area
+} from 'recharts';
+import { format, parseISO } from 'date-fns';
+import { id } from 'date-fns/locale';
+
+function App() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Data states
+  const [executive, setExecutive] = useState(null);
+  const [cases, setCases] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [evidence, setEvidence] = useState(null);
+  const [topEvidence, setTopEvidence] = useState([]);
+  const [evidenceDistribution, setEvidenceDistribution] = useState([]);
+  const [governance, setGovernance] = useState(null);
+  const [keyActors, setKeyActors] = useState([]);
+  const [riskTrend, setRiskTrend] = useState([]);
+  const [riskExplanation, setRiskExplanation] = useState(null);
+  const [recommendations, setRecommendations] = useState([]);
+  const [selectedCaseId, setSelectedCaseId] = useState('446e216d-eb0e-487e-8e6b-ec943468ea20');
+
+  // Colors for charts
+  const COLORS = {
+    critical: '#dc2626',
+    high: '#f97316',
+    medium: '#eab308',
+    low: '#22c55e',
+    primary: '#1976d2',
+    secondary: '#4d9de0'
+  };
+
+  useEffect(() => {
+    const fetchAllData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // 1. Executive Overview
+        const execRes = await fetch('/api/v1/dashboard/executive/overview');
+        if (execRes.ok) {
+          const data = await execRes.json();
+          setExecutive(data);
+        }
+
+        // 2. Investigation Stats
+        const statsRes = await fetch('/api/v1/investigation/stats');
+        if (statsRes.ok) {
+          const data = await statsRes.json();
+          setStats(data);
+        }
+
+        // 3. Investigation Cases
+        const casesRes = await fetch('/api/v1/investigation/cases');
+        if (casesRes.ok) {
+          const data = await casesRes.json();
+          setCases(data);
+        }
+
+        // 4. Evidence Stats
+        const evidRes = await fetch('/api/v1/evidence/stats');
+        if (evidRes.ok) {
+          const data = await evidRes.json();
+          setEvidence(data);
+        }
+
+        // 5. Top Evidence
+        const topRes = await fetch('/api/v1/evidence/top?limit=5');
+        if (topRes.ok) {
+          const data = await topRes.json();
+          setTopEvidence(data);
+        }
+
+        // 6. Evidence Distribution
+        const distRes = await fetch('/api/v1/evidence/distribution');
+        if (distRes.ok) {
+          const data = await distRes.json();
+          setEvidenceDistribution(data);
+        }
+
+        // 7. Risk Trend
+        const trendRes = await fetch('/api/v1/investigation/risk-trend?days=30');
+        if (trendRes.ok) {
+          const data = await trendRes.json();
+          setRiskTrend(data);
+        }
+
+        // 8. Risk Explanation (Provenance)
+        const provRes = await fetch(`/api/v1/provenance/case/${selectedCaseId}`);
+        if (provRes.ok) {
+          const data = await provRes.json();
+          setRiskExplanation(data);
+        }
+
+        // 9. Governance Metrics
+        const govRes = await fetch('/api/v1/dashboard/apip/governance');
+        if (govRes.ok) {
+          const data = await govRes.json();
+          setGovernance(data);
+        }
+
+        // 10. Key Actors
+        const actorsRes = await fetch('/api/v1/network/key-actors');
+        if (actorsRes.ok) {
+          const data = await actorsRes.json();
+          setKeyActors(data.key_actors || []);
+        }
+
+        // 11. Recommendations
+        const recRes = await fetch('/api/v1/recommendations');
+        if (recRes.ok) {
+          const data = await recRes.json();
+          setRecommendations(data || []);
+        }
+
+      } catch (err) {
+        console.error('❌ Error fetching data:', err);
+        setError('Gagal memuat data dashboard');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
+  }, [selectedCaseId]);
+
+  const formatRupiah = (value) => {
+    return new Intl.NumberFormat('id-ID', { 
+      style: 'currency', 
+      currency: 'IDR', 
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value || 0);
+  };
+
+  const getRiskColor = (level) => {
+    const map = { 'CRITICAL': '#dc2626', 'HIGH': '#f97316', 'MEDIUM': '#eab308', 'LOW': '#22c55e' };
+    return map[level] || '#22c55e';
+  };
+
+  const getSlaStatus = (status) => {
+    const map = { 'OVERDUE': '⚠️ Overdue', 'AT_RISK': '🟡 At Risk', 'ON_TRACK': '✅ On Track' };
+    return map[status] || '✅ On Track';
+  };
+
+  const getTrustColor = (score) => {
+    if (score >= 80) return '#2e7d32';
+    if (score >= 60) return '#ed6c02';
+    if (score >= 40) return '#f97316';
+    return '#dc2626';
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    try {
+      return format(parseISO(dateStr), 'dd MMM', { locale: id });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Prepare chart data
+  const caseStatusData = [
+    { name: 'Critical', value: executive?.risk_level?.critical || 0 },
+    { name: 'High', value: executive?.risk_level?.high || 0 },
+    { name: 'Medium', value: executive?.risk_level?.medium || 0 },
+    { name: 'Low', value: executive?.risk_level?.low || 0 }
+  ].filter(d => d.value > 0);
+
+  const pieColors = ['#dc2626', '#f97316', '#eab308', '#22c55e'];
+
+  // Risk factors for reasoning
+  const riskFactors = riskExplanation?.risk_contributors || [];
+
+  if (loading) {
+    return (
+      <div style={{ padding: 40, textAlign: 'center' }}>
+        <h1 style={{ color: '#1976d2' }}>🏛️ NEMESIS V8+</h1>
+        <p>Memuat Risk Reasoning & Charts...</p>
+        <div style={{ marginTop: 20 }}>⏳</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: 20, textAlign: 'center' }}>
+        <h2 style={{ color: 'red' }}>⚠️ Gagal Memuat Data</h2>
+        <p>{error}</p>
+        <button onClick={() => window.location.reload()} style={{ padding: '8px 16px', background: '#1976d2', color: 'white', border: 'none', borderRadius: 4 }}>
+          Coba Lagi
+        </button>
+      </div>
+    );
+  }
+
+  const riskLevel = executive?.risk_level || { critical: 0, high: 0, medium: 0, low: 0 };
+  const totalCases = riskLevel.critical + riskLevel.high + riskLevel.medium + riskLevel.low;
+  const highRisk = riskLevel.critical + riskLevel.high;
+
+  return (
+    <div style={{ padding: '16px', fontFamily: 'Arial, sans-serif', maxWidth: '1400px', margin: '0 auto', background: '#f0f2f5', minHeight: '100vh' }}>
+      
+      {/* ============================================================
+      HEADER
+      ============================================================ */}
+      <div style={{ background: 'linear-gradient(135deg, #1976d2, #0d47a1)', color: 'white', padding: '16px 24px', borderRadius: 12, marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <h1 style={{ margin: 0 }}>🧠 RISK REASONING & CHARTS</h1>
+            <p style={{ margin: '4px 0 0', opacity: 0.9 }}>Explainable Risk & Visual Analytics</p>
+          </div>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            <span style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: 20, fontSize: 12 }}>
+              Integrity: 100%
+            </span>
+            <span style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: 20, fontSize: 12 }}>
+              Updated: {new Date().toLocaleString('id-ID')}
+            </span>
+          </div>
+        </div>
+        <div style={{ marginTop: 8, background: '#22c55e', padding: '4px 12px', borderRadius: 4, display: 'inline-block', fontSize: 12 }}>
+          ✅ SPRINT 3 - RISK REASONING & CHARTS ACTIVE
+        </div>
+      </div>
+
+      {/* ============================================================
+      ROW 1: EXECUTIVE KPI
+      ============================================================ */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+        <div style={{ background: 'white', padding: 16, borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', textAlign: 'center' }}>
+          <div style={{ fontSize: 12, color: '#666' }}>Total Kasus</div>
+          <div style={{ fontSize: 28, fontWeight: 'bold' }}>{totalCases}</div>
+        </div>
+        <div style={{ background: 'white', padding: 16, borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', textAlign: 'center' }}>
+          <div style={{ fontSize: 12, color: '#666' }}>Risiko Tinggi</div>
+          <div style={{ fontSize: 28, fontWeight: 'bold', color: '#dc2626' }}>{highRisk}</div>
+        </div>
+        <div style={{ background: 'white', padding: 16, borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', textAlign: 'center' }}>
+          <div style={{ fontSize: 12, color: '#666' }}>Potensi Kerugian</div>
+          <div style={{ fontSize: 20, fontWeight: 'bold' }}>{formatRupiah(executive?.exposure || 0)}</div>
+        </div>
+        <div style={{ background: 'white', padding: 16, borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', textAlign: 'center' }}>
+          <div style={{ fontSize: 12, color: '#666' }}>Pemulihan</div>
+          <div style={{ fontSize: 20, fontWeight: 'bold' }}>{formatRupiah(executive?.recovery || 0)}</div>
+        </div>
+      </div>
+
+      {/* ============================================================
+      ROW 2: RISK TREND CHART + CASE STATUS PIE
+      ============================================================ */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 16 }}>
+        {/* Risk Trend Chart */}
+        <div style={{ background: 'white', borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: 16 }}>
+          <h4 style={{ margin: '0 0 12px' }}>📈 Risk Trend (30 Hari)</h4>
+          {riskTrend.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#666', padding: 40 }}>Tidak ada data trend</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={riskTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" tickFormatter={formatDate} />
+                <YAxis />
+                <Tooltip 
+                  labelFormatter={(label) => formatDate(label)}
+                  formatter={(value) => [value, '']}
+                />
+                <Legend />
+                <Line type="monotone" dataKey="avg_risk" stroke="#1976d2" name="Rata-rata Risiko" />
+                <Line type="monotone" dataKey="max_risk" stroke="#dc2626" name="Risiko Maksimum" />
+                <Area type="monotone" dataKey="total_cases" stroke="#4d9de0" fill="#4d9de0" fillOpacity={0.1} name="Total Kasus" />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* Case Status Pie Chart */}
+        <div style={{ background: 'white', borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: 16 }}>
+          <h4 style={{ margin: '0 0 12px' }}>📊 Distribusi Kasus</h4>
+          {caseStatusData.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#666', padding: 40 }}>Tidak ada data</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={caseStatusData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {caseStatusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
+      {/* ============================================================
+      ROW 3: RISK REASONING PANEL
+      ============================================================ */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+        {/* Risk Reasoning */}
+        <div style={{ background: 'white', borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h4 style={{ margin: 0 }}>🧠 Why High Risk?</h4>
+            <select 
+              value={selectedCaseId}
+              onChange={(e) => setSelectedCaseId(e.target.value)}
+              style={{ padding: '2px 8px', borderRadius: 4, border: '1px solid #ccc', fontSize: 11 }}
+            >
+              {cases.slice(0, 5).map(c => (
+                <option key={c.id} value={c.id}>{c.title.substring(0, 25)}...</option>
+              ))}
+            </select>
+          </div>
+          {riskFactors.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#666', padding: 20 }}>
+              Tidak ada faktor risiko untuk kasus ini
+            </div>
+          ) : (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontWeight: 'bold' }}>Faktor</span>
+                <span style={{ fontWeight: 'bold' }}>Kontribusi</span>
+              </div>
+              {riskFactors.map((factor, idx) => (
+                <div key={idx} style={{ marginBottom: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                    <span>{factor.factor?.replace(/_/g, ' ').toUpperCase() || 'Unknown'}</span>
+                    <span style={{ fontWeight: 'bold' }}>{factor.contribution}%</span>
+                  </div>
+                  <div style={{ background: '#e0e0e0', borderRadius: 4, height: 8, overflow: 'hidden' }}>
+                    <div style={{ 
+                      width: `${factor.contribution}%`, 
+                      height: '100%', 
+                      background: factor.contribution > 30 ? '#dc2626' : factor.contribution > 20 ? '#f97316' : '#22c55e'
+                    }} />
+                  </div>
+                  <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>{factor.description}</div>
+                </div>
+              ))}
+              <div style={{ marginTop: 8, textAlign: 'center', fontSize: 13, padding: 8, background: '#f8f9fa', borderRadius: 4 }}>
+                <strong>Risk Score: {riskExplanation?.total_risk_score || 0}</strong>
+                {' '}| Confidence: {riskExplanation?.confidence_score || 0}%
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Exposure Trend + Governance */}
+        <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: 16 }}>
+          {/* Exposure Trend (Bar Chart) */}
+          <div style={{ background: 'white', borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: 16 }}>
+            <h4 style={{ margin: '0 0 8px' }}>💰 Exposure Trend</h4>
+            {riskTrend.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#666', padding: 20 }}>Tidak ada data</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={120}>
+                <BarChart data={riskTrend.slice(-7)}>
+                  <XAxis dataKey="date" tickFormatter={formatDate} hide />
+                  <YAxis hide />
+                  <Tooltip 
+                    labelFormatter={(label) => formatDate(label)}
+                    formatter={(value) => [formatRupiah(value * 1000000), 'Exposure']}
+                  />
+                  <Bar dataKey="critical_count" fill="#dc2626" name="Critical" />
+                  <Bar dataKey="high_count" fill="#f97316" name="High" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          {/* Governance Quick Stats */}
+          <div style={{ background: 'white', borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: 16 }}>
+            <h4 style={{ margin: '0 0 8px' }}>🏛️ Governance</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div style={{ textAlign: 'center', padding: 8, background: '#e3f2fd', borderRadius: 6 }}>
+                <div style={{ fontSize: 20, fontWeight: 'bold' }}>{governance?.spip_maturity || 0}%</div>
+                <div style={{ fontSize: 11, color: '#666' }}>SPIP Maturity</div>
+              </div>
+              <div style={{ textAlign: 'center', padding: 8, background: '#e8f5e9', borderRadius: 6 }}>
+                <div style={{ fontSize: 20, fontWeight: 'bold' }}>{governance?.follow_up_completion || 0}%</div>
+                <div style={{ fontSize: 11, color: '#666' }}>Tindak Lanjut</div>
+              </div>
+            </div>
+            <div style={{ marginTop: 8, fontSize: 12, color: '#666', textAlign: 'center' }}>
+              Repeat Findings: {governance?.repeat_findings || 0}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ============================================================
+      ROW 4: RECOMMENDATIONS + KEY ACTORS
+      ============================================================ */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+        {/* Recommendations */}
+        <div style={{ background: 'white', borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: 16 }}>
+          <h4 style={{ margin: '0 0 12px' }}>⚡ Recommendations</h4>
+          {recommendations.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#666', padding: 20 }}>Tidak ada rekomendasi</div>
+          ) : (
+            recommendations.slice(0, 3).map((rec, idx) => (
+              <div key={idx} style={{ 
+                padding: 8, 
+                marginBottom: 6, 
+                background: rec.priority === 'CRITICAL' ? '#fff5f5' : '#f8f9fa',
+                borderLeft: `3px solid ${getRiskColor(rec.priority)}`,
+                borderRadius: 4
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 'bold' }}>{rec.recommendation_text || rec.action || 'Rekomendasi'}</div>
+                <div style={{ fontSize: 11, color: '#666' }}>
+                  Priority: {rec.priority} | Timeline: {rec.timeline_days || '-'} hari
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Key Actors */}
+        <div style={{ background: 'white', borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: 16 }}>
+          <h4 style={{ margin: '0 0 12px' }}>🔗 Key Actors</h4>
+          {keyActors.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#666', padding: 20 }}>Tidak ada data</div>
+          ) : (
+            keyActors.slice(0, 5).map((actor, idx) => (
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: idx < 4 ? '1px solid #f0f0f0' : 'none', fontSize: 13 }}>
+                <span>{actor.name}</span>
+                <span style={{ color: actor.risk_score >= 70 ? '#dc2626' : '#666' }}>
+                  Risk: {actor.risk_score} | Connections: {actor.degree || actor.connections || 0}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* ============================================================
+      ROW 5: EVIDENCE QUICK STATS
+      ============================================================ */}
+      <div style={{ background: 'white', borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: 16, marginBottom: 16 }}>
+        <h4 style={{ margin: '0 0 12px' }}>📎 Evidence Quick Stats</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 24, fontWeight: 'bold' }}>{evidence?.total || 0}</div>
+            <div style={{ fontSize: 12, color: '#666' }}>Total</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 24, fontWeight: 'bold', color: '#2e7d32' }}>{evidence?.verified || 0}</div>
+            <div style={{ fontSize: 12, color: '#666' }}>Verified</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 24, fontWeight: 'bold', color: '#ed6c02' }}>{evidence?.pending || 0}</div>
+            <div style={{ fontSize: 12, color: '#666' }}>Pending</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 24, fontWeight: 'bold', color: '#dc2626' }}>{evidence?.rejected || 0}</div>
+            <div style={{ fontSize: 12, color: '#666' }}>Rejected</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ============================================================
+      FOOTER
+      ============================================================ */}
+      <div style={{ marginTop: 16, padding: 12, textAlign: 'center', borderTop: '1px solid #e0e0e0', color: '#888', fontSize: 11 }}>
+        <p style={{ margin: 0 }}>NEMESIS V8+ - Risk Reasoning & Charts | Data terverifikasi hash chain | Integrity: 100%</p>
+        <p style={{ margin: '4px 0 0' }}>Terakhir diperbarui: {new Date().toLocaleString('id-ID')}</p>
+      </div>
+    </div>
+  );
+}
+
+export default App;

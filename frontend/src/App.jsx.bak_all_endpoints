@@ -1,0 +1,69 @@
+import React, { useEffect, useState } from 'react';
+
+function App() {
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/v1/dashboard/executive/overview')
+      .then(res => res.json())
+      .then(json => {
+        setData(json);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError(true);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <div style={{padding:40,textAlign:'center'}}>Loading...</div>;
+  if (error) return <div style={{padding:40,color:'red'}}>Error</div>;
+  if (!data) return <div style={{padding:40}}>No data</div>;
+
+  const r = data.risk_level || { critical: 0, high: 0, medium: 0, low: 0 };
+  const total = r.critical + r.high + r.medium + r.low;
+  const high = r.critical + r.high;
+
+  return (
+    <div style={{padding:20,fontFamily:'Arial',maxWidth:1200,margin:'0 auto'}}>
+      <h1 style={{color:'#1976d2'}}>🏛️ NEMESIS V8+</h1>
+      <h3>Strategic Intelligence Center</h3>
+      
+      <div style={{background:'green',color:'white',padding:10,margin:'10px 0',borderRadius:4,fontWeight:'bold'}}>
+        ✅ APP.JSX AKTIF - Total={total}, High={high}
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16}}>
+        <div style={{padding:20,background:'#e3f2fd',borderRadius:8}}>
+          <div>Total Kasus</div>
+          <div style={{fontSize:32,fontWeight:'bold'}}>{total}</div>
+        </div>
+        <div style={{padding:20,background:'#ffebee',borderRadius:8}}>
+          <div>Risiko Tinggi</div>
+          <div style={{fontSize:32,fontWeight:'bold',color:'#dc2626'}}>{high}</div>
+        </div>
+        <div style={{padding:20,background:'#fff3e0',borderRadius:8}}>
+          <div>Potensi Kerugian</div>
+          <div style={{fontSize:20,fontWeight:'bold'}}>
+            Rp {(data.exposure || 0).toLocaleString('id-ID')}
+          </div>
+        </div>
+        <div style={{padding:20,background:'#e8f5e9',borderRadius:8}}>
+          <div>Pemulihan</div>
+          <div style={{fontSize:20,fontWeight:'bold'}}>
+            Rp {(data.recovery || 0).toLocaleString('id-ID')}
+          </div>
+        </div>
+      </div>
+
+      <div style={{marginTop:20,textAlign:'center',color:'#888',fontSize:12}}>
+        <p>NEMESIS V8+ - Strategic Intelligence Center | Data terverifikasi hash chain</p>
+        <p>Updated: {data.timestamp ? new Date(data.timestamp).toLocaleString('id-ID') : '-'}</p>
+      </div>
+    </div>
+  );
+}
+
+export default App;

@@ -1,0 +1,81 @@
+# .dockerignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+venv/
+.env
+.git/
+.gitignore
+README.md
+*.md
+.DS_Store
+*.log
+*.pid
+*.seed
+*.pid.lock
+.venv/
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Database backups
+*.sql
+*.sqlite
+*.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+
+# Reports
+reports/
+snapshots/
+
+# Frontend
+frontend/
+node_modules/
+
+# Backups
+*.backup
+*.bak
+backups/
+.backup.*
+
+# Fase status
+.fase_status/
+.roadmap_status/
+
+# K8s
+k8s/
+
+# Grafana
+grafana/
+
+# Don't exclude these important files
+!alembic.ini
+!main.py
+!migrations/

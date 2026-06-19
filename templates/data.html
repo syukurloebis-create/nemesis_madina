@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data RUP - Mandailing Natal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 1.5em;
+        }
+        
+        .back-btn {
+            background: #667eea;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: opacity 0.3s;
+        }
+        
+        .back-btn:hover {
+            opacity: 0.9;
+        }
+        
+        .filters {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .filter-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .filter-group label {
+            display: block;
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+        
+        .filter-group button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        
+        .filter-group .reset {
+            background: #6b7280;
+        }
+        
+        .stats-info {
+            background: #e0e7ff;
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            overflow-x: auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #374151;
+            position: sticky;
+            top: 0;
+        }
+        
+        tr:hover {
+            background: #f8f9ff;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .pagination a, .pagination span {
+            padding: 8px 15px;
+            background: white;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #667eea;
+            border: 1px solid #ddd;
+        }
+        
+        .pagination .current {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .pagination a:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .delete-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        
+        .delete-btn:hover {
+            background: #dc2626;
+        }
+        
+        .pagu {
+            text-align: right;
+            font-family: monospace;
+        }
+        
+        @media (max-width: 768px) {
+            th, td {
+                padding: 8px;
+                font-size: 0.85em;
+            }
+            
+            .filter-form {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Data RUP Mandailing Natal</h1>
+            <a href="{{ url_for('index') }}" class="back-btn">← Kembali</a>
+        </div>
+        
+        <div class="filters">
+            <form method="GET" class="filter-form">
+                <div class="filter-group">
+                    <label>Tahun</label>
+                    <select name="tahun">
+                        <option value="">Semua Tahun</option>
+                        {% for year in years %}
+                        <option value="{{ year }}" {% if filters.tahun == year %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Jenis</label>
+                    <select name="jenis">
+                        <option value="">Semua Jenis</option>
+                        {% for type in types %}
+                        <option value="{{ type }}" {% if filters.jenis == type %}selected{% endif %}>{{ type }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Instansi</label>
+                    <select name="instansi">
+                        <option value="">Semua Instansi</option>
+                        {% for inst in instansi_list %}
+                        <option value="{{ inst }}" {% if filters.instansi == inst %}selected{% endif %}>{{ inst[:50] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Cari</label>
+                    <input type="text" name="search" placeholder="Nama paket atau ID..." value="{{ filters.search or '' }}">
+                </div>
+                
+                <div class="filter-group">
+                    <button type="submit">Filter</button>
+                    <a href="{{ url_for('view_data') }}" class="reset" style="background:#6b7280; color:white; padding:8px 20px; border-radius:6px; text-decoration:none;">Reset</a>
+                </div>
+            </form>
+        </div>
+        
+        <div class="stats-info">
+            <span>📊 Menampilkan {{ data|length }} dari {{ total_records }} record</span>
+            <span>📄 Halaman {{ page }} dari {{ total_pages }}</span>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>ID</th>
+                        <th>Nama Paket</th>
+                        <th>Pagu</th>
+                        <th>Jenis</th>
+                        <th>Tahun</th>
+                        <th>Instansi</th>
+                        <th>Metode</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in data %}
+                    <tr>
+                        <td>{{ ((page-1) * per_page) + loop.index }}</td>
+                        <td>{{ item.nomor_id }}</td>
+                        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">{{ item.nama_paket[:80] }}{% if item.nama_paket|length > 80 %}...{% endif %}</td>
+                        <td class="pagu">Rp {{ "{:,.0f}".format(item.pagu) }}</td>
+                        <td>{{ item.jenis }}</td>
+                        <td>{{ item.tahun }}</td>
+                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{{ item.instansi[:50] }}{% if item.instansi|length > 50 %}...{% endif %}</td>
+                        <td>{{ item.metode }}</td>
+                        <td>
+                            <button class="delete-btn" onclick="deleteData('{{ item.nomor_id }}')">Hapus</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if page > 1 %}
+            <a href="?page={{ page-1 }}{% for key, value in filters.items() if value %}&{{ key }}={{ value }}{% endfor %}">« Prev</a>
+            {% endif %}
+            
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == page %}
+                <span class="current">{{ p }}</span>
+                {% elif p <= page+2 and p >= page-2 %}
+                <a href="?page={{ p }}{% for key, value in filters.items() if value %}&{{ key }}={{ value }}{% endfor %}">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page < total_pages %}
+            <a href="?page={{ page+1 }}{% for key, value in filters.items() if value %}&{{ key }}={{ value }}{% endfor %}">Next »</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    
+    <script>
+        function deleteData(nomorId) {
+            if (confirm(`Yakin ingin menghapus data dengan ID: ${nomorId}?`)) {
+                fetch(`/api/delete/${nomorId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Data berhasil dihapus!');
+                        location.reload();
+                    } else {
+                        alert('Gagal menghapus data: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Error: ' + error);
+                });
+            }
+        }
+    </script>
+</body>
+</html>

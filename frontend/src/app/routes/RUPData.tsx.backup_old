@@ -1,0 +1,219 @@
+import React, { useEffect, useState } from 'react';
+import { api } from '../../services/api';
+
+interface RUPRecord {
+  id: number;
+  kode_paket: string;
+  kode_rup: string;
+  tahun_anggaran: number;
+  nama_instansi: string;
+  nama_penyedia: string;
+  nama_paket: string;
+  total_nilai: number;
+  status_paket: string;
+  metode_pengadaan: string;
+}
+
+export default function RUPData() {
+  const [rups, setRups] = useState<RUPRecord[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [filterYear, setFilterYear] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [dataRes, statsRes] = await Promise.all([
+        api.getRUPData(),
+        api.getRUPStats()
+      ]);
+      
+      // Handle response - bisa berupa array langsung atau object dengan data property
+      let records = dataRes.data;
+      if (records && !Array.isArray(records)) {
+        // If response is object, try to extract array from common properties
+        records = records.data || records.records || records.items || records.rups || [];
+      }
+      
+      setRups(Array.isArray(records) ? records : []);
+      setStats(statsRes.data);
+    } catch (err: any) {
+      console.error('Failed to load RUP data:', err);
+      setError(err.message || 'Failed to load data');
+      setRups([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredRups = Array.isArray(rups) ? rups.filter(rup => {
+    let match = true;
+    if (search) {
+      match = match && (
+        (rup.nama_paket?.toLowerCase().includes(search.toLowerCase())) ||
+        (rup.kode_paket?.toLowerCase().includes(search.toLowerCase())) ||
+        (rup.nama_penyedia?.toLowerCase().includes(search.toLowerCase()))
+      );
+    }
+    if (filterYear && rup.tahun_anggaran) {
+      match = match && rup.tahun_anggaran.toString() === filterYear;
+    }
+    if (filterStatus && rup.status_paket) {
+      match = match && rup.status_paket.toLowerCase().includes(filterStatus.toLowerCase());
+    }
+    return match;
+  }) : [];
+
+  const years = Array.isArray(rups) ? [...new Set(rups.map(r => r.tahun_anggaran).filter(Boolean))].sort() : [];
+  const statuses = Array.isArray(rups) ? [...new Set(rups.map(r => r.status_paket).filter(Boolean))] : [];
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="text-center py-12 text-gray-400">Loading RUP data...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-900/20 border border-red-500 rounded-lg p-6">
+          <p className="text-red-400 text-lg">⚠️ Error Loading Data</p>
+          <p className="text-gray-400 mt-2">{error}</p>
+          <button 
+            onClick={loadData}
+            className="mt-4 px-4 py-2 bg-cyan-600 rounded hover:bg-cyan-500"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-cyan-400 mb-2">Data RUP Mandailing Natal</h1>
+      <p className="text-gray-400 mb-6">Rencana Umum Pengadaan Kabupaten Mandailing Natal</p>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <div className="bg-gray-800 rounded-lg p-4 text-center">
+          <div className="text-2xl font-bold text-cyan-400">{stats?.total_packages || rups.length}</div>
+          <div className="text-gray-400 text-sm">Total Paket</div>
+        </div>
+        <div className="bg-gray-800 rounded-lg p-4 text-center">
+          <div className="text-2xl font-bold text-green-400">
+            Rp{((stats?.total_value || 0) / 1e9).toFixed(1)}B
+          </div>
+          <div className="text-gray-400 text-sm">Total Pagu</div>
+        </div>
+        <div className="bg-gray-800 rounded-lg p-4 text-center">
+          <div className="text-2xl font-bold text-blue-400">{stats?.packages_by_year?.[2025] || 0}</div>
+          <div className="text-gray-400 text-sm">Tahun 2025</div>
+        </div>
+        <div className="bg-gray-800 rounded-lg p-4 text-center">
+          <div className="text-2xl font-bold text-blue-400">{stats?.packages_by_year?.[2026] || 0}</div>
+          <div className="text-gray-400 text-sm">Tahun 2026</div>
+        </div>
+        <div className="bg-gray-800 rounded-lg p-4 text-center">
+          <div className="text-2xl font-bold text-yellow-400">
+            {rups.filter(r => r.status_paket === 'SELESAI').length}
+          </div>
+          <div className="text-gray-400 text-sm">Completed</div>
+        </div>
+        <div className="bg-gray-800 rounded-lg p-4 text-center">
+          <div className="text-2xl font-bold text-purple-400">
+            {rups.filter(r => r.status_paket !== 'SELESAI').length}
+          </div>
+          <div className="text-gray-400 text-sm">Active</div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-gray-800 rounded-lg p-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <input
+            type="text"
+            placeholder="Cari paket, ID, atau vendor..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="p-2 bg-gray-700 border border-gray-600 rounded text-white"
+          />
+          <select
+            value={filterYear}
+            onChange={(e) => setFilterYear(e.target.value)}
+            className="p-2 bg-gray-700 border border-gray-600 rounded text-white"
+          >
+            <option value="">Semua Tahun</option>
+            {years.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="p-2 bg-gray-700 border border-gray-600 rounded text-white"
+          >
+            <option value="">Semua Status</option>
+            {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <button className="px-4 py-2 bg-green-600 rounded hover:bg-green-500">
+            Export Excel
+          </button>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-gray-800 rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-700">
+              <tr>
+                <th className="p-3 text-left">ID</th>
+                <th className="p-3 text-left">Nama Paket</th>
+                <th className="p-3 text-left">Vendor</th>
+                <th className="p-3 text-left">Pagu</th>
+                <th className="p-3 text-left">Tahun</th>
+                <th className="p-3 text-left">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRups.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-gray-500">
+                    Tidak ada data RUP
+                  </td>
+                </tr>
+              ) : (
+                filteredRups.slice(0, 100).map((rup, idx) => (
+                  <tr key={rup.id || idx} className="border-t border-gray-700 hover:bg-gray-700/50">
+                    <td className="p-3 text-gray-300">{rup.kode_paket || rup.id}</td>
+                    <td className="p-3 text-gray-300 max-w-md truncate">{rup.nama_paket}</td>
+                    <td className="p-3 text-gray-300">{rup.nama_penyedia || '-'}</td>
+                    <td className="p-3 text-green-400">Rp{((rup.total_nilai || 0) / 1e6).toFixed(0)}M</td>
+                    <td className="p-3 text-gray-300">{rup.tahun_anggaran}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        rup.status_paket === 'SELESAI' ? 'bg-green-600' : 'bg-yellow-600'
+                      }`}>
+                        {rup.status_paket || 'UNKNOWN'}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}

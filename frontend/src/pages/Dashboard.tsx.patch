@@ -1,0 +1,13 @@
+// Tambahkan lazy loading
+const RiskReasoningPanel = React.lazy(() => 
+  import('../components/investigation/RiskReasoningPanel')
+);
+
+const RecommendationCenter = React.lazy(() => 
+  import('../components/recommendation/RecommendationCenter')
+);
+
+// Wrap dengan Suspense
+<Suspense fallback={<div className="animate-pulse p-4">Loading...</div>}>
+  <RiskReasoningPanel caseId={caseId} />
+</Suspense>

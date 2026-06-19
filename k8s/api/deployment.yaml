@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nemesis-api
+  namespace: nemesis
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nemesis-api
+  template:
+    metadata:
+      labels:
+        app: nemesis-api
+    spec:
+      containers:
+      - name: api
+        image: nemesis-madina:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: nemesis-secrets
+              key: DATABASE_URL
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: nemesis-secrets
+              key: SECRET_KEY
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: nemesis-config
+              key: ENVIRONMENT
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: nemesis-config
+              key: REDIS_URL
+        - name: NATS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: nemesis-config
+              key: NATS_URL
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        envFrom:
+        - configMapRef:
+            name: nemesis-config

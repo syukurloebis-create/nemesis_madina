@@ -1,0 +1,183 @@
+{
+  "dashboard": {
+    "title": "Nemesis Madina V8+ - Production Dashboard",
+    "uid": "nemesis-production",
+    "tags": ["nemesis", "production", "audit"],
+    "timezone": "browser",
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "API Health Status",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 3, "x": 0, "y": 0},
+        "targets": [{
+          "expr": "sum(up{job=\"nemesis_api\"})",
+          "legendFormat": "Healthy APIs"
+        }],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "orange", "value": 1},
+                {"color": "green", "value": 3}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Total Cases",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 3, "x": 3, "y": 0},
+        "targets": [{
+          "expr": "nemesis_total_cases",
+          "legendFormat": "Total Cases"
+        }]
+      },
+      {
+        "id": 3,
+        "title": "System Uptime",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 3, "x": 6, "y": 0},
+        "targets": [{
+          "expr": "time() - process_start_time_seconds{job=\"nemesis_api\"}",
+          "legendFormat": "Uptime (seconds)"
+        }],
+        "fieldConfig": {"defaults": {"unit": "s"}}
+      },
+      {
+        "id": 4,
+        "title": "Request Rate",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 3, "x": 9, "y": 0},
+        "targets": [{
+          "expr": "sum(rate(nemesis_http_requests_total[1m]))",
+          "legendFormat": "RPS"
+        }],
+        "fieldConfig": {"defaults": {"unit": "reqps"}}
+      },
+      {
+        "id": 5,
+        "title": "Recent Cases (Last 24h)",
+        "type": "table",
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 4},
+        "targets": [{
+          "expr": "nemesis_cases_by_status",
+          "format": "table",
+          "legendFormat": "{{status}}"
+        }]
+      },
+      {
+        "id": 6,
+        "title": "API Response Time (p95)",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 9, "x": 6, "y": 4},
+        "targets": [{
+          "expr": "histogram_quantile(0.95, sum(rate(nemesis_http_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95 latency"
+        }],
+        "fieldConfig": {"defaults": {"unit": "s"}}
+      },
+      {
+        "id": 7,
+        "title": "Cases by Priority",
+        "type": "piechart",
+        "gridPos": {"h": 8, "w": 5, "x": 15, "y": 4},
+        "targets": [{
+          "expr": "nemesis_cases_by_priority",
+          "legendFormat": "{{priority}}"
+        }]
+      },
+      {
+        "id": 8,
+        "title": "Database Connections",
+        "type": "gauge",
+        "gridPos": {"h": 6, "w": 4, "x": 0, "y": 12},
+        "targets": [{
+          "expr": "pg_stat_database_numbackends{datname=\"nemesis_db\"}",
+          "legendFormat": "Connections"
+        }],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "orange", "value": 50},
+                {"color": "red", "value": 80}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "Redis Hit Rate",
+        "type": "gauge",
+        "gridPos": {"h": 6, "w": 4, "x": 4, "y": 12},
+        "targets": [{
+          "expr": "sum(rate(redis_keyspace_hits_total[5m])) / (sum(rate(redis_keyspace_hits_total[5m])) + sum(rate(redis_keyspace_misses_total[5m]))) * 100",
+          "legendFormat": "Hit rate"
+        }],
+        "fieldConfig": {"defaults": {"unit": "percent"}}
+      },
+      {
+        "id": 10,
+        "title": "CPU Usage per API",
+        "type": "timeseries",
+        "gridPos": {"h": 6, "w": 8, "x": 8, "y": 12},
+        "targets": [{
+          "expr": "rate(container_cpu_usage_seconds_total{container=~\"api.*\"}[5m]) * 100",
+          "legendFormat": "{{container}}"
+        }],
+        "fieldConfig": {"defaults": {"unit": "percent"}}
+      },
+      {
+        "id": 11,
+        "title": "Memory Usage",
+        "type": "timeseries",
+        "gridPos": {"h": 6, "w": 8, "x": 16, "y": 12},
+        "targets": [{
+          "expr": "container_memory_usage_bytes{container=~\"api.*\"} / 1024 / 1024",
+          "legendFormat": "{{container}} (MB)"
+        }],
+        "fieldConfig": {"defaults": {"unit": "MB"}}
+      },
+      {
+        "id": 12,
+        "title": "Active Cases by Status (Last 7 Days)",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 18},
+        "targets": [{
+          "expr": "sum(increase(nemesis_cases_created_total[1d]))",
+          "legendFormat": "New cases per day"
+        }]
+      },
+      {
+        "id": 13,
+        "title": "Hash Chain Integrity",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
+        "targets": [{
+          "expr": "nemesis_hash_verification_failures_total",
+          "legendFormat": "Failed verifications"
+        }],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null, "text": "OK"},
+                {"color": "red", "value": 1, "text": "COMPROMISED"}
+              ]
+            }
+          }
+        }
+      }
+    ]
+  },
+  "overwrite": true
+}

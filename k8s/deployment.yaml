@@ -1,0 +1,184 @@
+# NEMESIS Kubernetes Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nemesis-api
+  namespace: nemesis
+  labels:
+    app: nemesis
+    component: api
+    version: v2
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: nemesis
+      component: api
+  template:
+    metadata:
+      labels:
+        app: nemesis
+        component: api
+        version: v2
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: api
+        image: nemesis/api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: nemesis-secrets
+              key: database_url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: nemesis-secrets
+              key: redis_url
+        - name: NATS_URL
+          valueFrom:
+            secretKeyRef:
+              name: nemesis-secrets
+              key: nats_url
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: nemesis-secrets
+              key: secret_key
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+      volumes:
+      - name: logs
+        emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nemesis-websocket
+  namespace: nemesis
+  labels:
+    app: nemesis
+    component: websocket
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nemesis
+      component: websocket
+  template:
+    metadata:
+      labels:
+        app: nemesis
+        component: websocket
+    spec:
+      containers:
+      - name: websocket
+        image: nemesis/websocket:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8001
+          name: ws
+        env:
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: nemesis-secrets
+              key: redis_url
+        - name: NATS_URL
+          valueFrom:
+            secretKeyRef:
+              name: nemesis-secrets
+              key: nats_url
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          tcpSocket:
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nemesis-worker
+  namespace: nemesis
+  labels:
+    app: nemesis
+    component: worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nemesis
+      component: worker
+  template:
+    metadata:
+      labels:
+        app: nemesis
+        component: worker
+    spec:
+      containers:
+      - name: worker
+        image: nemesis/worker:latest
+        imagePullPolicy: Always
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: nemesis-secrets
+              key: database_url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: nemesis-secrets
+              key: redis_url
+        - name: NATS_URL
+          valueFrom:
+            secretKeyRef:
+              name: nemesis-secrets
+              key: nats_url
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"

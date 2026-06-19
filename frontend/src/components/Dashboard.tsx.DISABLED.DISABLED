@@ -1,0 +1,151 @@
+import React, { useEffect, useState } from 'react';
+
+interface InvestigationCase {
+  id: string;
+  title: string;
+  risk_score: number;
+  risk_level: string;
+  workflow_stage: string;
+  status: string;
+  created_at: string;
+  assigned_to: string | null;
+  evidence_count: number;
+  verified_count: number;
+  pending_recommendations: number;
+  sla_status: string;
+}
+
+export default function Dashboard() {
+  const [loading, setLoading] = useState(true);
+  const [cases, setCases] = useState<InvestigationCase[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [statsRes, casesRes] = await Promise.all([
+          fetch('/api/v1/investigation/stats'),
+          fetch('/api/v1/investigation/cases')
+        ]);
+        
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setStats(statsData);
+        }
+        
+        if (casesRes.ok) {
+          const casesData = await casesRes.json();
+          setCases(casesData);
+        } else {
+          setError('Gagal memuat data kasus');
+        }
+      } catch (err) {
+        setError('Error: ' + String(err));
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{ padding: 40, textAlign: 'center' }}>
+        <h1 style={{ color: '#1976d2' }}>NEMESIS V8+</h1>
+        <p>Memuat Investigation Command Center...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: 20, textAlign: 'center' }}>
+        <h2 style={{ color: 'red' }}>⚠️ Gagal Memuat Data</h2>
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: 20, fontFamily: 'Arial, sans-serif', maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ background: '#1976d2', color: 'white', padding: 20, borderRadius: 12 }}>
+        <h1 style={{ margin: 0 }}>🔍 Investigation Command Center</h1>
+        <p style={{ margin: '8px 0 0', opacity: 0.9 }}>Prioritaskan kasus berdasarkan risiko dan SLA</p>
+      </div>
+
+      {/* Statistics Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, margin: '20px 0' }}>
+        <div style={{ padding: 16, background: '#e3f2fd', borderRadius: 8, textAlign: 'center' }}>
+          <div style={{ fontSize: 28, fontWeight: 'bold' }}>{stats?.total_cases || 0}</div>
+          <div style={{ fontSize: 12, color: '#666' }}>Total Kasus</div>
+        </div>
+        <div style={{ padding: 16, background: '#ffebee', borderRadius: 8, textAlign: 'center' }}>
+          <div style={{ fontSize: 28, fontWeight: 'bold', color: '#dc2626' }}>{stats?.active || 0}</div>
+          <div style={{ fontSize: 12, color: '#666' }}>Aktif</div>
+        </div>
+        <div style={{ padding: 16, background: '#fff3e0', borderRadius: 8, textAlign: 'center' }}>
+          <div style={{ fontSize: 28, fontWeight: 'bold', color: '#f97316' }}>{stats?.overdue || 0}</div>
+          <div style={{ fontSize: 12, color: '#666' }}>Overdue</div>
+        </div>
+        <div style={{ padding: 16, background: '#ffebee', borderRadius: 8, textAlign: 'center' }}>
+          <div style={{ fontSize: 28, fontWeight: 'bold', color: '#dc2626' }}>{stats?.critical || 0}</div>
+          <div style={{ fontSize: 12, color: '#666' }}>Kritis</div>
+        </div>
+      </div>
+
+      {/* Case Queue */}
+      <div style={{ background: 'white', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+        <div style={{ padding: 16, background: '#f8f9fa', borderBottom: '1px solid #e0e0e0' }}>
+          <span style={{ fontWeight: 'bold' }}>🎯 Case Queue (Prioritas)</span>
+        </div>
+        {cases.length === 0 ? (
+          <div style={{ padding: 40, textAlign: 'center', color: '#666' }}>Tidak ada kasus aktif</div>
+        ) : (
+          cases.map((caseItem, idx) => (
+            <div 
+              key={caseItem.id}
+              style={{ 
+                padding: 16, 
+                borderBottom: idx < cases.length - 1 ? '1px solid #f0f0f0' : 'none',
+                borderLeft: `4px solid ${caseItem.risk_score >= 80 ? '#dc2626' : '#22c55e'}`,
+                background: caseItem.risk_score >= 80 ? '#fff5f5' : 'white'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                <div>
+                  <div style={{ fontWeight: 'bold', fontSize: 16 }}>
+                    {caseItem.title}
+                    {caseItem.risk_score >= 80 && (
+                      <span style={{ marginLeft: 8, fontSize: 12, background: '#dc2626', color: 'white', padding: '2px 8px', borderRadius: 12 }}>
+                        🔴 KRITIS
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 14, color: '#666', marginTop: 4 }}>
+                    Risk: <strong>{caseItem.risk_score}</strong> ({caseItem.risk_level}) 
+                    | Status: <strong>{caseItem.workflow_stage}</strong>
+                    | Evidence: <strong>{caseItem.verified_count}/{caseItem.evidence_count}</strong>
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 12, color: caseItem.sla_status === 'OVERDUE' ? '#dc2626' : caseItem.sla_status === 'AT_RISK' ? '#f97316' : '#22c55e' }}>
+                    {caseItem.sla_status === 'OVERDUE' ? '⚠️ Overdue' : caseItem.sla_status === 'AT_RISK' ? '🟡 At Risk' : '✅ On Track'}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#888' }}>
+                    PIC: {caseItem.assigned_to || 'Belum ditugaskan'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div style={{ marginTop: 20, padding: 16, textAlign: 'center', borderTop: '1px solid #e0e0e0', color: '#888', fontSize: 12 }}>
+        <p>NEMESIS V8+ - Investigation Command Center | Data terverifikasi hash chain</p>
+        <p>Terakhir diperbarui: {new Date().toLocaleString('id-ID')}</p>
+      </div>
+    </div>
+  );
+}

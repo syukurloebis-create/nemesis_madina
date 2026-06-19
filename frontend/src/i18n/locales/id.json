@@ -1,0 +1,85 @@
+{
+  "translation": {
+    "app": {
+      "name": "NEMESIS V8+",
+      "subtitle": "Platform Intelijen Forensik",
+      "version": "v8.0.0",
+      "forensic_ready": "Siap Forensik"
+    },
+    "nav": {
+      "dashboard": "Dasbor Eksekutif",
+      "threat_center": "Pusat Ancaman",
+      "entities": "Ruang Kerja Entitas",
+      "graph": "Intelijen Graf",
+      "governance": "Pusat Tata Kelola",
+      "replay": "Pemutaran Temporal",
+      "cases": "Kasus Investigasi",
+      "analytics": "Analitik",
+      "alerts": "Peringatan Langsung",
+      "command": "Pusat Komando",
+      "vendors": "Daftar Vendor",
+      "upload": "Unggah Data",
+      "logout": "Keluar"
+    },
+    "dashboard": {
+      "title": "Dasbor Eksekutif",
+      "description": "Ikhtisar semua kasus dan metrik risiko",
+      "total_cases": "Total Kasus",
+      "active_cases": "Kasus Aktif",
+      "high_risk": "Risiko Tinggi",
+      "integrity_score": "Skor Integritas",
+      "total_events": "Total Kejadian",
+      "recent_cases": "Kasus Terbaru",
+      "title_col": "Judul",
+      "status_col": "Status",
+      "priority_col": "Prioritas",
+      "created_col": "Dibuat",
+      "action_col": "Aksi",
+      "view_forensic": "Lihat Forensik",
+      "hide_forensic": "Sembunyikan Forensik",
+      "chain_valid": "Rantai Valid",
+      "chain_broken": "Rantai Rusak",
+      "verified_at": "Diverifikasi pada",
+      "no_cases": "Tidak ada kasus. Buat kasus pertama untuk memulai."
+    },
+    "threat": {
+      "title": "Pusat Ancaman",
+      "description": "Deteksi ancaman dan pemantauan anomali waktu nyata",
+      "total_anomalies": "Total Anomali",
+      "critical": "Kritis",
+      "high_risk": "Risiko Tinggi",
+      "avg_risk_score": "Skor Risiko Rata-rata"
+    },
+    "menu": {
+      "savePage": "Simpan Halaman",
+      "translatePage": "Terjemahkan Halaman",
+      "exportPage": "Ekspor Halaman",
+      "printPage": "Cetak Halaman",
+      "settings": "Pengaturan",
+      "profile": "Profil"
+    },
+    "common": {
+      "loading": "Memuat...",
+      "error": "Terjadi Kesalahan",
+      "success": "Berhasil",
+      "save": "Simpan",
+      "cancel": "Batal",
+      "delete": "Hapus",
+      "edit": "Edit",
+      "add": "Tambah",
+      "search": "Cari",
+      "filter": "Filter",
+      "close": "Tutup",
+      "back": "Kembali"
+    },
+    "procurement": {
+      "title": "Intelijen Pengadaan",
+      "description": "Deteksi anomali, kolusi, dan risiko dalam proses pengadaan",
+      "totalCases": "Total Kasus",
+      "highRiskVendors": "Vendor Berisiko Tinggi",
+      "collusionPatterns": "Pola Kolusi Terdeteksi",
+      "integrityScore": "Skor Integritas",
+      "totalValue": "Nilai Pengadaan"
+    }
+  }
+}

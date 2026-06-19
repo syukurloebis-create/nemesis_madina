@@ -1,0 +1,32 @@
+from fastapi import APIRouter, HTTPException
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+from backend.database import get_db
+from fastapi import Depends
+
+router = APIRouter(prefix="/api/v1/recommendations", tags=["recommendations"])
+
+@router.get("/")
+async def get_recommendations(db: AsyncSession = Depends(get_db)):
+    """Get all recommendations"""
+    try:
+        result = await db.execute(text("""
+            SELECT id, case_id, recommendation_text, priority, status, created_at
+            FROM recommendations
+            ORDER BY created_at DESC
+            LIMIT 10
+        """))
+        rows = result.fetchall()
+        return [
+            {
+                "id": row[0],
+                "case_id": row[1],
+                "recommendation_text": row[2],
+                "priority": row[3],
+                "status": row[4],
+                "created_at": row[5].isoformat() if row[5] else None
+            }
+            for row in rows
+        ]
+    except Exception as e:
+        return []  # Return empty array if table doesn't exist

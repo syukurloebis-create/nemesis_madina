@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="2" failures="0" skipped="0" tests="9" time="4.420" timestamp="2026-06-01T16:39:50.697330+07:00" hostname="DESKTOP-H18U7BT"><testcase classname="tests.integration.test_event_pipeline" name="test_event_publish_subscribe" time="0.268" /><testcase classname="tests.integration.test_event_pipeline" name="test_idempotent_publish" time="0.111" /><testcase classname="tests.integration.test_event_pipeline" name="test_event_normalization" time="0.003" /><testcase classname="tests.integration.test_event_pipeline" name="test_dead_letter_queue" time="0.108" /><testcase classname="tests.integration.test_event_to_projection" name="test_event_to_projection_flow" time="0.107" /><testcase classname="tests.integration.test_event_to_projection" name="test_multiple_subscribers" time="0.112" /><testcase classname="tests.integration.test_event_to_projection" name="test_event_history" time="0.126" /><testcase classname="tests.integration.test_evidence_lineage" name="test_evidence_lineage_integration" time="0.006"><error message="failed on setup with &quot;ImportError: cannot import name 'EvidenceRegistry' from 'backend.evidence' (C:\Users\LENOVO\nemesis_madina\backend\evidence\__init__.py)&quot;">venv\Lib\site-packages\pytest_asyncio\plugin.py:944: in pytest_fixture_setup
+    hook_result = yield
+                  ^^^^^
+venv\Lib\site-packages\pytest_asyncio\plugin.py:407: in _asyncgen_fixture_wrapper
+    result = runner.run(setup(), context=context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py:687: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+venv\Lib\site-packages\pytest_asyncio\plugin.py:403: in setup
+    res = await gen_obj.__anext__()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\conftest.py:27: in evidence_registry
+    from backend.evidence import EvidenceRegistry
+E   ImportError: cannot import name 'EvidenceRegistry' from 'backend.evidence' (C:\Users\LENOVO\nemesis_madina\backend\evidence\__init__.py)</error></testcase><testcase classname="tests.integration.test_evidence_lineage" name="test_lineage_impact_analysis" time="0.003"><error message="failed on setup with &quot;ImportError: cannot import name 'EvidenceRegistry' from 'backend.evidence' (C:\Users\LENOVO\nemesis_madina\backend\evidence\__init__.py)&quot;">venv\Lib\site-packages\pytest_asyncio\plugin.py:944: in pytest_fixture_setup
+    hook_result = yield
+                  ^^^^^
+venv\Lib\site-packages\pytest_asyncio\plugin.py:407: in _asyncgen_fixture_wrapper
+    result = runner.run(setup(), context=context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\AppData\Local\Programs\Python\Python312\Lib\asyncio\runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\AppData\Local\Programs\Python\Python312\Lib\asyncio\base_events.py:687: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+venv\Lib\site-packages\pytest_asyncio\plugin.py:403: in setup
+    res = await gen_obj.__anext__()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\conftest.py:27: in evidence_registry
+    from backend.evidence import EvidenceRegistry
+E   ImportError: cannot import name 'EvidenceRegistry' from 'backend.evidence' (C:\Users\LENOVO\nemesis_madina\backend\evidence\__init__.py)</error></testcase></testsuite></testsuites>

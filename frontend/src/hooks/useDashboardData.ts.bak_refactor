@@ -1,0 +1,113 @@
+// useDashboardData.ts - Central data fetching hook
+import { useState, useEffect } from 'react';
+import dashboardApi from '../services/dashboardApi';
+
+interface DashboardData {
+  executive: any;
+  stats: any;
+  cases: any[];
+  evidence: any;
+  riskTrend: any[];
+  governance: any;
+  keyActors: any[];
+  recommendations: any[];
+  topEvidence: any[];
+  summary: any;
+}
+
+export const useDashboardData = (caseId: string) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<DashboardData>({
+    executive: null,
+    stats: null,
+    cases: [],
+    evidence: null,
+    riskTrend: [],
+    governance: null,
+    keyActors: [],
+    recommendations: [],
+    topEvidence: [],
+    summary: null,
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const results = await Promise.allSettled([
+          dashboardApi.getExecutive(),
+          dashboardApi.getStats(),
+          dashboardApi.getCases(),
+          dashboardApi.getEvidenceStats(),
+          dashboardApi.getRiskTrend(),
+          dashboardApi.getGovernance(),
+          dashboardApi.getKeyActors(),
+          dashboardApi.getRecommendations(),
+          dashboardApi.getTopEvidence(),
+          dashboardApi.getRecommendationSummary(),
+        ]);
+
+        // Extract data from settled promises
+        const [
+          executiveResult,
+          statsResult,
+          casesResult,
+          evidenceResult,
+          riskTrendResult,
+          governanceResult,
+          keyActorsResult,
+          recommendationsResult,
+          topEvidenceResult,
+          summaryResult,
+        ] = results;
+
+        // Get data or default values
+        const executive = executiveResult.status === 'fulfilled' ? executiveResult.value.data : null;
+        const stats = statsResult.status === 'fulfilled' ? statsResult.value.data : null;
+        const cases = casesResult.status === 'fulfilled' ? casesResult.value.data : [];
+        const evidence = evidenceResult.status === 'fulfilled' ? evidenceResult.value.data : null;
+        const riskTrend = riskTrendResult.status === 'fulfilled' ? riskTrendResult.value.data : [];
+        const governance = governanceResult.status === 'fulfilled' ? governanceResult.value.data : null;
+        const keyActors = keyActorsResult.status === 'fulfilled' ? keyActorsResult.value.data?.key_actors || [] : [];
+        const recommendations = recommendationsResult.status === 'fulfilled' ? recommendationsResult.value.data : [];
+        const topEvidence = topEvidenceResult.status === 'fulfilled' ? topEvidenceResult.value.data : [];
+        const summary = summaryResult.status === 'fulfilled' ? summaryResult.value.data : null;
+
+        setData({
+          executive,
+          stats,
+          cases,
+          evidence,
+          riskTrend,
+          governance,
+          keyActors,
+          recommendations,
+          topEvidence,
+          summary,
+        });
+
+        // ONLY set error if ALL critical data is missing
+        const hasAnyCriticalData = executive !== null || stats !== null || evidence !== null;
+        if (!hasAnyCriticalData) {
+          setError('Gagal memuat data dashboard');
+        } else {
+          setError(null);
+        }
+      } catch (err) {
+        console.error('❌ Error fetching dashboard data:', err);
+        setError('Gagal memuat data dashboard');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [caseId]);
+
+  return { loading, error, data };
+};
+
+export default useDashboardData;

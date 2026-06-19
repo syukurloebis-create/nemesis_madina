@@ -1,0 +1,159 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: nemesis_madina-postgres-1
+    environment:
+      POSTGRES_DB: nemesis_db
+      POSTGRES_USER: nemesis
+      POSTGRES_PASSWORD: nemesis123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nemesis"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nemesis_network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: nemesis_madina-redis-1
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nemesis_network
+    restart: unless-stopped
+
+  api1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nemesis_madina-api1-1
+    environment:
+      DATABASE_URL: postgresql+asyncpg://nemesis:nemesis123@postgres:5432/nemesis_db
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: "nemesis-secret-key"
+      API_ID: "api1"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - nemesis_network
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+
+  api2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nemesis_madina-api2-1
+    environment:
+      DATABASE_URL: postgresql+asyncpg://nemesis:nemesis123@postgres:5432/nemesis_db
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: "nemesis-secret-key"
+      API_ID: "api2"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - nemesis_network
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+
+  api3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nemesis_madina-api3-1
+    environment:
+      DATABASE_URL: postgresql+asyncpg://nemesis:nemesis123@postgres:5432/nemesis_db
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: "nemesis-secret-key"
+      API_ID: "api3"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - nemesis_network
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+
+  nginx:
+    image: nginx:alpine
+    container_name: nemesis_madina-nginx-1
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api1
+      - api2
+      - api3
+    networks:
+      - nemesis_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  nemesis_network:
+    driver: bridge
+    name: nemesis_madina_network
+
+volumes:
+  postgres_data:
+    name: nemesis_madina_postgres_data
+  redis_data:
+    name: nemesis_madina_redis_data

@@ -1,0 +1,110 @@
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { api } from '../../services/api';
+
+interface Case {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  created_at: string;
+}
+
+export default function InvestigationWorkspace() {
+  const { caseId } = useParams<{ caseId: string }>();
+  const [currentCase, setCurrentCase] = useState<Case | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (caseId) {
+      loadCase();
+    }
+  }, [caseId]);
+
+  const loadCase = async () => {
+    if (!caseId) return;
+    
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.getCase(caseId);
+      setCurrentCase(response.data);
+    } catch (err: any) {
+      console.error('Failed to load case:', err);
+      setError(err.message || 'Failed to load case');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="text-center py-12 text-gray-400">Loading case details...</div>
+      </div>
+    );
+  }
+
+  if (error || !currentCase) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-900/20 border border-red-500 rounded-lg p-6">
+          <p className="text-red-400 text-lg">⚠️ Error Loading Case</p>
+          <p className="text-gray-400 mt-2">{error || 'Case not found'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-cyan-400 mb-4">Investigation Workspace</h1>
+      
+      <div className="bg-gray-800 rounded-lg p-6 mb-6">
+        <h2 className="text-xl font-semibold text-white mb-2">{currentCase.title}</h2>
+        <p className="text-gray-400 mb-4">{currentCase.description}</p>
+        
+        <div className="flex gap-4">
+          <div className="bg-gray-700 rounded px-3 py-1">
+            <span className="text-gray-400">Status:</span>
+            <span className="ml-2 text-yellow-400">{currentCase.status}</span>
+          </div>
+          <div className="bg-gray-700 rounded px-3 py-1">
+            <span className="text-gray-400">Priority:</span>
+            <span className="ml-2 text-red-400">{currentCase.priority}</span>
+          </div>
+          <div className="bg-gray-700 rounded px-3 py-1">
+            <span className="text-gray-400">Created:</span>
+            <span className="ml-2 text-gray-300">
+              {new Date(currentCase.created_at).toLocaleDateString()}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-gray-800 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-cyan-400 mb-3">Timeline</h3>
+          <div className="text-gray-400 text-center py-8">Timeline events will appear here</div>
+        </div>
+        
+        <div className="bg-gray-800 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-cyan-400 mb-3">Evidence</h3>
+          <div className="text-gray-400 text-center py-8">Evidence items will appear here</div>
+        </div>
+        
+        <div className="bg-gray-800 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-cyan-400 mb-3">Event Stream</h3>
+          <div className="text-gray-400 text-center py-8">Events will appear here</div>
+        </div>
+        
+        <div className="bg-gray-800 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-cyan-400 mb-3">Entity Graph</h3>
+          <div className="text-gray-400 text-center py-8">Graph visualization will appear here</div>
+        </div>
+      </div>
+    </div>
+  );
+}

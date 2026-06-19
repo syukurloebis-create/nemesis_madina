@@ -1,0 +1,18 @@
+[
+    {
+        "name": "budget_negative",
+        "data": {"id": "rup-bad-001", "title": "Test", "budget": -1000000, "vendor": "PT X", "opd": "Dinas X"}
+    },
+    {
+        "name": "budget_zero",
+        "data": {"id": "rup-bad-002", "title": "Test", "budget": 0, "vendor": "PT Y", "opd": "Dinas Y"}
+    },
+    {
+        "name": "missing_vendor",
+        "data": {"id": "rup-bad-003", "title": "Test", "budget": 1000000, "opd": "Dinas Z"}
+    },
+    {
+        "name": "empty_title",
+        "data": {"id": "rup-bad-004", "title": "", "budget": 1000000, "vendor": "PT W", "opd": "Dinas W"}
+    }
+]

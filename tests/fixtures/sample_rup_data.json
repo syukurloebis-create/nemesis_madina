@@ -1,0 +1,26 @@
+[
+    {
+        "id": "rup-65477997",
+        "title": "Pengadaan Alat Kesehatan Rumah Sakit",
+        "budget": 1500000000,
+        "vendor": "PT Medika Jaya",
+        "instansi": "DINAS KESEHATAN",
+        "opd": "Dinas Kesehatan"
+    },
+    {
+        "id": "rup-64963586",
+        "title": "Pengadaan Laptop Dinas Pendidikan",
+        "budget": 500000000,
+        "vendor": "PT Teknologi Nusantara",
+        "instansi": "DINAS PENDIDIKAN",
+        "opd": "Dinas Pendidikan"
+    },
+    {
+        "id": "rup-65477682",
+        "title": "Pengadaan Meubelair Kantor",
+        "budget": 250000000,
+        "vendor": "PT Furnindo Jaya",
+        "instansi": "DINAS KESEHATAN",
+        "opd": "Dinas Kesehatan"
+    }
+]

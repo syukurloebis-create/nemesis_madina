@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-06-01T13:46:44.455410",
+  "metrics": {
+    "test_counter": {
+      "type": "counter",
+      "value": 5.0
+    },
+    "test_gauge": {
+      "type": "gauge",
+      "value": 42
+    },
+    "test_histogram": {
+      "type": "histogram",
+      "stats": {
+        "count": 1,
+        "sum": 100.0,
+        "min": 100.0,
+        "max": 100.0,
+        "avg": 100.0,
+        "p50": 100.0,
+        "p90": 100.0,
+        "p95": 100.0,
+        "p99": 100.0
+      }
+    }
+  },
+  "prometheus_format": "# HELP test_counter Counter metric\n# TYPE test_counter counter\ntest_counter 5.0\n# HELP test_gauge Gauge metric\n# TYPE test_gauge gauge\ntest_gauge 42\n# HELP test_histogram Histogram metric\n# TYPE test_histogram histogram\ntest_histogram_count 1\ntest_histogram_sum 100.0"
+}

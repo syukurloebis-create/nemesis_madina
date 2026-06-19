@@ -1,0 +1,298 @@
+from fastapi import APIRouter, Depends, HTTPException, Query, File, UploadFile, Form
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
+from typing import Optional
+import uuid
+import hashlib
+
+from backend.infrastructure.database import get_db
+
+router = APIRouter(prefix="/evidence", tags=["Evidence Management"])
+
+
+@router.get("/case/{case_id}")
+async def get_evidence_by_case(
+    case_id: str,
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    session: AsyncSession = Depends(get_db)
+):
+    """Get all evidence for a specific case"""
+    
+    try:
+        result = await session.execute(
+            text("""
+                SELECT id, filename, sha256_hash, file_size, mime_type,
+                       uploaded_by, uploaded_at, verified_at, integrity_status
+                FROM evidence_files
+                WHERE case_id = :case_id AND is_deleted = FALSE
+                ORDER BY uploaded_at DESC
+                LIMIT :limit OFFSET :offset
+            """),
+            {"case_id": case_id, "limit": limit, "offset": offset}
+        )
+        evidence_list = result.fetchall()
+        
+        total_result = await session.execute(
+            text("SELECT COUNT(*) FROM evidence_files WHERE case_id = :case_id AND is_deleted = FALSE"),
+            {"case_id": case_id}
+        )
+        total = total_result.scalar() or 0
+        
+        data = []
+        for ev in evidence_list:
+            data.append({
+                "id": str(ev[0]),
+                "filename": ev[1],
+                "sha256_hash": ev[2][:16] + "..." if ev[2] else None,
+                "file_size": ev[3],
+                "mime_type": ev[4],
+                "uploaded_by": str(ev[5]) if ev[5] else None,
+                "uploaded_at": ev[6].isoformat() if ev[6] else None,
+                "verified_at": ev[7].isoformat() if ev[7] else None,
+                "integrity_status": ev[8]
+            })
+        
+        return {
+            "evidence": data,
+            "total": total,
+            "limit": limit,
+            "offset": offset
+        }
+    except Exception as e:
+        return {
+            "evidence": [],
+            "total": 0,
+            "error": str(e)
+        }
+
+
+@router.get("/case/{case_id}/custody")
+async def get_custody_chain(
+    case_id: str,
+    session: AsyncSession = Depends(get_db)
+):
+    """Get custody chain for all evidence in a case"""
+    
+    try:
+        result = await session.execute(
+            text("""
+                SELECT id, filename, sha256_hash, uploaded_at, uploaded_by,
+                       integrity_status, verified_at
+                FROM evidence_files
+                WHERE case_id = :case_id AND is_deleted = FALSE
+            """),
+            {"case_id": case_id}
+        )
+        evidence_list = result.fetchall()
+        
+        custody_chains = []
+        for ev in evidence_list:
+            custody_chains.append({
+                "evidence_id": str(ev[0]),
+                "filename": ev[1],
+                "sha256_hash": ev[2][:16] + "..." if ev[2] else None,
+                "uploaded_at": ev[3].isoformat() if ev[3] else None,
+                "uploaded_by": str(ev[4]) if ev[4] else None,
+                "integrity_status": ev[5],
+                "verified_at": ev[6].isoformat() if ev[6] else None
+            })
+        
+        return {
+            "case_id": case_id,
+            "total_evidence": len(custody_chains),
+            "custody_chains": custody_chains
+        }
+    except Exception as e:
+        return {
+            "case_id": case_id,
+            "total_evidence": 0,
+            "error": str(e)
+        }
+
+
+@router.get("/{evidence_id}/verify")
+async def verify_evidence_integrity(
+    evidence_id: str,
+    session: AsyncSession = Depends(get_db)
+):
+    """Verify evidence integrity by recalculating hash"""
+    
+    try:
+        result = await session.execute(
+            text("""
+                SELECT storage_path, sha256_hash, filename
+                FROM evidence_files
+                WHERE id = :evidence_id
+            """),
+            {"evidence_id": evidence_id}
+        )
+        evidence = result.fetchone()
+        
+        if not evidence:
+            raise HTTPException(status_code=404, detail="Evidence tidak ditemukan")
+        
+        try:
+            with open(evidence[0], "rb") as f:
+                content = f.read()
+            computed_hash = hashlib.sha256(content).hexdigest()
+            is_valid = computed_hash == evidence[1]
+        except FileNotFoundError:
+            is_valid = False
+        
+        status = "verified" if is_valid else "compromised"
+        
+        await session.execute(
+            text("""
+                UPDATE evidence_files 
+                SET integrity_status = :status, verified_at = NOW()
+                WHERE id = :evidence_id
+            """),
+            {"status": status, "evidence_id": evidence_id}
+        )
+        await session.commit()
+        
+        return {
+            "evidence_id": evidence_id,
+            "filename": evidence[2],
+            "is_valid": is_valid,
+            "integrity_status": status,
+            "message": "Integritas bukti terverifikasi" if is_valid else "Integritas bukti GAGAL diverifikasi"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {
+            "evidence_id": evidence_id,
+            "error": str(e)
+        }
+
+@router.post("/upload")
+async def upload_evidence(
+    case_id: str = Form(...),
+    file: UploadFile = File(...),
+    session: AsyncSession = Depends(get_db)
+):
+    """Upload evidence file with automatic hashing"""
+    import uuid
+    import hashlib
+    import os
+    
+    # Baca file content
+    content = await file.read()
+    
+    # Hitung SHA256 hash
+    sha256_hash = hashlib.sha256(content).hexdigest()
+    
+    # Buat storage path
+    evidence_id = str(uuid.uuid4())
+    storage_dir = "/app/storage/evidence"
+    os.makedirs(storage_dir, exist_ok=True)
+    storage_path = f"{storage_dir}/{evidence_id}_{file.filename}"
+    
+    # Simpan file
+    with open(storage_path, "wb") as f:
+        f.write(content)
+    
+    # Simpan metadata ke database
+    await session.execute(
+        text("""
+            INSERT INTO evidence_files (
+                id, case_id, filename, original_filename, 
+                sha256_hash, file_size, mime_type, storage_path,
+                uploaded_at, integrity_status
+            ) VALUES (
+                :id, :case_id, :filename, :original_filename,
+                :sha256_hash, :file_size, :mime_type, :storage_path,
+                NOW(), 'pending'
+            )
+        """),
+        {
+            "id": evidence_id,
+            "case_id": case_id,
+            "filename": file.filename,
+            "original_filename": file.filename,
+            "sha256_hash": sha256_hash,
+            "file_size": len(content),
+            "mime_type": file.content_type,
+            "storage_path": storage_path
+        }
+    )
+    
+    await session.commit()
+    
+    return {
+        "success": True,
+        "evidence_id": evidence_id,
+        "filename": file.filename,
+        "sha256_hash": sha256_hash,
+        "file_size": len(content),
+        "message": "Bukti berhasil diunggah"
+    }
+
+@router.get("/top")
+async def get_top_evidence(
+    limit: int = Query(5, ge=1, le=20),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get top evidence by trust score"""
+    try:
+        result = await db.execute(text("""
+            SELECT 
+                id,
+                filename,
+                status,
+                trust_score,
+                confidence_level,
+                uploaded_at
+            FROM evidence
+            WHERE trust_score IS NOT NULL
+            ORDER BY trust_score DESC
+            LIMIT :limit
+        """), {"limit": limit})
+        rows = result.fetchall()
+        return [
+            {
+                "id": row[0],
+                "filename": row[1],
+                "status": row[2],
+                "trust_score": float(row[3]) if row[3] else 0,
+                "confidence_level": row[4] or "LOW",
+                "uploaded_at": row[5].isoformat() if row[5] else None
+            }
+            for row in rows
+        ]
+    except Exception as e:
+        return []
+
+
+# ============================================================
+# EVIDENCE STATS ENDPOINT
+# ============================================================
+
+@router.get("/stats")
+async def get_evidence_stats(
+    db: AsyncSession = Depends(get_db)
+):
+    """Get evidence statistics"""
+    try:
+        query = """
+            SELECT 
+                COUNT(*) as total,
+                COUNT(CASE WHEN status = 'verified' THEN 1 END) as verified,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending,
+                COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected
+            FROM evidence
+        """
+        result = await db.execute(text(query))
+        row = result.fetchone()
+        
+        return {
+            "total": row[0] or 0,
+            "verified": row[1] or 0,
+            "pending": row[2] or 0,
+            "rejected": row[3] or 0
+        }
+    except Exception as e:
+        print(f"Error getting evidence stats: {e}")
+        return {"total": 0, "verified": 0, "pending": 0, "rejected": 0}

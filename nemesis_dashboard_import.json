@@ -1,0 +1,34 @@
+{
+  "dashboard": {
+    "title": "Nemesis Madina V8+",
+    "uid": "nemesis-v8-prod",
+    "tags": ["nemesis", "production"],
+    "timezone": "browser",
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "API Health Status",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 3, "x": 0, "y": 0},
+        "targets": [{"expr": "sum(up{job=\"nemesis_api\"})"}]
+      },
+      {
+        "id": 2,
+        "title": "Total Cases",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 3, "x": 3, "y": 0},
+        "targets": [{"expr": "nemesis_total_cases or vector(0)"}]
+      },
+      {
+        "id": 3,
+        "title": "System Uptime",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 3, "x": 6, "y": 0},
+        "targets": [{"expr": "time() - process_start_time_seconds{job=\"nemesis_api\"}"}],
+        "fieldConfig": {"defaults": {"unit": "s"}}
+      }
+    ]
+  },
+  "overwrite": true
+}

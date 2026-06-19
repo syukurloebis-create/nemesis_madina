@@ -1,0 +1,85 @@
+{
+  "translation": {
+    "app": {
+      "name": "NEMESIS V8+",
+      "subtitle": "Forensic Intelligence Platform",
+      "version": "v8.0.0",
+      "forensic_ready": "Forensic Ready"
+    },
+    "nav": {
+      "dashboard": "Executive Dashboard",
+      "threat_center": "Threat Center",
+      "entities": "Entity Workspace",
+      "graph": "Graph Intelligence",
+      "governance": "Governance Center",
+      "replay": "Temporal Replay",
+      "cases": "Investigation Cases",
+      "analytics": "Analytics",
+      "alerts": "Live Alerts",
+      "command": "Command Center",
+      "vendors": "Vendors",
+      "upload": "Upload Data",
+      "logout": "Logout"
+    },
+    "dashboard": {
+      "title": "Executive Dashboard",
+      "description": "Overview of all cases and risk metrics",
+      "total_cases": "Total Cases",
+      "active_cases": "Active Cases",
+      "high_risk": "High Risk",
+      "integrity_score": "Integrity Score",
+      "total_events": "Total Events",
+      "recent_cases": "Recent Cases",
+      "title_col": "Title",
+      "status_col": "Status",
+      "priority_col": "Priority",
+      "created_col": "Created",
+      "action_col": "Action",
+      "view_forensic": "View Forensic",
+      "hide_forensic": "Hide Forensic",
+      "chain_valid": "Chain Valid",
+      "chain_broken": "Chain Broken",
+      "verified_at": "Verified at",
+      "no_cases": "No cases found. Create your first case to get started."
+    },
+    "threat": {
+      "title": "Threat Center",
+      "description": "Threat detection and real-time anomaly monitoring",
+      "total_anomalies": "Total Anomalies",
+      "critical": "Critical",
+      "high_risk": "High Risk",
+      "avg_risk_score": "Average Risk Score"
+    },
+    "menu": {
+      "savePage": "Save Page",
+      "translatePage": "Translate Page",
+      "exportPage": "Export Page",
+      "printPage": "Print Page",
+      "settings": "Settings",
+      "profile": "Profile"
+    },
+    "common": {
+      "loading": "Loading...",
+      "error": "An error occurred",
+      "success": "Success",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "edit": "Edit",
+      "add": "Add",
+      "search": "Search",
+      "filter": "Filter",
+      "close": "Close",
+      "back": "Back"
+    },
+    "procurement": {
+      "title": "Procurement Intelligence",
+      "description": "Anomaly detection, collusion, and risk in procurement",
+      "totalCases": "Total Cases",
+      "highRiskVendors": "High Risk Vendors",
+      "collusionPatterns": "Collusion Patterns Detected",
+      "integrityScore": "Integrity Score",
+      "totalValue": "Procurement Value"
+    }
+  }
+}

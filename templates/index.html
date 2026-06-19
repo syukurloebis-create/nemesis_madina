@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Manajemen Data RUP - Mandailing Natal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: transform 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .label {
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .action-btn {
+            background: white;
+            border: none;
+            padding: 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .action-btn .icon {
+            font-size: 3em;
+        }
+        
+        .action-btn .title {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .action-btn .desc {
+            font-size: 0.85em;
+            color: #666;
+        }
+        
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .upload-btn .desc {
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .recent-uploads {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .recent-uploads h3 {
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+        
+        .upload-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .upload-item:last-child {
+            border-bottom: none;
+        }
+        
+        .upload-status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .status-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .status-failed {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .status-partial {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .actions {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Sistem Manajemen Data RUP</h1>
+            <p>Kabupaten Mandailing Natal - Tahun 2025/2026</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="number">{{ "{:,.0f}".format(stats.total_records) }}</div>
+                <div class="label">Total Paket</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">Rp {{ "{:,.0f}".format(stats.total_pagu) }}</div>
+                <div class="label">Total Pagu</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">{{ stats.by_year|length }}</div>
+                <div class="label">Tahun Anggaran</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">{{ stats.recent_uploads|length }}</div>
+                <div class="label">Upload Terakhir</div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <a href="{{ url_for('upload') }}" class="action-btn upload-btn">
+                <div class="icon">📤</div>
+                <div class="title">Upload Data</div>
+                <div class="desc">Upload file CSV atau Excel</div>
+            </a>
+            
+            <a href="{{ url_for('view_data') }}" class="action-btn">
+                <div class="icon">📋</div>
+                <div class="title">Lihat Data</div>
+                <div class="desc">Lihat dan kelola data RUP</div>
+            </a>
+            
+            <a href="{{ url_for('dashboard') }}" class="action-btn">
+                <div class="icon">📈</div>
+                <div class="title">Dashboard</div>
+                <div class="desc">Visualisasi dan statistik</div>
+            </a>
+            
+            <a href="{{ url_for('export_data') }}" class="action-btn">
+                <div class="icon">💾</div>
+                <div class="title">Export Data</div>
+                <div class="desc">Download data ke CSV</div>
+            </a>
+        </div>
+        
+        {% if stats.recent_uploads %}
+        <div class="recent-uploads">
+            <h3>📁 Riwayat Upload Terbaru</h3>
+            {% for upload in stats.recent_uploads %}
+            <div class="upload-item">
+                <div>
+                    <strong>{{ upload.filename }}</strong><br>
+                    <small>{{ upload.uploaded_at[:16] if upload.uploaded_at else '-' }}</small>
+                </div>
+                <div>
+                    <span class="upload-status status-{{ upload.status.lower() }}">
+                        {{ upload.status }}
+                    </span>
+                    <div style="margin-top: 5px; font-size: 0.8em;">
+                        Total: {{ upload.total_records }} | 
+                        Baru: {{ upload.new_records }} | 
+                        Duplikat: {{ upload.duplicate_records }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

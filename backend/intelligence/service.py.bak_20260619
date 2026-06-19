@@ -1,0 +1,19 @@
+# intelligence/service.py - Intelligence Score Engine
+import logging
+from typing import Dict, Any
+
+logger = logging.getLogger(__name__)
+
+class IntelligenceService:
+    @staticmethod
+    def calculate_risk_score(case_risk, graph_risk, fraud_score, evidence_trust):
+        weights = {"case": 0.25, "graph": 0.25, "fraud": 0.30, "evidence": 0.20}
+        final_score = ((case_risk or 0) * weights["case"] +
+                       (graph_risk or 0) * weights["graph"] +
+                       (fraud_score or 0) * weights["fraud"] +
+                       (evidence_trust or 0) * weights["evidence"])
+        if final_score >= 80: level = "CRITICAL"
+        elif final_score >= 60: level = "HIGH"
+        elif final_score >= 40: level = "MEDIUM"
+        else: level = "LOW"
+        return {"score": round(final_score, 2), "level": level}

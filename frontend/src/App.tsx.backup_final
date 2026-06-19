@@ -1,0 +1,312 @@
+import React, { useEffect, useState } from 'react'
+import axios from 'axios'
+
+const API_BASE = 'http://localhost:8000'
+
+// ============================================================
+// INTERFACES
+// ============================================================
+
+interface StrategicData {
+  summary: {
+    total_cases: number;
+    high_risk_cases: number;
+    closure_rate: number;
+    total_loss: number;
+    total_recovered: number;
+    recovery_rate: number;
+  };
+}
+
+interface GraphMetrics {
+  total_entities: number;
+  total_relationships: number;
+  collusion_edges: number;
+}
+
+interface CollusionGraph {
+  nodes: Array<{ id: string; name: string; type: string }>;
+  edges: Array<{ source: string; target: string; type: string; confidence: number }>;
+  summary: { total_nodes: number; total_edges: number; collusion_detected: boolean };
+}
+
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
+
+function App() {
+  const [loading, setLoading] = useState(true)
+  const [strategic, setStrategic] = useState<StrategicData | null>(null)
+  const [graphMetrics, setGraphMetrics] = useState<GraphMetrics | null>(null)
+  const [collusion, setCollusion] = useState<CollusionGraph | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchAllData()
+  }, [])
+
+  const fetchAllData = async () => {
+    try {
+      setError(null)
+      
+      // 1. Strategic Dashboard
+      const strategicRes = await axios.get(`${API_BASE}/strategic/dashboard`)
+      setStrategic(strategicRes.data)
+      
+      // 2. Graph Metrics
+      const metricsRes = await axios.get(`${API_BASE}/graph/metrics`)
+      setGraphMetrics(metricsRes.data)
+      
+      // 3. Collusion Graph
+      const collusionRes = await axios.get(`${API_BASE}/graph/collusion`)
+      setCollusion(collusionRes.data)
+      
+    } catch (err) {
+      console.error('Error:', err)
+      setError('Gagal memuat data dashboard')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatCurrency = (value: number) => {
+    if (!value) return 'Rp0'
+    return new Intl.NumberFormat('id-ID', { 
+      style: 'currency', 
+      currency: 'IDR', 
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0 
+    }).format(value)
+  }
+
+  const getRiskColor = (level: string) => {
+    switch (level) {
+      case 'HIGH': return '#d32f2f'
+      case 'CRITICAL': return '#b71c1c'
+      case 'MEDIUM': return '#ff9800'
+      case 'LOW': return '#4caf50'
+      default: return '#1976d2'
+    }
+  }
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0a0e1a' }}>
+        <div style={{ textAlign: 'center', color: '#fff' }}>
+          <h1 style={{ color: '#1976d2' }}>NEMESIS V8+</h1>
+          <p style={{ color: '#666' }}>Loading Intelligence Center...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0a0e1a' }}>
+        <div style={{ textAlign: 'center', color: '#fff', padding: '40px', background: '#1a1a2e', borderRadius: '12px' }}>
+          <h2 style={{ color: '#d32f2f' }}>⚠️ Error</h2>
+          <p>{error}</p>
+          <button 
+            onClick={fetchAllData}
+            style={{ 
+              padding: '10px 24px', 
+              background: '#1976d2', 
+              color: '#fff', 
+              border: 'none', 
+              borderRadius: '8px',
+              cursor: 'pointer',
+              marginTop: '16px'
+            }}
+          >
+            Coba Lagi
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  const s = strategic?.summary || { total_cases: 0, high_risk_cases: 0, total_loss: 0, recovery_rate: 0 }
+  const gm = graphMetrics || { total_entities: 0, total_relationships: 0, collusion_edges: 0 }
+  const c = collusion?.summary || { total_nodes: 0, total_edges: 0, collusion_detected: false }
+
+  return (
+    <div style={{ 
+      minHeight: '100vh', 
+      background: '#0a0e1a',
+      color: '#fff',
+      padding: '24px',
+      fontFamily: 'Arial, sans-serif'
+    }}>
+      
+      {/* Header */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginBottom: '32px',
+        borderBottom: '1px solid #2a2a4a',
+        paddingBottom: '16px'
+      }}>
+        <div>
+          <h1 style={{ margin: 0, color: '#1976d2', fontSize: '24px' }}>
+            ⚡ NEMESIS V8+
+          </h1>
+          <p style={{ margin: '4px 0 0', color: '#666', fontSize: '14px' }}>
+            STRATEGIC INTELLIGENCE CENTER
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <span style={{ 
+            padding: '6px 16px', 
+            background: '#151929', 
+            borderRadius: '20px',
+            fontSize: '12px',
+            border: '1px solid '#2a2a4a'
+          }}>
+            🟢 Online
+          </span>
+          <span style={{ 
+            padding: '6px 16px', 
+            background: '#151929', 
+            borderRadius: '20px',
+            fontSize: '12px',
+            border: '1px solid '#2a2a4a'
+          }}>
+            {new Date().toLocaleString('id-ID')}
+          </span>
+        </div>
+      </div>
+
+      {/* ROW 1: Executive Summary - 5 Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ padding: '20px', background: '#151929', borderRadius: '12px', border: '1px solid #2a2a4a', textAlign: 'center' }}>
+          <div style={{ fontSize: '12px', color: '#666', textTransform: 'uppercase' }}>Total Kasus</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{s.total_cases}</div>
+        </div>
+        
+        <div style={{ padding: '20px', background: '#151929', borderRadius: '12px', border: '1px solid #2a2a4a', textAlign: 'center' }}>
+          <div style={{ fontSize: '12px', color: '#666', textTransform: 'uppercase' }}>Risiko Tinggi</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#d32f2f' }}>{s.high_risk_cases}</div>
+        </div>
+        
+        <div style={{ padding: '20px', background: '#151929', borderRadius: '12px', border: '1px solid #2a2a4a', textAlign: 'center' }}>
+          <div style={{ fontSize: '12px', color: '#666', textTransform: 'uppercase' }}>Potensi Kerugian</div>
+          <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ff9800' }}>{formatCurrency(s.total_loss)}</div>
+        </div>
+        
+        <div style={{ padding: '20px', background: '#151929', borderRadius: '12px', border: '1px solid #2a2a4a', textAlign: 'center' }}>
+          <div style={{ fontSize: '12px', color: '#666', textTransform: 'uppercase' }}>Tingkat Pemulihan</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#4caf50' }}>{s.recovery_rate}%</div>
+        </div>
+        
+        <div style={{ padding: '20px', background: '#151929', borderRadius: '12px', border: '1px solid #2a2a4a', textAlign: 'center' }}>
+          <div style={{ fontSize: '12px', color: '#666', textTransform: 'uppercase' }}>Integrity</div>
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#4caf50' }}>100%</div>
+        </div>
+      </div>
+
+      {/* ROW 2: Graph Intelligence */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ padding: '20px', background: '#151929', borderRadius: '12px', border: '1px solid #2a2a4a' }}>
+          <h3 style={{ margin: '0 0 16px', fontSize: '16px', color: '#fff' }}>📊 Graph Intelligence</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <span style={{ color: '#666' }}>Total Entities</span>
+            <span style={{ fontWeight: 'bold' }}>{gm.total_entities}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <span style={{ color: '#666' }}>Relationships</span>
+            <span style={{ fontWeight: 'bold' }}>{gm.total_relationships}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: '#666' }}>Collusion Edges</span>
+            <span style={{ fontWeight: 'bold', color: '#d32f2f' }}>{gm.collusion_edges}</span>
+          </div>
+        </div>
+
+        <div style={{ padding: '20px', background: '#151929', borderRadius: '12px', border: '1px solid #2a2a4a' }}>
+          <h3 style={{ margin: '0 0 16px', fontSize: '16px', color: '#fff' }}>🔗 Collusion Network</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <span style={{ color: '#666' }}>Nodes</span>
+            <span style={{ fontWeight: 'bold' }}>{c.total_nodes}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <span style={{ color: '#666' }}>Edges</span>
+            <span style={{ fontWeight: 'bold' }}>{c.total_edges}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: '#666' }}>Status</span>
+            <span style={{ 
+              fontWeight: 'bold', 
+              color: c.collusion_detected ? '#d32f2f' : '#4caf50'
+            }}>
+              {c.collusion_detected ? '⚠️ DETECTED' : '✅ CLEAR'}
+            </span>
+          </div>
+        </div>
+
+        <div style={{ padding: '20px', background: '#151929', borderRadius: '12px', border: '1px solid #2a2a4a' }}>
+          <h3 style={{ margin: '0 0 16px', fontSize: '16px', color: '#fff' }}>🎯 Case Performance</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <span style={{ color: '#666' }}>Closure Rate</span>
+            <span style={{ fontWeight: 'bold' }}>{s.closure_rate}%</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <span style={{ color: '#666' }}>Total Loss</span>
+            <span style={{ fontWeight: 'bold', color: '#ff9800' }}>{formatCurrency(s.total_loss)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: '#666' }}>Recovered</span>
+            <span style={{ fontWeight: 'bold', color: '#4caf50' }}>{formatCurrency(s.total_recovered)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ROW 3: Collusion Edges Detail */}
+      <div style={{ 
+        padding: '20px', 
+        background: '#151929', 
+        borderRadius: '12px', 
+        border: '1px solid #2a2a4a',
+        marginBottom: '24px'
+      }}>
+        <h3 style={{ margin: '0 0 16px', fontSize: '16px', color: '#fff' }}>🔍 Collusion Details</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+          {collusion?.edges?.map((edge, idx) => (
+            <div key={idx} style={{ 
+              padding: '12px', 
+              background: '#0a0e1a', 
+              borderRadius: '8px',
+              borderLeft: `4px solid ${edge.type === 'collusion' ? '#d32f2f' : '#ff9800'}`
+            }}>
+              <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
+                {edge.source} → {edge.target}
+              </div>
+              <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                Type: {edge.type} | Confidence: {edge.confidence}%
+              </div>
+            </div>
+          ))}
+          {(!collusion?.edges || collusion.edges.length === 0) && (
+            <div style={{ textAlign: 'center', color: '#666', padding: '20px' }}>
+              Tidak ada pola kolusi terdeteksi
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div style={{ 
+        marginTop: '32px', 
+        padding: '16px', 
+        textAlign: 'center', 
+        borderTop: '1px solid #2a2a4a',
+        color: '#444',
+        fontSize: '12px'
+      }}>
+        NEMESIS V8+ Strategic Intelligence Center | Integrity: 100% | {new Date().toLocaleString('id-ID')}
+      </div>
+    </div>
+  )
+}
+
+export default App
