@@ -1,143 +1,63 @@
-import {useEffect,useState} from 'react';
-import dashboardApi from '../services/dashboardApi';
+import { useState, useEffect, useCallback } from 'react';
+import { dashboardApi } from '../services/dashboardApi';
 
-
-export interface DashboardData {
-
-  strategic:any;
-
-  keyActors:any[];
-
+interface DashboardData {
+  executive: any;
+  stats: any;
+  cases: any;
+  evidence: any;
+  risk: any;
+  actors: any;
+  recommendations: any;
 }
 
+export const useDashboardData = (caseId: string) => {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-const emptyData:DashboardData={
-  strategic:null,
-  keyActors:[]
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const [
+        executive,
+        stats,
+        cases,
+        evidence,
+        risk,
+        actors,
+        recommendations
+      ] = await Promise.all([
+        dashboardApi.getExecutive().catch(() => ({ data: null })),
+        dashboardApi.getStats().catch(() => ({ data: null })),
+        dashboardApi.getCases().catch(() => ({ data: null })),
+        dashboardApi.getEvidenceStats().catch(() => ({ data: null })),
+        dashboardApi.getRiskTrend().catch(() => ({ data: null })),
+        dashboardApi.getKeyActors().catch(() => ({ data: null })),
+        dashboardApi.getRecommendations().catch(() => ({ data: null })),
+      ]);
+
+      setData({
+        executive: executive.data,
+        stats: stats.data,
+        cases: cases.data,
+        evidence: evidence.data,
+        risk: risk.data,
+        actors: actors.data,
+        recommendations: recommendations.data,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal memuat data dashboard');
+    } finally {
+      setLoading(false);
+    }
+  }, [caseId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  return { data, loading, error, refresh: fetchData };
 };
-
-
-
-export const useDashboardData=(caseId:string)=>{
-
-
-const [loading,setLoading]=useState(true);
-
-const [error,setError]=useState<string|null>(null);
-
-const [data,setData]=useState<DashboardData>(emptyData);
-
-
-
-useEffect(()=>{
-
-
-const load=async()=>{
-
-
-try{
-
-
-setLoading(true);
-setError(null);
-
-
-
-const results=
-await Promise.allSettled([
-
- dashboardApi.getStrategicDashboard(),
-
- dashboardApi.getKeyActors()
-
-]);
-
-
-
-const strategicResult=results[0];
-
-const actorsResult=results[1];
-
-
-
-const strategic =
-strategicResult.status==='fulfilled'
-?
-strategicResult.value.data
-:
-null;
-
-
-
-const keyActors =
-actorsResult.status==='fulfilled'
-?
-actorsResult.value.data?.key_actors || []
-:
-[];
-
-
-
-setData({
-
- strategic,
-
- keyActors
-
-});
-
-
-
-if(!strategic && keyActors.length===0)
-{
- setError(
-  'Dashboard intelligence data unavailable'
- );
-}
-
-
-
-}
-catch(e){
-
-console.error(
-'Dashboard loading error',
-e
-);
-
-setError(
-'Failed loading dashboard'
-);
-
-}
-
-finally{
-
-setLoading(false);
-
-}
-
-
-};
-
-
-
-load();
-
-
-},[caseId]);
-
-
-
-return {
-
-loading,
-error,
-data
-
-};
-
-};
-
-
-export default useDashboardData;

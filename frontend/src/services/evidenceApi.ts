@@ -1,55 +1,37 @@
-// services/evidenceApi.ts - Evidence Chain API (FIXED)
+// src/services/evidenceApi.ts
 import api from './api';
-import { Evidence, EvidenceChain, EvidenceStats } from '../types/evidence';
+import type { Evidence, EvidenceStats, CustodyRecord } from '../types';
 
-export const evidenceApi = {
-  // Get evidence by ID
-  getEvidence: async (id: string): Promise<Evidence> => {
-    const response = await api.get(`/api/v1/evidence/${id}`);
-    return response.data;
+const evidenceApi = {
+  getEvidence: (caseId: string) => {
+    return api.get<Evidence[]>(`/api/v1/evidence/case/${caseId}`);
   },
-
-  // Get evidence chain
-  getEvidenceChain: async (id: string): Promise<EvidenceChain> => {
-    const response = await api.get(`/api/v1/evidence/${id}/chain`);
-    return response.data;
+  getEvidenceById: (evidenceId: string) => {
+    return api.get<Evidence>(`/api/v1/evidence/${evidenceId}`);
   },
-
-  // Get evidence stats
-  getEvidenceStats: async (): Promise<EvidenceStats> => {
-    const response = await api.get('/api/v1/evidence/stats');
-    return response.data;
+  getEvidenceStats: () => {
+    return api.get<EvidenceStats>('/api/v1/evidence/stats');
   },
-
-  // Get top evidence
-  getTopEvidence: async (limit: number = 10): Promise<Evidence[]> => {
-    const response = await api.get(`/api/v1/evidence/top?limit=${limit}`);
-    return response.data;
+  uploadEvidence: (caseId: string, file: File, metadata?: Record<string, any>) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('case_id', caseId);
+    if (metadata) {
+      formData.append('metadata', JSON.stringify(metadata));
+    }
+    return api.post<Evidence>('/api/v1/evidence/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
   },
-
-  // Get evidence by case
-  getEvidenceByCase: async (caseId: string): Promise<Evidence[]> => {
-    const response = await api.get(`/api/v1/evidence/case/${caseId}`);
-    return response.data;
+  verifyEvidence: (evidenceId: string) => {
+    return api.post<Evidence>(`/api/v1/evidence/${evidenceId}/verify`);
   },
-
-  // Verify evidence
-  verifyEvidence: async (id: string): Promise<Evidence> => {
-    const response = await api.post(`/api/v1/evidence/${id}/verify`);
-    return response.data;
+  getCustodyHistory: (evidenceId: string) => {
+    return api.get<CustodyRecord[]>(`/api/v1/evidence/${evidenceId}/custody`);
   },
-
-  // Reject evidence
-  rejectEvidence: async (id: string, reason?: string): Promise<Evidence> => {
-    const response = await api.post(`/api/v1/evidence/${id}/reject`, { reason });
-    return response.data;
+  getTopEvidence: (limit: number = 10) => {
+    return api.get<Evidence[]>(`/api/v1/evidence/top?limit=${limit}`);
   },
-
-  // Get custody history
-  getCustodyHistory: async (evidenceId: string): Promise<any[]> => {
-    const response = await api.get(`/api/v1/evidence/${evidenceId}/custody`);
-    return response.data;
-  }
 };
 
 export default evidenceApi;

@@ -1,7 +1,19 @@
 // EvidenceTimeline.tsx - Visual timeline of evidence chain
 import React from 'react';
 import { CheckCircle, Clock, XCircle, Upload, Shield, RefreshCw, Archive } from 'lucide-react';
-import { CustodyEvent, CustodyAction } from '../../types/evidence';
+import type { Evidence, CustodyRecord } from '../../types';
+
+// Definisikan tipe lokal untuk kompatibilitas
+interface CustodyEvent {
+  id: string;
+  action: 'UPLOAD' | 'VERIFY' | 'REJECT' | 'REVIEW' | 'TRANSFER' | 'ARCHIVE';
+  timestamp: string;
+  actor?: string;
+  notes?: string;
+  metadata?: Record<string, any>;
+}
+
+type CustodyAction = CustodyEvent['action'];
 
 interface EvidenceTimelineProps {
   events: CustodyEvent[];
@@ -54,14 +66,12 @@ export const EvidenceTimeline: React.FC<EvidenceTimelineProps> = ({
     );
   }
 
-  // Sort by timestamp (oldest first)
   const sortedEvents = [...events].sort((a, b) => 
     new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );
 
   return (
     <div className={`relative ${className}`}>
-      {/* Vertical line */}
       <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-dark-border" />
       
       <div className="space-y-4">
@@ -71,14 +81,12 @@ export const EvidenceTimeline: React.FC<EvidenceTimelineProps> = ({
           
           return (
             <div key={event.id} className="relative pl-10">
-              {/* Timeline dot */}
               <div className={`absolute left-0 top-1 w-6 h-6 rounded-full flex items-center justify-center bg-dark-card border-2 ${isLast ? 'border-blue-500' : 'border-dark-border'}`}>
                 <span className={`${config.color}`}>
                   {config.icon}
                 </span>
               </div>
               
-              {/* Content */}
               <div className="bg-dark-bg rounded-lg p-3 border border-dark-border">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">

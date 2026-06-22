@@ -1,80 +1,104 @@
-// hooks/useDecisions.ts - Custom hook for decisions
+// src/hooks/useDecisions.ts
 import { useState, useEffect, useCallback } from 'react';
-import { Decision, DecisionSummary, DecisionStatus } from '../types/decision';
 import decisionApi from '../services/decisionApi';
+import type { Decision, DecisionTrace } from '../types/decision';
 
 interface UseDecisionsReturn {
   decisions: Decision[];
-  summary: DecisionSummary | null;
   loading: boolean;
   error: string | null;
-  fetchDecisions: () => Promise<void>;
-  updateStatus: (id: string, status: DecisionStatus) => Promise<void>;
-  executeDecision: (id: string) => Promise<void>;
+  refetch: () => Promise<void>;
+  getDecision: (id: string) => Promise<Decision | null>;
+  getTrace: (id: string) => Promise<DecisionTrace[]>;
+  createDecision: (data: Partial<Decision>) => Promise<Decision>;
+  updateStatus: (id: string, status: Decision['status']) => Promise<Decision>;
 }
 
-export const useDecisions = (caseId?: string): UseDecisionsReturn => {
+export const useDecisions = (caseId: string): UseDecisionsReturn => {
   const [decisions, setDecisions] = useState<Decision[]>([]);
-  const [summary, setSummary] = useState<DecisionSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchDecisions = useCallback(async () => {
+    if (!caseId) {
+      setDecisions([]);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
     try {
-      setLoading(true);
-      setError(null);
-      
-      const [decisionsData, summaryData] = await Promise.all([
-        decisionApi.getDecisions(caseId),
-        decisionApi.getDecisionSummary()
-      ]);
-      
-      setDecisions(decisionsData);
-      setSummary(summaryData);
-    } catch (err: any) {
-      console.error('❌ Error fetching decisions:', err);
-      setError(err.response?.data?.detail || 'Gagal memuat data keputusan');
+      const response = await decisionApi.getDecisions(caseId);
+      setDecisions(response.data || []);
+    } catch (err) {
+      console.error('Error fetching decisions:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch decisions');
+      setDecisions([]);
     } finally {
       setLoading(false);
     }
   }, [caseId]);
 
-  const updateStatus = useCallback(async (id: string, status: DecisionStatus) => {
+  const getDecision = useCallback(async (id: string) => {
     try {
-      const updated = await decisionApi.updateDecisionStatus(id, status);
-      setDecisions(prev => prev.map(d => d.id === id ? updated : d));
-      // Refresh summary
-      const summaryData = await decisionApi.getDecisionSummary();
-      setSummary(summaryData);
-    } catch (err: any) {
-      console.error('❌ Error updating decision status:', err);
+      const response = await decisionApi.getDecision(id);
+      return response.data || null;
+    } catch (err) {
+      console.error('Error fetching decision:', err);
+      return null;
+    }
+  }, []);
+
+  const getTrace = useCallback(async (id: string) => {
+    try {
+      const response = await decisionApi.getDecisionTrace(id);
+      return response.data || [];
+    } catch (err) {
+      console.error('Error fetching decision trace:', err);
+      return [];
+    }
+  }, []);
+
+  const createDecision = useCallback(async (data: Partial<Decision>) => {
+    try {
+      const response = await decisionApi.createDecision(data);
+      await fetchDecisions(); // Refresh list
+      return response.data;
+    } catch (err) {
+      console.error('Error creating decision:', err);
+      throw err;
+    }
+  }, [fetchDecisions]);
+
+  const updateStatus = useCallback(async (id: string, status: Decision['status']) => {
+    try {
+      const response = await decisionApi.updateDecisionStatus(id, status);
+      setDecisions((prev) =>
+        prev.map((d) => (d.id === id ? { ...d, status } : d))
+      );
+      return response.data;
+    } catch (err) {
+      console.error('Error updating decision status:', err);
       throw err;
     }
   }, []);
 
-  const executeDecision = useCallback(async (id: string) => {
-    try {
-      await decisionApi.executeDecision(id);
-      // Refresh data
-      await fetchDecisions();
-    } catch (err: any) {
-      console.error('❌ Error executing decision:', err);
-      throw err;
-    }
-  }, [fetchDecisions]);
-
   useEffect(() => {
-    fetchDecisions();
-  }, [fetchDecisions]);
+    if (caseId) {
+      fetchDecisions();
+    }
+  }, [caseId, fetchDecisions]);
 
   return {
     decisions,
-    summary,
     loading,
     error,
-    fetchDecisions,
+    refetch: fetchDecisions,
+    getDecision,
+    getTrace,
+    createDecision,
     updateStatus,
-    executeDecision
   };
 };
 

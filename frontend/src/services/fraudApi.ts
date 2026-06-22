@@ -1,61 +1,51 @@
-// services/fraudApi.ts - Fraud Pattern Detection API
+// src/services/fraudApi.ts
 import api from './api';
-import { FraudPattern, FraudPatternSummary, FraudPatternProps } from '../types/fraud';
+import type { 
+  FraudPattern, 
+  FraudPatternSummary,
+  FraudSeverity,
+  FraudStatus
+} from '../types';
 
-export const fraudApi = {
-  // Get all fraud patterns
-  getPatterns: async (): Promise<FraudPattern[]> => {
-    const response = await api.get('/api/v1/fraud/patterns');
-    return response.data;
+const fraudApi = {
+  getFraudPatterns: (caseId: string) => {
+    return api.get<FraudPattern[]>(`/api/v1/fraud/patterns/${caseId}`);
   },
-
-  // Get pattern by ID
-  getPattern: async (id: string): Promise<FraudPattern> => {
-    const response = await api.get(`/api/v1/fraud/patterns/${id}`);
-    return response.data;
+  getFraudPattern: (patternId: string) => {
+    return api.get<FraudPattern>(`/api/v1/fraud/patterns/${patternId}`);
   },
-
-  // Get pattern summary
-  getPatternSummary: async (): Promise<FraudPatternSummary> => {
-    const response = await api.get('/api/v1/fraud/patterns/summary');
-    return response.data;
+  getFraudAlerts: (caseId: string, status?: FraudStatus) => {
+    const params = status ? { status } : {};
+    return api.get<FraudPattern[]>(`/api/v1/fraud/alerts/${caseId}`, { params });
   },
-
-  // Get pattern library
-  getPatternLibrary: async (): Promise<any[]> => {
-    const response = await api.get('/api/v1/fraud/patterns/library');
-    return response.data;
+  detectFraud: (caseId: string) => {
+    return api.post<{ patterns: FraudPattern[]; summary: FraudPatternSummary }>(
+      `/api/v1/fraud/detect/${caseId}`
+    );
   },
-
-  // Update pattern status
-  updatePatternStatus: async (id: string, status: string): Promise<FraudPattern> => {
-    const response = await api.put(`/api/v1/fraud/patterns/${id}/status`, { status });
-    return response.data;
+  updatePatternStatus: (patternId: string, status: FraudStatus) => {
+    return api.patch<FraudPattern>(`/api/v1/fraud/patterns/${patternId}`, { status });
   },
-
-  // Investigate pattern
-  investigatePattern: async (id: string): Promise<any> => {
-    const response = await api.post(`/api/v1/fraud/patterns/${id}/investigate`);
-    return response.data;
+  getFraudStats: () => {
+    return api.get<FraudPatternSummary>('/api/v1/fraud/stats');
   },
-
-  // Get pattern indicators
-  getPatternIndicators: async (id: string): Promise<any[]> => {
-    const response = await api.get(`/api/v1/fraud/patterns/${id}/indicators`);
-    return response.data;
+  getFraudRiskScore: (caseId: string) => {
+    return api.get<{ riskScore: number; riskLevel: FraudSeverity }>(
+      `/api/v1/fraud/risk/${caseId}`
+    );
   },
-
-  // Get real-time alerts
-  getAlerts: async (): Promise<any[]> => {
-    const response = await api.get('/api/v1/fraud/alerts');
-    return response.data;
+  investigatePattern: (patternId: string, notes?: string) => {
+    return api.post<{ success: boolean; message: string }>(
+      `/api/v1/fraud/patterns/${patternId}/investigate`,
+      { notes }
+    );
   },
-
-  // Dismiss alert
-  dismissAlert: async (id: string): Promise<any> => {
-    const response = await api.post(`/api/v1/fraud/alerts/${id}/dismiss`);
-    return response.data;
-  }
+  dismissPattern: (patternId: string, reason?: string) => {
+    return api.post<{ success: boolean; message: string }>(
+      `/api/v1/fraud/patterns/${patternId}/dismiss`,
+      { reason }
+    );
+  },
 };
 
 export default fraudApi;

@@ -1,98 +1,81 @@
-// hooks/useEvidenceChain.ts - Custom hook for evidence chain
+// src/hooks/useEvidenceChain.ts
 import { useState, useEffect, useCallback } from 'react';
-import { Evidence, EvidenceChain, EvidenceStats } from '../types/evidence';
 import evidenceApi from '../services/evidenceApi';
+import type { Evidence, CustodyRecord, EvidenceStats } from '../types';
 
 interface UseEvidenceChainReturn {
   evidence: Evidence | null;
-  chain: EvidenceChain | null;
+  chain: CustodyRecord[];
   stats: EvidenceStats | null;
   loading: boolean;
   error: string | null;
   fetchEvidence: (id: string) => Promise<void>;
   verifyEvidence: (id: string) => Promise<void>;
-  rejectEvidence: (id: string, reason?: string) => Promise<void>;
+  rejectEvidence: (id: string, reason: string) => Promise<void>;
 }
 
-export const useEvidenceChain = (evidenceId?: string): UseEvidenceChainReturn => {
+export const useEvidenceChain = (evidenceId: string): UseEvidenceChainReturn => {
   const [evidence, setEvidence] = useState<Evidence | null>(null);
-  const [chain, setChain] = useState<EvidenceChain | null>(null);
+  const [chain, setChain] = useState<CustodyRecord[]>([]);
   const [stats, setStats] = useState<EvidenceStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const statsData = await evidenceApi.getEvidenceStats();
-      setStats(statsData);
-    } catch (err) {
-      console.error('❌ Error fetching evidence stats:', err);
-    }
-  }, []);
-
   const fetchEvidence = useCallback(async (id: string) => {
+    if (!id) {
+      setEvidence(null);
+      setChain([]);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
     try {
-      setLoading(true);
-      setError(null);
-      
-      const [evidenceData, chainData] = await Promise.all([
-        evidenceApi.getEvidence(id),
-        evidenceApi.getEvidenceChain(id)
+      const [evidenceRes, chainRes, statsRes] = await Promise.all([
+        evidenceApi.getEvidenceById(id),
+        evidenceApi.getCustodyHistory(id),
+        evidenceApi.getEvidenceStats(),
       ]);
-      
-      setEvidence(evidenceData);
-      setChain(chainData);
-      
-      // Also fetch stats if not loaded
-      if (!stats) {
-        await fetchStats();
-      }
+
+      setEvidence(evidenceRes.data || null);
+      setChain(chainRes.data || []);
+      setStats(statsRes.data || null);
     } catch (err: any) {
-      console.error('❌ Error fetching evidence chain:', err);
-      setError(err.response?.data?.detail || 'Gagal memuat data evidence');
+      console.error('Error fetching evidence chain:', err);
+      setError(err.message || 'Failed to fetch evidence chain');
+      setEvidence(null);
+      setChain([]);
     } finally {
       setLoading(false);
     }
-  }, [stats, fetchStats]);
+  }, []);
 
   const verifyEvidence = useCallback(async (id: string) => {
     try {
-      const updated = await evidenceApi.verifyEvidence(id);
-      setEvidence(updated);
-      // Refresh chain
-      if (id === evidenceId) {
-        await fetchEvidence(id);
-      }
-      await fetchStats();
-    } catch (err: any) {
-      console.error('❌ Error verifying evidence:', err);
+      await evidenceApi.verifyEvidence(id);
+      await fetchEvidence(id);
+    } catch (err) {
+      console.error('Error verifying evidence:', err);
       throw err;
     }
-  }, [evidenceId, fetchEvidence, fetchStats]);
+  }, [fetchEvidence]);
 
-  const rejectEvidence = useCallback(async (id: string, reason?: string) => {
+  const rejectEvidence = useCallback(async (id: string, reason: string) => {
     try {
-      const updated = await evidenceApi.rejectEvidence(id, reason);
-      setEvidence(updated);
-      // Refresh chain
-      if (id === evidenceId) {
-        await fetchEvidence(id);
-      }
-      await fetchStats();
-    } catch (err: any) {
-      console.error('❌ Error rejecting evidence:', err);
+      await evidenceApi.rejectEvidence(id, reason);
+      await fetchEvidence(id);
+    } catch (err) {
+      console.error('Error rejecting evidence:', err);
       throw err;
     }
-  }, [evidenceId, fetchEvidence, fetchStats]);
+  }, [fetchEvidence]);
 
   useEffect(() => {
-    fetchStats();
     if (evidenceId) {
       fetchEvidence(evidenceId);
-    } else {
-      setLoading(false);
     }
-  }, [evidenceId, fetchEvidence, fetchStats]);
+  }, [evidenceId, fetchEvidence]);
 
   return {
     evidence,
@@ -102,7 +85,7 @@ export const useEvidenceChain = (evidenceId?: string): UseEvidenceChainReturn =>
     error,
     fetchEvidence,
     verifyEvidence,
-    rejectEvidence
+    rejectEvidence,
   };
 };
 

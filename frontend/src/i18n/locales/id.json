@@ -1,85 +1,58 @@
 {
-  "translation": {
-    "app": {
-      "name": "NEMESIS V8+",
-      "subtitle": "Platform Intelijen Forensik",
-      "version": "v8.0.0",
-      "forensic_ready": "Siap Forensik"
-    },
-    "nav": {
-      "dashboard": "Dasbor Eksekutif",
-      "threat_center": "Pusat Ancaman",
-      "entities": "Ruang Kerja Entitas",
-      "graph": "Intelijen Graf",
-      "governance": "Pusat Tata Kelola",
-      "replay": "Pemutaran Temporal",
-      "cases": "Kasus Investigasi",
-      "analytics": "Analitik",
-      "alerts": "Peringatan Langsung",
-      "command": "Pusat Komando",
-      "vendors": "Daftar Vendor",
-      "upload": "Unggah Data",
-      "logout": "Keluar"
-    },
-    "dashboard": {
-      "title": "Dasbor Eksekutif",
-      "description": "Ikhtisar semua kasus dan metrik risiko",
-      "total_cases": "Total Kasus",
-      "active_cases": "Kasus Aktif",
-      "high_risk": "Risiko Tinggi",
-      "integrity_score": "Skor Integritas",
-      "total_events": "Total Kejadian",
-      "recent_cases": "Kasus Terbaru",
-      "title_col": "Judul",
-      "status_col": "Status",
-      "priority_col": "Prioritas",
-      "created_col": "Dibuat",
-      "action_col": "Aksi",
-      "view_forensic": "Lihat Forensik",
-      "hide_forensic": "Sembunyikan Forensik",
-      "chain_valid": "Rantai Valid",
-      "chain_broken": "Rantai Rusak",
-      "verified_at": "Diverifikasi pada",
-      "no_cases": "Tidak ada kasus. Buat kasus pertama untuk memulai."
-    },
-    "threat": {
-      "title": "Pusat Ancaman",
-      "description": "Deteksi ancaman dan pemantauan anomali waktu nyata",
-      "total_anomalies": "Total Anomali",
-      "critical": "Kritis",
-      "high_risk": "Risiko Tinggi",
-      "avg_risk_score": "Skor Risiko Rata-rata"
-    },
-    "menu": {
-      "savePage": "Simpan Halaman",
-      "translatePage": "Terjemahkan Halaman",
-      "exportPage": "Ekspor Halaman",
-      "printPage": "Cetak Halaman",
-      "settings": "Pengaturan",
-      "profile": "Profil"
-    },
-    "common": {
-      "loading": "Memuat...",
-      "error": "Terjadi Kesalahan",
-      "success": "Berhasil",
-      "save": "Simpan",
-      "cancel": "Batal",
-      "delete": "Hapus",
-      "edit": "Edit",
-      "add": "Tambah",
-      "search": "Cari",
-      "filter": "Filter",
-      "close": "Tutup",
-      "back": "Kembali"
-    },
-    "procurement": {
-      "title": "Intelijen Pengadaan",
-      "description": "Deteksi anomali, kolusi, dan risiko dalam proses pengadaan",
-      "totalCases": "Total Kasus",
-      "highRiskVendors": "Vendor Berisiko Tinggi",
-      "collusionPatterns": "Pola Kolusi Terdeteksi",
-      "integrityScore": "Skor Integritas",
-      "totalValue": "Nilai Pengadaan"
-    }
+  "dashboard": {
+    "title": "Pusat Komando NEMESIS AI",
+    "intelligence_score": "Skor Kecerdasan",
+    "risk_score": "Skor Risiko",
+    "case_risk": "Risiko Kasus",
+    "graph_risk": "Risiko Graf",
+    "fraud_score": "Skor Fraud",
+    "evidence_trust": "Kepercayaan Bukti",
+    "key_actors": "Aktor Kunci",
+    "system_status": "Status Sistem",
+    "loading": "Memuat...",
+    "error": "Terjadi kesalahan",
+    "retry": "Coba Lagi"
+  },
+  "cases": {
+    "title": "Manajemen Kasus",
+    "total": "Total",
+    "open": "Terbuka",
+    "investigating": "Investigasi",
+    "closed": "Selesai",
+    "no_cases": "Belum ada kasus",
+    "status": "Status",
+    "evidence": "Bukti"
+  },
+  "fraud": {
+    "title": "Pusat Deteksi Fraud",
+    "patterns": "Pola Fraud",
+    "confidence": "Tingkat Keyakinan",
+    "status": "Status",
+    "active": "Aktif",
+    "investigating": "Investigasi",
+    "resolved": "Selesai"
+  },
+  "evidence": {
+    "title": "Manajemen Bukti",
+    "upload": "Unggah Bukti",
+    "chain_of_custody": "Rantai Custody",
+    "statistics": "Statistik",
+    "verified": "Terverifikasi",
+    "pending": "Menunggu",
+    "rejected": "Ditolak"
+  },
+  "copilot": {
+    "title": "Asisten AI Copilot",
+    "welcome": "Selamat datang di NEMESIS AI Copilot",
+    "description": "Saya siap membantu analisis risiko dan deteksi fraud",
+    "placeholder": "Tanyakan tentang risiko, fraud, atau jaringan..."
+  },
+  "procurement": {
+    "title": "Intelijen Pengadaan",
+    "total_vendors": "Total Vendor",
+    "total_packages": "Total Paket",
+    "total_value": "Total Nilai",
+    "avg_value": "Nilai Rata-rata",
+    "years": "Tahun"
   }
 }

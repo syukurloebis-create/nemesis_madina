@@ -1,27 +1,17 @@
-// services/provenanceApi.ts - Provenance API calls
+// src/services/provenanceApi.ts
 import api from './api';
-import { ProvenanceData } from '../types/provenance';
+import type { ProvenanceRecord, ProvenanceGraph } from '../types';
 
-export const provenanceApi = {
-  getProvenance: async (caseId: string): Promise<ProvenanceData> => {
-    const response = await api.get(`/api/v1/provenance/case/${caseId}`);
-    return response.data;
+const provenanceApi = {
+  getProvenance: (caseId: string) => {
+    return api.get<ProvenanceRecord[]>(`/api/v1/provenance/case/${caseId}`);
   },
-  
-  getRiskContributors: async (caseId: string) => {
-    const data = await provenanceApi.getProvenance(caseId);
-    return data.risk_contributors || [];
+  getProvenanceGraph: (caseId: string) => {
+    return api.get<ProvenanceGraph>(`/api/v1/provenance/case/${caseId}/graph`);
   },
-  
-  getDecisionChain: async (caseId: string) => {
-    const data = await provenanceApi.getProvenance(caseId);
-    return data.decision_chain || [];
+  getEntityLineage: (entityId: string) => {
+    return api.get<ProvenanceRecord[]>(`/api/v1/provenance/entity/${entityId}`);
   },
-  
-  generateReport: async (caseId: string) => {
-    const response = await api.post(`/api/v1/provenance/case/${caseId}/report`);
-    return response.data;
-  }
 };
 
 export default provenanceApi;

@@ -1,56 +1,23 @@
-// services/decisionApi.ts - Decision Support API
+// src/services/decisionApi.ts
 import api from './api';
-import { Decision, DecisionSummary, DecisionStatus } from '../types/decision';
+import type { Decision, DecisionTrace } from '../types';
 
-export const decisionApi = {
-  // Get all decisions
-  getDecisions: async (caseId?: string): Promise<Decision[]> => {
-    const url = caseId ? `/api/v1/decisions?case_id=${caseId}` : '/api/v1/decisions';
-    const response = await api.get(url);
-    return response.data;
+const decisionApi = {
+  getDecisions: (caseId: string) => {
+    return api.get<Decision[]>(`/api/v1/decisions/${caseId}`);
   },
-
-  // Get decision by ID
-  getDecision: async (id: string): Promise<Decision> => {
-    const response = await api.get(`/api/v1/decisions/${id}`);
-    return response.data;
+  getDecision: (decisionId: string) => {
+    return api.get<Decision>(`/api/v1/decisions/${decisionId}`);
   },
-
-  // Get decision summary
-  getDecisionSummary: async (): Promise<DecisionSummary> => {
-    const response = await api.get('/api/v1/decisions/summary');
-    return response.data;
+  getDecisionTrace: (decisionId: string) => {
+    return api.get<DecisionTrace[]>(`/api/v1/decisions/${decisionId}/trace`);
   },
-
-  // Create decision
-  createDecision: async (data: Partial<Decision>): Promise<Decision> => {
-    const response = await api.post('/api/v1/decisions', data);
-    return response.data;
+  createDecision: (data: Partial<Decision>) => {
+    return api.post<Decision>('/api/v1/decisions', data);
   },
-
-  // Update decision status
-  updateDecisionStatus: async (id: string, status: DecisionStatus): Promise<Decision> => {
-    const response = await api.put(`/api/v1/decisions/${id}/status`, { status });
-    return response.data;
+  updateDecisionStatus: (decisionId: string, status: Decision['status']) => {
+    return api.patch<Decision>(`/api/v1/decisions/${decisionId}`, { status });
   },
-
-  // Update decision
-  updateDecision: async (id: string, data: Partial<Decision>): Promise<Decision> => {
-    const response = await api.put(`/api/v1/decisions/${id}`, data);
-    return response.data;
-  },
-
-  // Get decision justification
-  getDecisionJustification: async (id: string): Promise<any> => {
-    const response = await api.get(`/api/v1/decisions/${id}/justification`);
-    return response.data;
-  },
-
-  // Execute decision action
-  executeDecision: async (id: string): Promise<any> => {
-    const response = await api.post(`/api/v1/decisions/${id}/execute`);
-    return response.data;
-  }
 };
 
 export default decisionApi;

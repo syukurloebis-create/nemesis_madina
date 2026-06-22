@@ -1,2 +1,0 @@
-// Pastikan menggunakan api service, bukan fetch langsung ke localhost:8000
-// Ganti fetch('http://localhost:8000/...') dengan api.getDashboardSummary()

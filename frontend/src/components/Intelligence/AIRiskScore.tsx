@@ -1,67 +1,84 @@
-// AIRiskScore.tsx - AI Risk Score Card
+// src/components/intelligence/AIRiskScore.tsx - AI Risk Score (FIXED)
 import React from 'react';
-import { TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 
 interface AIRiskScoreProps {
-  riskScore: number;
-  trend?: number;
-  level?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  score: number;
+  level: string;
+  caseId: string;
+  className?: string;
 }
 
-export const AIRiskScore: React.FC<AIRiskScoreProps> = ({ 
-  riskScore = 0, 
-  trend = 0,
-  level = 'CRITICAL'
+const riskLevelColors = {
+  CRITICAL: {
+    bg: 'bg-red-600/20',
+    border: 'border-red-500/50',
+    text: 'text-red-400',
+    badge: 'bg-red-600/30 text-red-300'
+  },
+  HIGH: {
+    bg: 'bg-orange-600/20',
+    border: 'border-orange-500/50',
+    text: 'text-orange-400',
+    badge: 'bg-orange-600/30 text-orange-300'
+  },
+  MEDIUM: {
+    bg: 'bg-yellow-600/20',
+    border: 'border-yellow-500/50',
+    text: 'text-yellow-400',
+    badge: 'bg-yellow-600/30 text-yellow-300'
+  },
+  LOW: {
+    bg: 'bg-green-600/20',
+    border: 'border-green-500/50',
+    text: 'text-green-400',
+    badge: 'bg-green-600/30 text-green-300'
+  }
+};
+
+export const AIRiskScore: React.FC<AIRiskScoreProps> = ({
+  score,
+  level,
+  caseId,
+  className = ''
 }) => {
-  const getLevelColor = (score: number) => {
-    if (score >= 80) return { color: 'text-red-500', bg: 'bg-red-500/20', border: 'border-red-500/30' };
-    if (score >= 60) return { color: 'text-orange-500', bg: 'bg-orange-500/20', border: 'border-orange-500/30' };
-    if (score >= 40) return { color: 'text-yellow-500', bg: 'bg-yellow-500/20', border: 'border-yellow-500/30' };
-    return { color: 'text-green-500', bg: 'bg-green-500/20', border: 'border-green-500/30' };
-  };
+  const colors = riskLevelColors[level as keyof typeof riskLevelColors] || riskLevelColors.LOW;
 
-  const getLevelLabel = (score: number) => {
-    if (score >= 80) return 'CRITICAL';
-    if (score >= 60) return 'HIGH';
-    if (score >= 40) return 'MEDIUM';
-    return 'LOW';
-  };
-
-  const colors = getLevelColor(riskScore);
-  const levelLabel = getLevelLabel(riskScore);
-
+  // ============ FIX: Display real score ============
   return (
-    <div className={`bg-dark-card rounded-lg border ${colors.border} p-4 h-full`}>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-gray-400 font-medium">AI RISK SCORE</span>
-        {trend !== 0 && (
-          <div className={`flex items-center gap-1 text-xs ${trend > 0 ? 'text-red-400' : 'text-green-400'}`}>
-            {trend > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-            {Math.abs(trend)}%
-          </div>
-        )}
-      </div>
-      
-      <div className="flex items-end gap-3">
-        <span className={`text-4xl font-bold ${colors.color}`}>
-          {riskScore}
-        </span>
-        <span className="text-sm text-gray-500 mb-1">/ 100</span>
-      </div>
-      
-      <div className="flex items-center gap-2 mt-2">
-        <AlertTriangle className={`w-4 h-4 ${colors.color}`} />
-        <span className={`text-sm font-semibold ${colors.color}`}>
-          {levelLabel}
+    <div className={`bg-dark-card rounded-xl shadow-lg border ${colors.border} p-6 ${className}`}>
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-white">🎯 Skor Risiko AI</h3>
+          <p className="text-sm text-gray-400">Kasus: {caseId.slice(0, 8)}...</p>
+        </div>
+        <span className={`px-3 py-1 rounded-full text-sm font-medium ${colors.badge}`}>
+          {level}
         </span>
       </div>
 
-      {/* Progress Bar */}
-      <div className="w-full h-1.5 bg-gray-800 rounded-full mt-3 overflow-hidden">
-        <div 
-          className={`h-full rounded-full ${riskScore >= 80 ? 'bg-red-500' : riskScore >= 60 ? 'bg-orange-500' : riskScore >= 40 ? 'bg-yellow-500' : 'bg-green-500'}`}
-          style={{ width: `${Math.min(riskScore, 100)}%` }}
-        />
+      <div className="mt-4 flex items-center gap-6">
+        <div className={`text-6xl font-bold ${colors.text}`}>
+          {score.toFixed(0)}
+        </div>
+        <div className="text-sm text-gray-400">/ 100</div>
+        <div className="flex-1">
+          <div className="w-full bg-gray-700 rounded-full h-4">
+            <div
+              className={`h-4 rounded-full transition-all duration-700 ${
+                level === 'CRITICAL' ? 'bg-red-500' :
+                level === 'HIGH' ? 'bg-orange-500' :
+                level === 'MEDIUM' ? 'bg-yellow-500' : 'bg-green-500'
+              }`}
+              style={{ width: `${Math.min(score, 100)}%` }}
+            />
+          </div>
+          <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <span>Rendah</span>
+            <span>Sedang</span>
+            <span>Tinggi</span>
+            <span>Kritis</span>
+          </div>
+        </div>
       </div>
     </div>
   );

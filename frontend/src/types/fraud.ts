@@ -1,8 +1,30 @@
 // types/fraud.ts - Fraud Pattern Detection Types
 
-export type FraudSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-export type FraudTrend = 'RISING' | 'STABLE' | 'DECLINING';
-export type FraudStatus = 'ACTIVE' | 'INVESTIGATING' | 'RESOLVED' | 'FALSE_POSITIVE';
+export const FraudSeverity = {
+  CRITICAL: 'CRITICAL',
+  HIGH: 'HIGH',
+  MEDIUM: 'MEDIUM',
+  LOW: 'LOW'
+} as const;
+
+export type FraudSeverityType = typeof FraudSeverity[keyof typeof FraudSeverity];
+
+export const FraudTrend = {
+  RISING: 'RISING',
+  STABLE: 'STABLE',
+  DECLINING: 'DECLINING'
+} as const;
+
+export type FraudTrendType = typeof FraudTrend[keyof typeof FraudTrend];
+
+export const FraudStatus = {
+  ACTIVE: 'ACTIVE',
+  INVESTIGATING: 'INVESTIGATING',
+  RESOLVED: 'RESOLVED',
+  FALSE_POSITIVE: 'FALSE_POSITIVE'
+} as const;
+
+export type FraudStatusType = typeof FraudStatus[keyof typeof FraudStatus];
 
 export interface FraudIndicator {
   id: string;
@@ -18,10 +40,10 @@ export interface FraudPattern {
   name: string;
   description: string;
   category: string;
-  severity: FraudSeverity;
+  severity: FraudSeverityType;
   confidence: number;
-  trend: FraudTrend;
-  status: FraudStatus;
+  trend: FraudTrendType;
+  status: FraudStatusType;
   indicators: FraudIndicator[];
   cases: string[];
   affected_entities: string[];
@@ -32,8 +54,8 @@ export interface FraudPattern {
 
 export interface FraudPatternSummary {
   total: number;
-  by_severity: Record<FraudSeverity, number>;
-  by_status: Record<FraudStatus, number>;
+  by_severity: Record<FraudSeverityType, number>;
+  by_status: Record<FraudStatusType, number>;
   by_category: Record<string, number>;
   active_alerts: number;
   high_confidence: number;
@@ -50,7 +72,14 @@ export interface PatternLibraryItem {
   name: string;
   description: string;
   category: string;
-  severity: FraudSeverity;
+  severity: FraudSeverityType;
   examples: string[];
   detection_rules: string[];
 }
+
+// Export default untuk fallback
+export default {
+  FraudSeverity,
+  FraudTrend,
+  FraudStatus,
+};

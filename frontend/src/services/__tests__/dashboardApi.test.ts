@@ -1,22 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import dashboardApi from '../dashboardApi';
-import api from '../api';
+import { describe, it, expect, vi } from 'vitest';
+import { dashboardApi } from '../dashboardApi';
+import { api } from '../api';
 
-// Mock API client
 vi.mock('../api', () => ({
-  default: {
+  api: {
     get: vi.fn(),
     post: vi.fn(),
-    put: vi.fn(),
-    delete: vi.fn(),
   },
 }));
 
 describe('dashboardApi Service', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it('should call getExecutive correctly', () => {
     dashboardApi.getExecutive();
     expect(api.get).toHaveBeenCalledWith('/api/v1/dashboard/executive/overview');
@@ -49,7 +42,7 @@ describe('dashboardApi Service', () => {
 
   it('should call getKeyActors correctly', () => {
     dashboardApi.getKeyActors();
-    expect(api.get).toHaveBeenCalledWith('/api/v1/network/key-actors');
+    expect(api.get).toHaveBeenCalledWith('/api/v1/graph/key-actors');
   });
 
   it('should call getRecommendations correctly', () => {
@@ -64,7 +57,7 @@ describe('dashboardApi Service', () => {
 
   it('should call getGovernance correctly', () => {
     dashboardApi.getGovernance();
-    expect(api.get).toHaveBeenCalledWith('/api/v1/dashboard/apip/governance');
+    expect(api.get).toHaveBeenCalledWith('/api/v1/dashboard/api/governance');
   });
 
   it('should call getProvenance with caseId', () => {

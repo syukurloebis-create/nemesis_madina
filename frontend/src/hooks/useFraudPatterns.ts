@@ -1,81 +1,42 @@
-// hooks/useFraudPatterns.ts - Custom hook for fraud patterns
+// src/hooks/useFraudPatterns.ts
 import { useState, useEffect, useCallback } from 'react';
-import { FraudPattern, FraudPatternSummary } from '../types/fraud';
 import fraudApi from '../services/fraudApi';
+import type { FraudPattern, FraudSeverity, FraudStatus } from '../types';
 
-interface UseFraudPatternsReturn {
-  patterns: FraudPattern[];
-  summary: FraudPatternSummary | null;
-  loading: boolean;
-  error: string | null;
-  fetchPatterns: () => Promise<void>;
-  updateStatus: (id: string, status: string) => Promise<void>;
-  investigatePattern: (id: string) => Promise<void>;
+interface UseFraudPatternsOptions {
+  caseId?: string;
+  severity?: FraudSeverity;
+  status?: FraudStatus;
+  autoFetch?: boolean;
 }
 
-export const useFraudPatterns = (): UseFraudPatternsReturn => {
+export const useFraudPatterns = (options: UseFraudPatternsOptions = {}) => {
+  const { caseId, severity, status, autoFetch = true } = options;
   const [patterns, setPatterns] = useState<FraudPattern[]>([]);
-  const [summary, setSummary] = useState<FraudPatternSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchPatterns = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
-      
-      const [patternsData, summaryData] = await Promise.all([
-        fraudApi.getPatterns(),
-        fraudApi.getPatternSummary()
-      ]);
-      
-      setPatterns(patternsData);
-      setSummary(summaryData);
-    } catch (err: any) {
-      console.error('❌ Error fetching fraud patterns:', err);
-      setError(err.response?.data?.detail || 'Gagal memuat data pola fraud');
+      const response = await fraudApi.getFraudPatterns(caseId || '');
+      let data = response.data || [];
+      if (severity) data = data.filter((p: FraudPattern) => p.severity === severity);
+      if (status) data = data.filter((p: FraudPattern) => p.status === status);
+      setPatterns(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch fraud patterns');
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const updateStatus = useCallback(async (id: string, status: string) => {
-    try {
-      const updated = await fraudApi.updatePatternStatus(id, status);
-      setPatterns(prev => prev.map(p => p.id === id ? updated : p));
-      // Refresh summary
-      const summaryData = await fraudApi.getPatternSummary();
-      setSummary(summaryData);
-    } catch (err: any) {
-      console.error('❌ Error updating pattern status:', err);
-      throw err;
-    }
-  }, []);
-
-  const investigatePattern = useCallback(async (id: string) => {
-    try {
-      await fraudApi.investigatePattern(id);
-      // Refresh data
-      await fetchPatterns();
-    } catch (err: any) {
-      console.error('❌ Error investigating pattern:', err);
-      throw err;
-    }
-  }, [fetchPatterns]);
+  }, [caseId, severity, status]);
 
   useEffect(() => {
-    fetchPatterns();
-  }, [fetchPatterns]);
+    if (autoFetch) fetchPatterns();
+  }, [autoFetch, fetchPatterns]);
 
-  return {
-    patterns,
-    summary,
-    loading,
-    error,
-    fetchPatterns,
-    updateStatus,
-    investigatePattern
-  };
+  return { patterns, loading, error, refetch: fetchPatterns };
 };
 
 export default useFraudPatterns;

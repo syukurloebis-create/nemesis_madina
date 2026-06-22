@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getExecutiveOverview, getEvidenceStats, getGovernanceMetrics, getKeyActors, getCommunities } from '../api/nemesisApi';
+import { getKeyActors } from '../services/api';
 
 export const useExecutiveOverview = () => {
   return useQuery({
