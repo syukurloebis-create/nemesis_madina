@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request
-from backend.core.analytics.risk_engine import RiskEngine
+from core.analytics.risk_engine import RiskEngine
 
 router = APIRouter()
 

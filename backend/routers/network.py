@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from typing import List, Dict, Any
 
-from backend.services.network_intelligence import get_key_actors, get_communities
+from services.network_intelligence import get_key_actors, get_communities
 
 router = APIRouter(prefix="/api/v1/network", tags=["network"])
 

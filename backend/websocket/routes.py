@@ -3,7 +3,7 @@ WebSocket Routes - Clean, no duplicate readers
 """
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from backend.websocket.manager import ConnectionManager
+from websocket.manager import ConnectionManager
 
 router = APIRouter(tags=["websocket"])
 manager = ConnectionManager()

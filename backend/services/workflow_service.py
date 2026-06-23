@@ -1,9 +1,9 @@
 # backend/services/workflow_service.py
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Dict, Any, Optional, List
-from backend.domain.value_objects import CaseState, WorkflowStatus, CaseStatus
-from backend.cases.event_store import EventStore
-from backend.services.replay_service import ReplayService
+from domain.value_objects import CaseState, WorkflowStatus, CaseStatus
+from cases.event_store import EventStore
+from services.replay_service import ReplayService
 import logging
 
 logger = logging.getLogger(__name__)

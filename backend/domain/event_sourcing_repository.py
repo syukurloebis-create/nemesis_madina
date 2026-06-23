@@ -7,7 +7,7 @@ import json
 import logging
 
 from .aggregate_root import AggregateRoot
-from backend.events.repository import EventRepository
+from events.repository import EventRepository
 
 logger = logging.getLogger(__name__)
 

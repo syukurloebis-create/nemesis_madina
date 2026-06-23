@@ -12,7 +12,7 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 import enum
 import uuid
 
-from backend.database import Base
+from database import Base
 
 
 class RiskLevel(str, enum.Enum):

@@ -5,7 +5,7 @@ from typing import Dict, Any, List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 
-from backend.explainability.engine import explainer
+from explainability.engine import explainer
 
 router = APIRouter(prefix="/explain", tags=["explainability"])
 
@@ -52,7 +52,7 @@ async def explain_finding(request: ExplainRequest):
     )
     
     # Audit log
-    from backend.audit.logger import AuditLogger
+    from audit.logger import AuditLogger
     AuditLogger.log(
         action="EXPLAIN",
         actor="system",
@@ -78,7 +78,7 @@ async def get_explanation(explanation_id: str):
 async def get_latest_explanation(evidence_id: str):
     """Get latest explanation for an evidence"""
     # Get all explanations for this evidence
-    from backend.explainability.engine import explainer as exp_engine
+    from explainability.engine import explainer as exp_engine
     all_exps = exp_engine._explanations.values()
     
     matching = [e for e in all_exps if e.evidence_id == evidence_id]

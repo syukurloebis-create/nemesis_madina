@@ -1,3 +1,4 @@
+# backend/routers/__init__.py
 from . import cases
 from . import evidence
 from . import custody
@@ -9,3 +10,5 @@ from . import historical
 from . import metrics_id as metrics
 from . import graph
 from . import dashboard
+from . import network
+from . import fraud

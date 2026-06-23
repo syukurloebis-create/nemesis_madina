@@ -1,12 +1,12 @@
 # DEPRECATED - Use backend.graph instead
 import warnings
 warnings.warn(
-    "This module is deprecated. Use 'from backend.graph import ...'",
+    "This module is deprecated. Use 'from graph import ...'",
     DeprecationWarning,
     stacklevel=2
 )
 
-from backend.graph import *
+from graph import *
 
 __all__ = [
     'RelationshipGraph',

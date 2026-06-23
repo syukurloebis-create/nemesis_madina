@@ -1,13 +1,13 @@
-from backend.graph.models import (
+from graph.models import (
     GraphEntity,
     GraphRelationship,
     CollusionDetection
 )
-from backend.graph.builder import GraphBuilder, Graph
-from backend.graph.service import GraphIntelligenceService
-from backend.graph.relationship_graph import RelationshipGraph
-from backend.graph.metrics import GraphMetrics
-from backend.graph.routes import router
+from graph.builder import GraphBuilder, Graph
+from graph.service import GraphIntelligenceService
+from graph.relationship_graph import RelationshipGraph
+from graph.metrics import GraphMetrics
+from graph.routes import router
 
 
 __all__ = [

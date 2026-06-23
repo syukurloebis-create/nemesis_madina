@@ -17,7 +17,7 @@ from sqlalchemy.pool import NullPool
 
 # Import config
 try:
-    from backend.config import settings
+    from config import settings
 except ImportError:
     from config import settings
 

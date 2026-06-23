@@ -3,8 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text, select, func
 from datetime import datetime, timedelta
 from typing import Optional
-from backend.infrastructure.database import get_db
-from backend.security.auth import decode_token
+from infrastructure.database import get_db
+from security.auth import decode_token
 
 router = APIRouter(prefix="/forensic", tags=["Forensic Dashboard"])
 

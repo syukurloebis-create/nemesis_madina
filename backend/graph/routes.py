@@ -3,9 +3,9 @@
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, List
 
-from backend.graph.builder import GraphBuilder
-from backend.graph.models import NodeType, EdgeType
-from backend.graph.metrics import GraphMetrics
+from graph.builder import GraphBuilder
+from graph.models import NodeType, EdgeType
+from graph.metrics import GraphMetrics
 
 
 router = APIRouter(

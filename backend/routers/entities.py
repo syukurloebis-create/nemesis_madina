@@ -5,9 +5,9 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 import uuid
 
-from backend.infrastructure.database import get_db
-from backend.security.dependencies import get_current_active_user
-from backend.security.models import User
+from infrastructure.database import get_db
+from security.dependencies import get_current_active_user
+from security.models import User
 
 router = APIRouter(prefix="/entities", tags=["entities"])
 

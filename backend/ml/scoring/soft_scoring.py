@@ -191,7 +191,7 @@ def compute_confidence_score(
     payload: Dict = None
 ) -> float:
     """Hitung confidence score untuk response."""
-    from backend.ml.scoring.confidence import ConfidenceScorer
+    from ml.scoring.confidence import ConfidenceScorer
     
     data_completeness = 1.0
     if payload:

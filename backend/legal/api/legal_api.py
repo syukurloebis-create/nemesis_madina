@@ -5,7 +5,7 @@ from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
 
-from backend.legal.models import (
+from legal.models import (
     DigitalEvidencePackage, IntegrityCertificate, ChainOfCustodyRecord,
     ForensicExportRequest, LegalStatus
 )

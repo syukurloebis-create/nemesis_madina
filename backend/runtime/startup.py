@@ -3,7 +3,7 @@ Startup Handler - Initialize services on application start
 """
 
 import logging
-from backend.runtime.validator import startup_validator
+from runtime.validator import startup_validator
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ async def startup_handler():
     
     # Initialize evidence registry
     try:
-        from backend.evidence import EvidenceRegistry
+        from evidence import EvidenceRegistry
         registry = EvidenceRegistry()
         logger.info("Evidence registry initialized")
         print("  ✅ Evidence registry")
@@ -34,7 +34,7 @@ async def startup_handler():
     
     # Initialize event bus
     try:
-        from backend.core.events import EventBus
+        from core.events import EventBus
         event_bus = EventBus()
         logger.info("Event bus initialized")
         print("  ✅ Event bus")
@@ -44,7 +44,7 @@ async def startup_handler():
     
     # Initialize WebSocket manager
     try:
-        from backend.websocket import ConnectionManager
+        from websocket import ConnectionManager
         ws_manager = ConnectionManager()
         logger.info("WebSocket manager initialized")
         print("  ✅ WebSocket manager")
@@ -54,7 +54,7 @@ async def startup_handler():
     
     # Initialize graph
     try:
-        from backend.graph import GraphBuilder
+        from graph import GraphBuilder
         graph = GraphBuilder()
         logger.info("Graph initialized")
         print("  ✅ Graph builder")

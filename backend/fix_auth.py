@@ -14,7 +14,7 @@ from sqlalchemy import text, create_engine
 from sqlalchemy.pool import NullPool
 
 try:
-    from backend.config import settings
+    from config import settings
 except ImportError:
     from config import settings
 

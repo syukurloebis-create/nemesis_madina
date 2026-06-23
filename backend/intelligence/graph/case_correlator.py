@@ -8,7 +8,7 @@ from collections import defaultdict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from backend.intelligence.graph.models import Entity, Relationship, CollusionDetection
+from intelligence.graph.models import Entity, Relationship, CollusionDetection
 
 CASE_ID_FIELD = "aggregate_id"
 
@@ -162,7 +162,7 @@ class CaseCorrelator:
         Calculate risk propagation between connected cases.
         """
         # Get risk scores for each case
-        from backend.intelligence.models import RiskScore
+        from intelligence.models import RiskScore
         
         risks = {}
         for case_id in case_ids:

@@ -3,7 +3,7 @@ Lineage Graph - Visualization and Query Support
 """
 
 from typing import List, Dict, Any, Set, Optional
-from backend.lineage.tracker import LineageTracker, LineageNode, LineageEdge
+from lineage.tracker import LineageTracker, LineageNode, LineageEdge
 
 
 class LineageGraph:

@@ -7,8 +7,8 @@ from typing import List, Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Direct import from core - NO EventStoreService
-from backend.cases.event_store import get_case_events
-from backend.models.event import Event
+from cases.event_store import get_case_events
+from models.event import Event
 
 
 class ReplayService:

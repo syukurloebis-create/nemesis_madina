@@ -115,7 +115,7 @@ detector = AnomalyDetector()
         """Detect anomalies with calibrated risk scoring"""
         result = AnomalyDetector.detect_anomaly(procurement_data)
         
-        from backend.ml.calibration import calibrator
+        from ml.calibration import calibrator
         calibrated = calibrator.calibrate(result["score"], result.get("confidence", 0.5))
         
         result["calibrated_score"] = calibrated.calibrated_score

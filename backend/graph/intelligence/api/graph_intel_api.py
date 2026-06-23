@@ -4,8 +4,8 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
 from uuid import UUID
 
-from backend.graph.intelligence.repositories.entity_edge_repo import EntityEdgeRepository
-from backend.graph.intelligence.models import (
+from graph.intelligence.repositories.entity_edge_repo import EntityEdgeRepository
+from graph.intelligence.models import (
     EntityNode, EntityEdge, CollusionDetectionResult,
     EntityType, RelationshipType
 )
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/graph-intel", tags=["graph-intelligence"])
 
 
 async def get_edge_repo():
-    from backend.infrastructure.database import get_pool
+    from infrastructure.database import get_pool
     pool = await get_pool()
     return EntityEdgeRepository(pool)
 

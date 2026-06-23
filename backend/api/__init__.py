@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 
 # Import V1 router
-from backend.api.v1 import router as v1_router
+from api.v1 import router as v1_router
 
 # Create main router
 router = APIRouter()

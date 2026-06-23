@@ -3,8 +3,8 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 import uuid
 
-from backend.security.dependencies import get_current_active_user
-from backend.security.models import User
+from security.dependencies import get_current_active_user
+from security.models import User
 
 router = APIRouter(prefix="/audit", tags=["audit"])
 

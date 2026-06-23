@@ -2,8 +2,8 @@
 import asyncio
 from typing import Optional
 import asyncpg
-from backend.core.events.hash_chain import HashChain
-from backend.core.events.lineage_verifier import LineageVerifier
+from core.events.hash_chain import HashChain
+from core.events.lineage_verifier import LineageVerifier
 
 class ChainValidator:
     """Background worker untuk chain integrity validation."""

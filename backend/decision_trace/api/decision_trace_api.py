@@ -4,15 +4,15 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
 from uuid import UUID
 
-from backend.decision_trace.services.decision_trace_service import DecisionTraceService
-from backend.decision_trace.repositories.decision_trace_repo import DecisionTraceRepository
-from backend.decision_trace.models import DecisionTrace, DecisionTraceCreate, ExplainabilityResult
+from decision_trace.services.decision_trace_service import DecisionTraceService
+from decision_trace.repositories.decision_trace_repo import DecisionTraceRepository
+from decision_trace.models import DecisionTrace, DecisionTraceCreate, ExplainabilityResult
 
 router = APIRouter(prefix="/decision-traces", tags=["decision-traces"])
 
 
 async def get_decision_trace_service():
-    from backend.infrastructure.database import get_pool
+    from infrastructure.database import get_pool
     pool = await get_pool()
     repo = DecisionTraceRepository(pool)
     return DecisionTraceService(repo)

@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from backend.database import get_db
+from database import get_db
 from typing import Optional
 import uuid
 import logging

@@ -3,7 +3,7 @@ from typing import Dict, Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from backend.database import get_db
+from database import get_db
 import logging
 
 logger = logging.getLogger(__name__)

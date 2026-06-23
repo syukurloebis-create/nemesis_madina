@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from collections import deque
 
-from backend.orchestrator.models import HealthReport
+from orchestrator.models import HealthReport
 
 logger = logging.getLogger(__name__)
 

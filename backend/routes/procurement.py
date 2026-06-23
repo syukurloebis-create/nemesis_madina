@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from backend.infrastructure.database import AsyncSessionLocal
+from infrastructure.database import AsyncSessionLocal
 from sqlalchemy import text
 
 router = APIRouter(prefix="/procurement", tags=["procurement"])

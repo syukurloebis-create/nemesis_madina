@@ -4,11 +4,11 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID
 from datetime import datetime
 
-from backend.investigation.models import (
+from investigation.models import (
     InvestigationCase, InvestigationCaseCreate, Finding, FindingCreate,
     CaseStatus
 )
-from backend.investigation.repositories.case_repo import InvestigationCaseRepository, FindingRepository
+from investigation.repositories.case_repo import InvestigationCaseRepository, FindingRepository
 
 
 class InvestigationCaseService:

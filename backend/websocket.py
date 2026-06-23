@@ -3,7 +3,7 @@ import json
 import asyncio
 from datetime import datetime
 from sqlalchemy import text
-from backend.database import engine
+from database import engine
 
 router = APIRouter(prefix="/ws", tags=["websocket"])
 

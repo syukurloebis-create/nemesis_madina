@@ -6,9 +6,9 @@ from datetime import datetime
 import uuid
 import logging
 
-from backend.domain.case_aggregate import CaseAggregate
-from backend.domain.event_sourcing_repository import EventSourcingRepository
-from backend.models.existing import Case as CaseModel
+from domain.case_aggregate import CaseAggregate
+from domain.event_sourcing_repository import EventSourcingRepository
+from models.existing import Case as CaseModel
 
 logger = logging.getLogger(__name__)
 

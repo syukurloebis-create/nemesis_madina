@@ -1,6 +1,6 @@
 # routers/entity.py - Entity Resolution endpoints
 from fastapi import APIRouter, Depends, HTTPException
-from backend.entity.resolution import EntityResolutionService
+from entity.resolution import EntityResolutionService
 from typing import List, Dict, Any
 import logging
 

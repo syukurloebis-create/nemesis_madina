@@ -2,7 +2,7 @@
 import asyncio
 from typing import Optional
 import asyncpg
-from backend.core.events.lineage_verifier import LineageVerifier
+from core.events.lineage_verifier import LineageVerifier
 
 class ChainValidator:
     """Background worker for chain integrity validation."""

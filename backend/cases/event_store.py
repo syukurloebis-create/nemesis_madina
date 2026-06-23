@@ -14,8 +14,8 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text, desc
 
-from backend.models.event import Event
-from backend.cases.models import Case
+from models.event import Event
+from cases.models import Case
 
 # ============================================
 # HASHING UTILITIES

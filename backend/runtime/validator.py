@@ -148,10 +148,10 @@ class StartupValidator:
         
         critical_modules = [
             ("fastapi", "FastAPI"),
-            ("backend.evidence", "EvidenceRegistry"),
-            ("backend.core.events", "EventBus"),
-            ("backend.websocket", "ConnectionManager"),
-            ("backend.graph", "GraphBuilder")
+            ("evidence", "EvidenceRegistry"),
+            ("core.events", "EventBus"),
+            ("websocket", "ConnectionManager"),
+            ("graph", "GraphBuilder")
         ]
         
         for module_name, class_name in critical_modules:

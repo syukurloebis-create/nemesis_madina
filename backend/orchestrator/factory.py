@@ -1,4 +1,4 @@
-from backend.core.orchestration.orchestrator import NemesisOrchestrator
+from core.orchestration.orchestrator import NemesisOrchestrator
 
 def build_orchestrator(
     repository,

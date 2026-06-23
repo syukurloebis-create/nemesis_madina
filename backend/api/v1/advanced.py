@@ -7,15 +7,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Dict, Any
 from datetime import datetime
 
-from backend.infrastructure.database import get_db
-from backend.cases.service import CaseService
-from backend.intelligence.graph.service import GraphIntelligenceService
-from backend.ml.anomaly_detection import anomaly_service
-from backend.websocket.alerts import alert_engine, manager
-from backend.legal.court_report import report_generator
-from backend.graph.visualization import visualizer
-from backend.security.dependencies import get_current_user
-from backend.security.models import User
+from infrastructure.database import get_db
+from cases.service import CaseService
+from intelligence.graph.service import GraphIntelligenceService
+from ml.anomaly_detection import anomaly_service
+from websocket.alerts import alert_engine, manager
+from legal.court_report import report_generator
+from graph.visualization import visualizer
+from security.dependencies import get_current_user
+from security.models import User
 
 router = APIRouter(prefix="/advanced", tags=["Advanced Features"])
 

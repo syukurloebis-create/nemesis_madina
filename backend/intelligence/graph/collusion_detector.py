@@ -9,18 +9,18 @@ import warnings
 from typing import List, Dict, Any
 
 warnings.warn(
-    "This module uses legacy graph interface. Consider migrating to backend.graph.intelligence.services.collusion_detector",
+    "This module uses legacy graph interface. Consider migrating to graph.intelligence.services.collusion_detector",
     DeprecationWarning,
     stacklevel=2
 )
 
 # SAFE IMPORT - now available after __init__.py fix
 try:
-    from backend.graph import RelationshipGraph, GraphMetrics
+    from graph import RelationshipGraph, GraphMetrics
 except ImportError:
     # Fallback for backward compatibility
-    from backend.graph.relationship_graph import RelationshipGraph
-    from backend.graph.metrics import GraphMetrics
+    from graph.relationship_graph import RelationshipGraph
+    from graph.metrics import GraphMetrics
 
 
 class CollusionDetector:

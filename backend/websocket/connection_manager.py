@@ -4,7 +4,7 @@ import os
 from typing import Dict
 from fastapi import WebSocket
 
-from backend.websocket.observability import WSObservability
+from websocket.observability import WSObservability
 
 
 class ConnectionManager:

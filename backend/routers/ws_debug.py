@@ -1,8 +1,8 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from backend.websocket.manager import gateway
-from backend.websocket.broadcaster import WSEventBus
-from backend.websocket.observability import ws_observability
+from websocket.manager import gateway
+from websocket.broadcaster import WSEventBus
+from websocket.observability import ws_observability
 
 router = APIRouter()
 

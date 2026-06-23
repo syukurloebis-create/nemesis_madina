@@ -4,7 +4,7 @@ from sqlalchemy import text
 from datetime import datetime
 from typing import Dict, Any
 
-from backend.infrastructure.database import get_db
+from infrastructure.database import get_db
 
 router = APIRouter(prefix="/metrics", tags=["Dashboard Metrics"])
 

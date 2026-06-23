@@ -1,8 +1,8 @@
 # Ganti endpoint create_case dengan ini:
 
-from backend.cases.service import CaseService
-from backend.events.types import Event, EventType
-from backend.events.event_store import EventStore
+from cases.service import CaseService
+from events.types import Event, EventType
+from events.event_store import EventStore
 
 @router.post("/")
 async def create_case(

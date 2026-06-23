@@ -5,7 +5,7 @@ from typing import Dict, Any, List, Optional
 import uuid
 from datetime import datetime
 
-from backend.database import get_db
+from database import get_db
 
 router = APIRouter(prefix="/risk", tags=["risk"])
 

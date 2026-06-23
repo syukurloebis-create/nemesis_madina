@@ -16,7 +16,7 @@ async def shutdown_handler():
     
     # Close WebSocket connections
     try:
-        from backend.websocket import ConnectionManager
+        from websocket import ConnectionManager
         ws_manager = ConnectionManager()
         
         # Broadcast shutdown message
@@ -37,11 +37,11 @@ async def shutdown_handler():
     
     # Save state if needed
     try:
-        from backend.core.events import EventBus
+        from core.events import EventBus
         bus = EventBus()
         
         # Take final snapshot
-        from backend.core.events.snapshots import EventSnapshot
+        from core.events.snapshots import EventSnapshot
         snapshot = EventSnapshot()
         snapshot_id = snapshot.create_snapshot({
             "events": bus.get_history(limit=1000),

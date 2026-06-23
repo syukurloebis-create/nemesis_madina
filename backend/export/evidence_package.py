@@ -8,7 +8,7 @@ from typing import Dict, Any, List
 import uuid
 
 from sqlalchemy import text
-from backend.database import get_db
+from database import get_db
 
 
 class CourtEvidencePackage:

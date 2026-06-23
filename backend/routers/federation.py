@@ -3,7 +3,7 @@ import asyncio
 import uuid
 from datetime import datetime, timezone
 from fastapi import APIRouter, Request, HTTPException
-from backend.models.event import EventEnvelope
+from models.event import EventEnvelope
 
 router = APIRouter(prefix="/federation", tags=["federation"])
 
@@ -74,7 +74,7 @@ async def federated_verify(tenant_id: str, aggregate_id: str, request: Request):
     runtime = request.app.state.runtime
     pool = runtime.get("pool")
     
-    from backend.core.events.lineage_verifier import LineageVerifier
+    from core.events.lineage_verifier import LineageVerifier
     verifier = LineageVerifier(pool)
     
     result = await verifier.verify_aggregate_chain(aggregate_id)

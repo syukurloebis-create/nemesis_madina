@@ -1,169 +1,131 @@
-"""
-Evidence Scoring Engine - Fixed JSONB
-"""
-import psycopg2
-import json
-from typing import Dict, Any
-from datetime import datetime
+# services/evidence_scoring.py - Evidence Confidence Engine (FIXED)
+import logging
+from typing import Dict, Any, Optional
 
-DB_CONFIG = {
-    'host': 'postgres',
-    'port': 5432,
-    'database': 'nemesis_db',
-    'user': 'nemesis',
-    'password': 'nemesis123'
-}
+logger = logging.getLogger(__name__)
 
-class EvidenceScoringEngine:
-    WEIGHTS = {
-        'source_reliability': 0.30,
-        'hash_integrity': 0.25,
-        'verification': 0.25,
-        'correlation': 0.20
-    }
+class ConfidenceLevel:
+    """Standard confidence levels"""
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
+    VERY_LOW = "VERY_LOW"
+
+class EvidenceScorer:
+    """Evidence scoring and confidence calculation"""
     
-    def calculate_trust_score(self, evidence_id: str) -> Dict[str, Any]:
-        conn = psycopg2.connect(**DB_CONFIG)
-        cur = conn.cursor()
+    # ============================================
+    # FIX: Deterministic Confidence Mapping
+    # ============================================
+    @staticmethod
+    def calculate_confidence(trust_score: float, status: str = "pending") -> str:
+        """
+        Calculate confidence level based on trust score ONLY.
         
-        try:
-            cur.execute("""
-                SELECT 
-                    id,
-                    case_id,
-                    file_hash,
-                    status,
-                    verified_at,
-                    file_type
-                FROM evidence
-                WHERE id = %s
-            """, (evidence_id,))
-            evidence = cur.fetchone()
+        Args:
+            trust_score: Trust score (0-100)
+            status: Evidence status (pending/verified/rejected)
             
-            if not evidence:
-                return {"error": "Evidence not found"}
-            
-            source_reliability = self._calculate_source_reliability(evidence[5])
-            hash_integrity = self._calculate_hash_integrity(evidence[2])
-            verification = self._calculate_verification_score(evidence[3], evidence[4])
-            correlation = self._calculate_correlation_score(evidence_id)
-            
-            trust_score = (
-                source_reliability * self.WEIGHTS['source_reliability'] +
-                hash_integrity * self.WEIGHTS['hash_integrity'] +
-                verification * self.WEIGHTS['verification'] +
-                correlation * self.WEIGHTS['correlation']
-            )
-            trust_score = round(trust_score, 2)
-            
-            components = {
-                'source_reliability': source_reliability,
-                'hash_integrity': hash_integrity,
-                'verification': verification,
-                'correlation': correlation
-            }
-            
-            result = {
-                'evidence_id': evidence_id,
-                'case_id': evidence[1],
-                'trust_score': trust_score,
-                'confidence_level': self._get_confidence_level(trust_score),
-                'components': components,
-                'calculated_at': datetime.now().isoformat()
-            }
-            
-            # Save to database - convert dict to JSON string
-            self._save_score(evidence_id, trust_score, json.dumps(components))
-            
-            return result
-            
-        except Exception as e:
-            return {"error": str(e)}
-        finally:
-            cur.close()
-            conn.close()
-    
-    def _calculate_source_reliability(self, file_type: str) -> float:
-        if not file_type:
-            return 50.0
-        ft = file_type.lower()
-        if 'pdf' in ft:
-            return 90.0
-        elif 'excel' in ft or 'spreadsheet' in ft or 'xls' in ft:
-            return 85.0
-        elif 'image' in ft or 'png' in ft or 'jpg' in ft or 'jpeg' in ft:
-            return 70.0
-        elif 'audio' in ft or 'mp3' in ft or 'wav' in ft:
-            return 65.0
+        Returns:
+            Confidence level: HIGH/MEDIUM/LOW/VERY_LOW
+        """
+        # Rejected evidence always VERY_LOW
+        if status == "rejected":
+            return ConfidenceLevel.VERY_LOW
+        
+        # ============ FIX: Deterministic mapping ============
+        if trust_score >= 90:
+            return ConfidenceLevel.HIGH
+        elif trust_score >= 75:
+            return ConfidenceLevel.MEDIUM
+        elif trust_score >= 50:
+            return ConfidenceLevel.LOW
         else:
-            return 60.0
+            return ConfidenceLevel.VERY_LOW
     
-    def _calculate_hash_integrity(self, file_hash: str) -> float:
-        return 100.0 if file_hash else 0.0
+    @staticmethod
+    def calculate_trust_score(
+        file_hash: str,
+        file_size: int,
+        file_type: str,
+        verified: bool = False,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> float:
+        """
+        Calculate initial trust score for evidence
+        
+        Returns:
+            Trust score (0-100)
+        """
+        base_score = 50.0
+        
+        # Hash quality
+        if file_hash and len(file_hash) == 64:
+            base_score += 20
+        
+        # File size (not empty)
+        if file_size > 0:
+            base_score += 10
+        
+        # File type
+        trusted_types = ["application/pdf", "image/png", "image/jpeg", 
+                        "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+        if file_type in trusted_types:
+            base_score += 10
+        
+        # Verified
+        if verified:
+            base_score += 10
+        
+        return min(base_score, 100)
     
-    def _calculate_verification_score(self, status: str, verified_at) -> float:
-        if status == 'verified' and verified_at:
-            return 100.0
-        elif status == 'verified':
-            return 80.0
-        elif status == 'pending':
-            return 60.0
-        elif status == 'rejected':
-            return 0.0
-        return 50.0
-    
-    def _calculate_correlation_score(self, evidence_id: str) -> float:
-        conn = psycopg2.connect(**DB_CONFIG)
-        cur = conn.cursor()
-        try:
-            cur.execute("""
-                SELECT COUNT(*) 
-                FROM evidence 
-                WHERE case_id = (
-                    SELECT case_id FROM evidence WHERE id = %s
-                )
-                AND id != %s
-            """, (evidence_id, evidence_id))
-            count = cur.fetchone()[0]
-            if count >= 5:
-                return 100.0
-            elif count >= 3:
-                return 80.0
-            elif count >= 1:
-                return 60.0
-            else:
-                return 30.0
-        finally:
-            cur.close()
-            conn.close()
-    
-    def _get_confidence_level(self, score: float) -> str:
-        if score >= 85:
-            return 'HIGH'
-        elif score >= 70:
-            return 'MEDIUM'
-        elif score >= 50:
-            return 'LOW'
-        else:
-            return 'VERY_LOW'
-    
-    def _save_score(self, evidence_id: str, trust_score: float, components_json: str):
-        conn = psycopg2.connect(**DB_CONFIG)
-        cur = conn.cursor()
-        try:
-            cur.execute("""
-                UPDATE evidence 
-                SET trust_score = %s, 
-                    scoring_detail = %s::jsonb,
-                    updated_at = NOW()
-                WHERE id = %s
-            """, (trust_score, components_json, evidence_id))
-            conn.commit()
-        finally:
-            cur.close()
-            conn.close()
-
-scoring_engine = EvidenceScoringEngine()
-
-def calculate_score(evidence_id: str) -> Dict[str, Any]:
-    return scoring_engine.calculate_trust_score(evidence_id)
+    @staticmethod
+    def get_evidence_quality(
+        trust_score: float,
+        status: str,
+        verified_count: int = 0,
+        total_evidence: int = 1,
+        immutable_count: int = 0
+    ) -> Dict[str, Any]:
+        """
+        Calculate comprehensive evidence quality score
+        
+        Args:
+            trust_score: Average trust score (0-100)
+            status: Evidence status
+            verified_count: Number of verified evidence
+            total_evidence: Total evidence
+            immutable_count: Number of immutable evidence
+            
+        Returns:
+            Quality metrics
+        """
+        # Verification ratio
+        verification_ratio = verified_count / total_evidence if total_evidence > 0 else 0
+        
+        # Immutable ratio
+        immutable_ratio = immutable_count / total_evidence if total_evidence > 0 else 0
+        
+        # ============ NEW FORMULA ============
+        # Evidence Quality Index (EQI)
+        # 40% Integrity + 30% Trust + 20% Verification + 10% Freshness
+        integrity_score = immutable_ratio * 100
+        trust_component = trust_score * 0.3
+        verification_component = verification_ratio * 100 * 0.2
+        freshness_component = 80  # Default, bisa dihitung dari timestamp
+        
+        quality_score = (
+            (integrity_score * 0.4) +
+            (trust_score * 0.3) +
+            (verification_ratio * 100 * 0.2) +
+            (freshness_component * 0.1)
+        )
+        
+        return {
+            "quality_score": round(min(quality_score, 100), 1),
+            "verification_ratio": round(verification_ratio * 100, 1),
+            "integrity_score": round(integrity_score, 1),
+            "trust_component": round(trust_component, 1),
+            "verification_component": round(verification_component, 1),
+            "risk_level": "HIGH" if quality_score > 70 else "MEDIUM" if quality_score > 50 else "LOW"
+        }

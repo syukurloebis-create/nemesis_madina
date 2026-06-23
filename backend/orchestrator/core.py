@@ -8,11 +8,11 @@ import asyncio
 from typing import Dict, Any, Optional, Tuple  # <-- ADD THIS IMPORT
 from datetime import datetime
 
-from backend.orchestrator.registry import ExecutionRegistry
-from backend.orchestrator.watchdog import HealthWatchdog
-from backend.core.events.bus import EventBusV2, RoutingDecision
-from backend.orchestrator.scheduler_layer import SchedulerLayer
-from backend.orchestrator.models import ExecutionJob, JobStatus, ReplayResult, HealthReport, EventType
+from orchestrator.registry import ExecutionRegistry
+from orchestrator.watchdog import HealthWatchdog
+from core.events.bus import EventBusV2, RoutingDecision
+from orchestrator.scheduler_layer import SchedulerLayer
+from orchestrator.models import ExecutionJob, JobStatus, ReplayResult, HealthReport, EventType
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +107,7 @@ class NemesisOrchestrator:
         
         try:
             # TODO: Implement actual replay logic using existing ReplayEngine
-            from backend.core.events.replay_engine import ReplayEngine
+            from core.events.replay_engine import ReplayEngine
             replay_engine = ReplayEngine()
             
             # Register replay as a job first
@@ -209,7 +209,7 @@ class NemesisOrchestrator:
         """Handle trust mutation event"""
         # TODO: Integrate with existing trust engine
         logger.debug("Handling trust mutation for job %s", job.job_id)
-        # from backend.intelligence.core.trust_model import TrustModel
+        # from intelligence.core.trust_model import TrustModel
         # trust_model = TrustModel()
         # ... implementation
     

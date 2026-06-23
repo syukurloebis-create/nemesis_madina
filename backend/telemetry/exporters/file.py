@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
-from backend.telemetry.metrics import metrics_registry
+from telemetry.metrics import metrics_registry
 
 
 class FileExporter:

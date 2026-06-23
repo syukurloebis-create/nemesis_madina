@@ -8,7 +8,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlalchemy import text
-from backend.database import get_db
+from database import get_db
 import logging
 
 logging.basicConfig(level=logging.INFO)

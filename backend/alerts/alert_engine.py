@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 import logging
 from enum import Enum
 
-from backend.alerts.websocket_manager import ws_manager
-from backend.ml.anomaly_detector import ml_detector
+from alerts.websocket_manager import ws_manager
+from ml.anomaly_detector import ml_detector
 
 logger = logging.getLogger(__name__)
 

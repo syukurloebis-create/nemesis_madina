@@ -7,10 +7,10 @@ from datetime import datetime
 import logging
 logger = logging.getLogger(__name__)
 
-from backend.database import get_db
+from database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from backend.config import settings
+from config import settings
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 

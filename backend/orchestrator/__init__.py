@@ -3,12 +3,12 @@ NEMESIS V8+ Control Plane – Orchestrator Layer
 Execution Governance untuk Event-Driven Intelligence System
 """
 
-from backend.orchestrator.core import NemesisOrchestrator
-from backend.orchestrator.registry import ExecutionRegistry
-from backend.orchestrator.watchdog import HealthWatchdog
-from backend.core.events.bus import EventBusV2
-from backend.orchestrator.scheduler_layer import SchedulerLayer
-from backend.orchestrator.models import ExecutionJob, JobStatus, HealthReport, ReplayResult, EventType
+from orchestrator.core import NemesisOrchestrator
+from orchestrator.registry import ExecutionRegistry
+from orchestrator.watchdog import HealthWatchdog
+from core.events.bus import EventBusV2
+from orchestrator.scheduler_layer import SchedulerLayer
+from orchestrator.models import ExecutionJob, JobStatus, HealthReport, ReplayResult, EventType
 
 __all__ = [
     "NemesisOrchestrator",

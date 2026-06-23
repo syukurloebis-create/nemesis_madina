@@ -1,8 +1,8 @@
 ﻿from sqlalchemy import select
 from passlib.context import CryptContext
 
-from backend.security.models import User
-from backend.infrastructure.database import AsyncSessionLocal
+from security.models import User
+from infrastructure.database import AsyncSessionLocal
 
 pwd = CryptContext(
     schemes=["bcrypt"],

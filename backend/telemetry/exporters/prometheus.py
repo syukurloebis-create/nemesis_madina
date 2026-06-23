@@ -3,7 +3,7 @@ Prometheus Exporter - Export metrics to Prometheus
 """
 
 from typing import Dict, Any
-from backend.telemetry.metrics import metrics_registry
+from telemetry.metrics import metrics_registry
 
 
 class PrometheusExporter:

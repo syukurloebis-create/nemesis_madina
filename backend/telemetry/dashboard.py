@@ -4,7 +4,7 @@ Dashboard - Metrics Dashboard API
 
 from typing import Dict, Any, List
 from datetime import datetime, timedelta
-from backend.telemetry.metrics import metrics_registry
+from telemetry.metrics import metrics_registry
 
 
 class MetricsDashboard:

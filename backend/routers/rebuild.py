@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from backend.infrastructure.database import get_db
-from backend.security.auth import decode_token
+from infrastructure.database import get_db
+from security.auth import decode_token
 
 router = APIRouter(prefix="/rebuild", tags=["Event Rebuild"])
 

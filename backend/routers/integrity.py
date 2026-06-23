@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.infrastructure.database import get_db
-from backend.cases.event_store import get_case_events, compute_event_hash
+from infrastructure.database import get_db
+from cases.event_store import get_case_events, compute_event_hash
 
 router = APIRouter(prefix="/integrity", tags=["integrity"])
 

@@ -8,11 +8,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
-from backend.runtime.startup import startup_handler
-from backend.runtime.shutdown import shutdown_handler
-from backend.websocket.routes import router as ws_router
-from backend.api import v1_router
-from backend.graph import router as graph_router
+from runtime.startup import startup_handler
+from runtime.shutdown import shutdown_handler
+from websocket.routes import router as ws_router
+from api import v1_router
+from graph import router as graph_router
 
 
 @asynccontextmanager
@@ -54,7 +54,7 @@ app.include_router(graph_router)
 
 # Evidence API
 try:
-    from backend.evidence.api import router as evidence_router
+    from evidence.api import router as evidence_router
     app.include_router(evidence_router)
     print("✅ Evidence API registered at /evidence")
 except Exception as e:
@@ -62,7 +62,7 @@ except Exception as e:
 
 # Lineage Tracking API
 try:
-    from backend.lineage.api import router as lineage_router
+    from lineage.api import router as lineage_router
     app.include_router(lineage_router)
     print("✅ Lineage API registered at /lineage")
 except Exception as e:
@@ -70,7 +70,7 @@ except Exception as e:
 
 # Explainability API
 try:
-    from backend.explainability.api import router as explain_router
+    from explainability.api import router as explain_router
     app.include_router(explain_router)
     print("✅ Explainability API registered at /explain")
 except Exception as e:
@@ -78,7 +78,7 @@ except Exception as e:
 
 # Audit Log API
 try:
-    from backend.audit.api import router as audit_router
+    from audit.api import router as audit_router
     app.include_router(audit_router)
     print("✅ Audit API registered at /audit")
 except Exception as e:
@@ -86,7 +86,7 @@ except Exception as e:
 
 # Webhook API
 try:
-    from backend.webhooks.api import router as webhook_router
+    from webhooks.api import router as webhook_router
     app.include_router(webhook_router)
     print("✅ Webhook API registered at /webhooks")
 except Exception as e:
@@ -94,7 +94,7 @@ except Exception as e:
 
 # ML Detection API - FIXED
 try:
-    from backend.ml.api import router as ml_router
+    from ml.api import router as ml_router
     app.include_router(ml_router)
     print("✅ ML API registered at /ml")
 except Exception as e:
@@ -102,7 +102,7 @@ except Exception as e:
 
 # Findings API
 try:
-    from backend.findings.api import router as findings_router
+    from findings.api import router as findings_router
     app.include_router(findings_router)
     print("✅ Findings API registered at /findings")
 except Exception as e:
@@ -110,7 +110,7 @@ except Exception as e:
 
 # Investigation API
 try:
-    from backend.investigation.api.case_api import router as case_router
+    from investigation.api.case_api import router as case_router
     app.include_router(case_router)
     print("✅ Investigation API registered")
 except Exception as e:
@@ -176,7 +176,7 @@ async def root():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
-        "backend.app.main:app",
+        "app.main:app",
         host="0.0.0.0",
         port=8000,
         reload=True

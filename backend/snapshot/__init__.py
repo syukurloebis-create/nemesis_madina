@@ -1,3 +1,3 @@
-from backend.snapshot.models import Snapshot
+from snapshot.models import Snapshot
 
 __all__ = ['Snapshot']

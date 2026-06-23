@@ -2,19 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useDashboardData } from '../useDashboardData';
 
-// Mock dashboardApi dengan benar
-vi.mock('../../services/dashboardApi', () => ({
-  dashboardApi: {
-    getExecutive: vi.fn(),
-    getStats: vi.fn(),
-    getCases: vi.fn(),
-    getEvidenceStats: vi.fn(),
-    getRiskTrend: vi.fn(),
-    getKeyActors: vi.fn(),
-    getRecommendations: vi.fn(),
-    getRecommendationSummary: vi.fn(),
-    getGovernance: vi.fn(),
-    getProvenance: vi.fn(),
+// Mock dashboard service
+vi.mock('@/services', () => ({
+  dashboardService: {
+    getDashboardData: vi.fn(),
   },
 }));
 
@@ -26,6 +17,22 @@ describe('useDashboardData Hook', () => {
   });
 
   it('should fetch data successfully', async () => {
+    const { dashboardService } = await import('@/services');
+    const mockData = {
+      executive: { totalCases: 10 },
+      cases: [],
+      evidence: {},
+      graph: {},
+      fraud: {},
+      rup: {},
+      stats: {},
+      risk: {},
+      recommendations: [],
+      systemStatus: { isOnline: true },
+    };
+    
+    dashboardService.getDashboardData.mockResolvedValue(mockData);
+
     const { result } = renderHook(() => useDashboardData(mockCaseId));
 
     expect(result.current.loading).toBe(true);
@@ -35,28 +42,20 @@ describe('useDashboardData Hook', () => {
     });
 
     expect(result.current.error).toBeNull();
-    expect(result.current.data).toBeDefined();
+    expect(result.current.data).toEqual(mockData);
   });
 
   it('should handle API errors gracefully', async () => {
+    const { dashboardService } = await import('@/services');
+    dashboardService.getDashboardData.mockRejectedValue(new Error('Network error'));
+
     const { result } = renderHook(() => useDashboardData(mockCaseId));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
     });
 
-    // Error should be handled
-    expect(result.current.error).toBeDefined();
-  });
-
-  it('should handle partial data failure gracefully', async () => {
-    const { result } = renderHook(() => useDashboardData(mockCaseId));
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false);
-    });
-
-    // Should have data even if some calls fail
-    expect(result.current.data).toBeDefined();
+    expect(result.current.error).toBe('Network error');
+    expect(result.current.data).toBeNull();
   });
 });

@@ -8,9 +8,9 @@ import asyncio
 from typing import Optional, Callable, Awaitable
 from datetime import datetime
 
-from backend.orchestrator.registry import ExecutionRegistry
-from backend.orchestrator.watchdog import HealthWatchdog
-from backend.orchestrator.models import ExecutionJob, JobStatus
+from orchestrator.registry import ExecutionRegistry
+from orchestrator.watchdog import HealthWatchdog
+from orchestrator.models import ExecutionJob, JobStatus
 
 logger = logging.getLogger(__name__)
 

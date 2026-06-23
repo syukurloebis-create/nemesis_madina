@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
-from backend.infrastructure.database import AsyncSessionLocal
+from infrastructure.database import AsyncSessionLocal
 from sqlalchemy import text
 import uuid
 import os

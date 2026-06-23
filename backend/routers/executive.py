@@ -4,7 +4,7 @@ Executive Intelligence Router
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Dict, Any
 
-from backend.services.executive import ExecutiveIntelligence
+from services.executive import ExecutiveIntelligence
 
 # Create instance
 executive = ExecutiveIntelligence()

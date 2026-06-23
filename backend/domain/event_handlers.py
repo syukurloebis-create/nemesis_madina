@@ -1,7 +1,7 @@
 ﻿# backend/domain/event_handlers.py
 from typing import Any, Dict
-from backend.domain.event_registry import get_event_registry, handles, EventType
-from backend.domain.aggregates.case_aggregate import CaseAggregate, CaseStatus
+from domain.event_registry import get_event_registry, handles, EventType
+from domain.aggregates.case_aggregate import CaseAggregate, CaseStatus
 import logging
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ def handle_case_created(aggregate: CaseAggregate, data: Dict[str, Any]) -> None:
     
     priority_str = data.get("priority", "medium")
     try:
-        from backend.domain.aggregates.case_aggregate import CasePriority
+        from domain.aggregates.case_aggregate import CasePriority
         aggregate.priority = CasePriority(priority_str.lower())
     except ValueError:
         pass

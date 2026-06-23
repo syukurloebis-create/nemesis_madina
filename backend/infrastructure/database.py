@@ -2,13 +2,13 @@
 Compatibility database layer.
 
 Legacy modules import:
-    from backend.infrastructure.database import ...
+    from infrastructure.database import ...
 
 Current implementation lives in:
-    backend.database
+    database
 """
 
-from backend.database import (
+from database import (
     engine,
     Base,
     get_db,

@@ -3,7 +3,7 @@ Grafana Exporter - Format metrics for Grafana
 """
 
 from typing import Dict, Any, List
-from backend.telemetry.metrics import metrics_registry
+from telemetry.metrics import metrics_registry
 
 
 class GrafanaExporter:
@@ -53,7 +53,7 @@ class GrafanaExporter:
     
     def get_annotations(self) -> List[Dict[str, Any]]:
         """Get annotations for Grafana"""
-        from backend.telemetry.alerts import alert_manager
+        from telemetry.alerts import alert_manager
         
         alerts = alert_manager.get_alert_history(limit=50)
         

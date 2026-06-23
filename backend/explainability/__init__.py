@@ -1,6 +1,6 @@
 """Explainability Domain - AI Decision Explanation"""
 
-from backend.explainability.engine import ExplainabilityEngine, explainer
-from backend.explainability.api import router
+from explainability.engine import ExplainabilityEngine, explainer
+from explainability.api import router
 
 __all__ = ["ExplainabilityEngine", "explainer", "router"]

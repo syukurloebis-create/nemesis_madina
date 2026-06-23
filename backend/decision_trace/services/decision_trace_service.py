@@ -3,11 +3,11 @@
 from typing import Optional, List, Dict, Any
 from uuid import UUID
 
-from backend.decision_trace.models import (
+from decision_trace.models import (
     DecisionTrace, DecisionTraceCreate, ExplainabilityResult, DecisionType
 )
-from backend.decision_trace.repositories.decision_trace_repo import DecisionTraceRepository
-from backend.core.hash.hasher import UnifiedHasher
+from decision_trace.repositories.decision_trace_repo import DecisionTraceRepository
+from core.hash.hasher import UnifiedHasher
 
 
 class DecisionTraceService:

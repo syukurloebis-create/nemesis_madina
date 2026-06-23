@@ -3,7 +3,7 @@ Extractor Registry - Register and manage graph extractors
 """
 
 from typing import Dict, Any, Callable, List, Tuple, Optional
-from backend.graph.models import GraphNode, GraphEdge
+from graph.models import GraphNode, GraphEdge
 
 
 class ExtractorRegistry:
@@ -69,7 +69,7 @@ def extract_entity_created(event: Dict[str, Any]) -> Tuple[List[GraphNode], List
     # Create entity node
     entity_id = event.get("entity_id", event.get("id"))
     if entity_id:
-        from backend.graph.models import GraphNode, NodeType
+        from graph.models import GraphNode, NodeType
         node = GraphNode(
             id=entity_id,
             type=NodeType.ENTITY,
@@ -88,7 +88,7 @@ def extract_entity_created(event: Dict[str, Any]) -> Tuple[List[GraphNode], List
 @register_extractor("transaction.processed")
 def extract_transaction_processed(event: Dict[str, Any]) -> Tuple[List[GraphNode], List[GraphEdge]]:
     """Extract graph from transaction.processed event"""
-    from backend.graph.models import GraphNode, GraphEdge, NodeType, EdgeType
+    from graph.models import GraphNode, GraphEdge, NodeType, EdgeType
     
     nodes = []
     edges = []
@@ -136,7 +136,7 @@ def extract_transaction_processed(event: Dict[str, Any]) -> Tuple[List[GraphNode
 @register_extractor("user.action")
 def extract_user_action(event: Dict[str, Any]) -> Tuple[List[GraphNode], List[GraphEdge]]:
     """Extract graph from user.action event"""
-    from backend.graph.models import GraphNode, GraphEdge, NodeType, EdgeType
+    from graph.models import GraphNode, GraphEdge, NodeType, EdgeType
     
     nodes = []
     edges = []

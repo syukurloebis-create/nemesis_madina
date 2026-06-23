@@ -4,15 +4,15 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Optional
 from uuid import UUID
 
-from backend.investigation.services.case_service import InvestigationCaseService
-from backend.investigation.repositories.case_repo import InvestigationCaseRepository, FindingRepository
-from backend.investigation.models import InvestigationCase, InvestigationCaseCreate, Finding, FindingCreate
+from investigation.services.case_service import InvestigationCaseService
+from investigation.repositories.case_repo import InvestigationCaseRepository, FindingRepository
+from investigation.models import InvestigationCase, InvestigationCaseCreate, Finding, FindingCreate
 
 router = APIRouter(prefix="/cases", tags=["investigation-cases"])
 
 
 async def get_case_service():
-    from backend.infrastructure.database import get_pool
+    from infrastructure.database import get_pool
     pool = await get_pool()
     case_repo = InvestigationCaseRepository(pool)
     finding_repo = FindingRepository(pool)

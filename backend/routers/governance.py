@@ -4,7 +4,7 @@ Intelligence Governance Router
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Dict, Any
 
-from backend.services.governance import governance
+from services.governance import governance
 
 router = APIRouter(prefix="/api/v1/governance", tags=["governance"])
 

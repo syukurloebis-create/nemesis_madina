@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from backend.infrastructure.database import get_db
-from backend.finding.models import Finding
-from backend.finding.service import FindingService, AnomalyScoringService
-from backend.security.auth import decode_token
+from infrastructure.database import get_db
+from finding.models import Finding
+from finding.service import FindingService, AnomalyScoringService
+from security.auth import decode_token
 from pydantic import BaseModel
 from typing import Optional, List
 import logging

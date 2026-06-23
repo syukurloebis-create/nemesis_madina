@@ -6,7 +6,7 @@ from uuid import UUID
 import json
 from datetime import datetime
 
-from backend.graph.intelligence.models import (
+from graph.intelligence.models import (
     EntityNode, EntityEdge, RelationshipType, EntityType, NetworkMetrics
 )
 
@@ -156,7 +156,7 @@ class EntityEdgeRepository:
             return [row['entity_id'] for row in rows]
     
     def _row_to_edge(self, row) -> EntityEdge:
-        from backend.graph.intelligence.models import EntityEdge, RelationshipType
+        from graph.intelligence.models import EntityEdge, RelationshipType
         return EntityEdge(
             edge_id=row['edge_id'],
             source_id=row['source_id'],

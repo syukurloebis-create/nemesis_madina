@@ -8,8 +8,8 @@ from sqlalchemy import select, func
 import logging
 import time
 
-from backend.infrastructure.database import AsyncSessionLocal
-from backend.cases.models import Case
+from infrastructure.database import AsyncSessionLocal
+from cases.models import Case
 
 logger = logging.getLogger(__name__)
 

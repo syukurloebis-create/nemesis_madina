@@ -3,7 +3,7 @@
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 
-from backend.events.types import Event, EventType
+from events.types import Event, EventType
 
 
 class CaseState(BaseModel):

@@ -6,7 +6,7 @@ import json
 import csv
 from pathlib import Path
 from typing import Dict, Any, List
-from backend.lineage.tracker import LineageTracker
+from lineage.tracker import LineageTracker
 
 
 class LineageExporter:

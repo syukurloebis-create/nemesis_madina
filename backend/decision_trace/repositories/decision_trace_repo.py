@@ -6,7 +6,7 @@ from uuid import UUID
 import json
 from datetime import datetime
 
-from backend.decision_trace.models import DecisionTrace, DecisionType
+from decision_trace.models import DecisionTrace, DecisionType
 
 
 class DecisionTraceRepository:

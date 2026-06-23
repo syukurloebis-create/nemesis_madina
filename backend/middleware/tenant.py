@@ -61,7 +61,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
     async def _extract_tenant_from_token(self, token: str) -> Optional[str]:
         """Extract tenant from JWT token"""
         try:
-            from backend.security.auth import AuthService
+            from security.auth import AuthService
             payload = AuthService.decode_token(token)
             return payload.get("tenant_id")
         except Exception:

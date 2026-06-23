@@ -3,8 +3,8 @@ Lineage Verifier - Verify Lineage Integrity
 """
 
 from typing import List, Dict, Any, Tuple
-from backend.lineage.tracker import LineageTracker, LineageNode
-from backend.evidence.hashing import EvidenceHasher
+from lineage.tracker import LineageTracker, LineageNode
+from evidence.hashing import EvidenceHasher
 
 
 class LineageVerifier:

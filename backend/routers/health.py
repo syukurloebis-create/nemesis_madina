@@ -1,15 +1,15 @@
 from fastapi import APIRouter
 
-router = APIRouter(tags=["health"])
+router = APIRouter(prefix="/api/v1/health", tags=["Health"])
 
-@router.get("/health")
+@router.get("/")
 async def health():
-    return {"status": "healthy", "service": "NEMESIS V8"}
+    return {"status": "healthy", "service": "nemesis-api"}
 
-@router.get("/health/runtime")
-async def health_runtime():
-    return {
-        "status": "healthy",
-        "runtime": "active",
-        "timestamp": "2026-06-02T00:00:00Z"
-    }
+@router.get("/live")
+async def liveness():
+    return {"status": "alive"}
+
+@router.get("/ready")
+async def readiness():
+    return {"status": "ready"}

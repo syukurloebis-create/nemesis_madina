@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Integer, DateTime, Text, Float, Enum as SQLEnum
 from sqlalchemy.sql import func
-from backend.database import Base
+from database import Base
 import enum
 import uuid
 

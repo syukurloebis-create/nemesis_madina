@@ -3,10 +3,10 @@
 from typing import Optional
 from fastapi import Depends
 
-from backend.evidence import EvidenceRegistry
-from backend.websocket import ConnectionManager
-from backend.core.events import EventBus
-from backend.graph import RelationshipGraph
+from evidence import EvidenceRegistry
+from websocket import ConnectionManager
+from core.events import EventBus
+from graph import RelationshipGraph
 
 
 _evidence_registry = None

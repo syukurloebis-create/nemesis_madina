@@ -5,10 +5,10 @@ Orchestrator untuk Risk + Trust + Confidence + Explainability
 
 from typing import Dict
 
-from backend.intelligence.core.risk_model import RiskModel
-from backend.intelligence.core.confidence_model import ConfidenceModel
-from backend.intelligence.core.explainability_engine import ExplainabilityEngine
-from backend.intelligence.legal.court_readiness import CourtReadiness
+from intelligence.core.risk_model import RiskModel
+from intelligence.core.confidence_model import ConfidenceModel
+from intelligence.core.explainability_engine import ExplainabilityEngine
+from intelligence.legal.court_readiness import CourtReadiness
 
 
 class IntelligenceEngine:

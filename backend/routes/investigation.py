@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.database import get_db
+from database import get_db
 from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/api/v1/investigation", tags=["investigation"])

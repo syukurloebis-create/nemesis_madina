@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Dict, Any
 from datetime import datetime
 
-from backend.security.dependencies import get_current_active_user
-from backend.security.models import User
+from security.dependencies import get_current_active_user
+from security.models import User
 
 router = APIRouter(prefix="/lineage", tags=["lineage"])
 

@@ -2,7 +2,7 @@
 Simple WebSocket Handler - Uses ConnectionManager
 """
 
-from backend.websocket.manager import ConnectionManager
+from websocket.manager import ConnectionManager
 
 manager = ConnectionManager()
 

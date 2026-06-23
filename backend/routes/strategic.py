@@ -6,7 +6,7 @@ from sqlalchemy import text
 from datetime import datetime, timedelta
 import json
 
-from backend.database import get_db
+from database import get_db
 
 router = APIRouter(prefix="/strategic", tags=["strategic"])
 

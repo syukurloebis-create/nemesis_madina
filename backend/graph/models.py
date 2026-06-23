@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Integer, DateTime, Float, JSON, Text
 from sqlalchemy.sql import func
-from backend.database import Base
+from database import Base
 import uuid
 
 class GraphEntity(Base):

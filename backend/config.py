@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     # Security - WITH DEFAULT FOR DEVELOPMENT
     SECRET_KEY: str = os.getenv(
         "SECRET_KEY",
-        "nemesis-v8-secret-key-2026-for-development-only"  # Default untuk development
+        "nemesis-v8-secret-key-2026-for-development-only"
     )
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     JWT_EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_MINUTES", "30"))
@@ -63,8 +63,16 @@ class Settings(BaseSettings):
     SNAPSHOT_INTERVAL: int = int(os.getenv("SNAPSHOT_INTERVAL", "1000"))
     REBUILD_PARALLEL_WORKERS: int = int(os.getenv("REBUILD_PARALLEL_WORKERS", "4"))
     
-    class Config:
-        env_file = ".env"
+    # API Version
+    API_VERSION: str = os.getenv("API_VERSION", "v1")
+    API_PREFIX: str = os.getenv("API_PREFIX", "/api/v1")
+    
+    model_config = {
+        "env_file": ".env",
+        "extra": "ignore",
+        "case_sensitive": False
+    }
+
 
 settings = Settings()
 

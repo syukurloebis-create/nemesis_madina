@@ -9,8 +9,8 @@ from typing import Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text
 
-from backend.services.replay_service import ReplayService
-from backend.snapshot.models import Snapshot
+from services.replay_service import ReplayService
+from snapshot.models import Snapshot
 
 
 class SnapshotService:

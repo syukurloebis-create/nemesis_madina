@@ -1,6 +1,6 @@
 import time
 from starlette.middleware.base import BaseHTTPMiddleware
-from backend.telemetry.metrics import (
+from telemetry.metrics import (
     http_requests_total,
     http_request_duration_seconds,
     http_requests_in_progress,

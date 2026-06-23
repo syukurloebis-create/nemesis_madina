@@ -7,7 +7,7 @@ import uuid
 import json
 from datetime import datetime
 
-from backend.database import get_db
+from database import get_db
 
 # Buat router
 router = APIRouter(prefix="/workflow", tags=["workflow"])

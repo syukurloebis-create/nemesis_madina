@@ -3,7 +3,7 @@ Schema Migration - Migrate Data Between Schema Versions
 """
 
 from typing import Dict, Any, List, Optional
-from backend.schema.registry import SchemaRegistry, SchemaVersion
+from schema.registry import SchemaRegistry, SchemaVersion
 
 
 class SchemaMigrator:

@@ -3,10 +3,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
 
-from backend.database import get_db
+from database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.services.custody_service import CustodyService
-from backend.config import settings
+from services.custody_service import CustodyService
+from config import settings
 
 router = APIRouter(prefix="/custody", tags=["custody"])
 

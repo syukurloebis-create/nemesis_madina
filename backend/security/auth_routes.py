@@ -8,8 +8,8 @@ import jwt
 from datetime import datetime, timedelta
 import uuid
 
-from backend.database import get_db
-from backend.config import settings
+from database import get_db
+from config import settings
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 

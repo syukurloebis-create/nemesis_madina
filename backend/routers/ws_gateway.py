@@ -1,6 +1,6 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from backend.websocket.manager import manager
-from backend.websocket.ws_event_types import WSEvent
+from websocket.manager import manager
+from websocket.ws_event_types import WSEvent
 
 router = APIRouter()
 

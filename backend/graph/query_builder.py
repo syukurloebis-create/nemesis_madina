@@ -3,7 +3,7 @@ Query Builder - Build complex graph queries
 """
 
 from typing import List, Dict, Any, Optional, Set, Tuple
-from backend.graph.relationship_graph import RelationshipGraph
+from graph.relationship_graph import RelationshipGraph
 
 
 class QueryBuilder:

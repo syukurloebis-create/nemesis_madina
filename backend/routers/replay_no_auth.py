@@ -5,8 +5,8 @@ from sqlalchemy import text
 from typing import Optional
 from datetime import datetime
 
-from backend.infrastructure.database import get_db
-from backend.services.replay_service import ReplayService
+from infrastructure.database import get_db
+from services.replay_service import ReplayService
 
 router = APIRouter(prefix="/replay", tags=["Event Replay"])
 

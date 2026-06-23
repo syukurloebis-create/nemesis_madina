@@ -1,5 +1,5 @@
 from fastapi import APIRouter, WebSocket
-from backend.websocket.observability import ws_observability
+from websocket.observability import ws_observability
 
 router = APIRouter()
 

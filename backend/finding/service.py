@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from backend.finding.models import Finding
+from finding.models import Finding
 import uuid
 import logging
 

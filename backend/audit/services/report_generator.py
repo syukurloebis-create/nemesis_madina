@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional
 from uuid import UUID
 
-from backend.audit.models import (
+from audit.models import (
     AuditReport, AuditReportRequest, ReportType, ReportFormat,
     AuditFinding, EvidenceMatrix, AuditTimeline
 )

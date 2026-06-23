@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from uuid import UUID
 
-from backend.legal.models import (
+from legal.models import (
     DigitalEvidencePackage, IntegrityCertificate, ChainOfCustodyRecord,
     LegalStatus, EvidenceFormat, ForensicExportRequest
 )

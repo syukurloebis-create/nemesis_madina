@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 from uuid import UUID, uuid4
 
-from backend.domain.value_objects import CaseStatus, CasePriority
+from domain.value_objects import CaseStatus, CasePriority
 
 
 @dataclass

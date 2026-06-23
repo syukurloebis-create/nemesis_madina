@@ -6,7 +6,7 @@ from uuid import UUID
 import json
 import secrets
 
-from backend.federation.models import FederationTenant, InstitutionType
+from federation.models import FederationTenant, InstitutionType
 
 
 class TenantRepository:

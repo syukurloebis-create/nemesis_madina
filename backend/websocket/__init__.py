@@ -10,12 +10,12 @@ Exports:
     - WebSocketObservability: Metrics dan monitoring
 """
 
-from backend.websocket.manager import ConnectionManager
-from backend.websocket.connection import WebSocketConnection
-from backend.websocket.broadcaster import EventBroadcaster
-from backend.websocket.observability import WebSocketObservability
-from backend.websocket.protocol import MessageProtocol
-from backend.websocket.recovery import RecoveryHandler
+from websocket.manager import ConnectionManager
+from websocket.connection import WebSocketConnection
+from websocket.broadcaster import EventBroadcaster
+from websocket.observability import WebSocketObservability
+from websocket.protocol import MessageProtocol
+from websocket.recovery import RecoveryHandler
 
 __all__ = [
     'ConnectionManager',

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Query, Response
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.database import get_db
+from database import get_db
 import json
 from datetime import datetime
 import csv

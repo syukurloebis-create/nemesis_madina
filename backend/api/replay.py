@@ -2,9 +2,9 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.infrastructure.database import get_db
-from backend.events.event_store import EventStore
-from backend.cases.aggregate import CaseAggregate
+from infrastructure.database import get_db
+from events.event_store import EventStore
+from cases.aggregate import CaseAggregate
 import uuid
 
 router = APIRouter(prefix="/api/v1/replay", tags=["replay"])

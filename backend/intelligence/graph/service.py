@@ -10,12 +10,12 @@ import uuid
 import hashlib
 import logging
 
-from backend.intelligence.graph.models import CollusionDetection
-from backend.intelligence.graph.extractors.entity_extractor import EntityExtractor
-from backend.intelligence.graph.graph_store import graph_store
-from backend.cases.event_store import get_case_events
-from backend.cases.service import CaseService
-from backend.telemetry.metrics import collusion_detections_total
+from intelligence.graph.models import CollusionDetection
+from intelligence.graph.extractors.entity_extractor import EntityExtractor
+from intelligence.graph.graph_store import graph_store
+from cases.event_store import get_case_events
+from cases.service import CaseService
+from telemetry.metrics import collusion_detections_total
 
 logger = logging.getLogger(__name__)
 

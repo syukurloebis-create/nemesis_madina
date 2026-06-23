@@ -1,62 +1,39 @@
-/**
- * Evidence API Service
- */
-
-import { apiClient } from './index';
-
-export interface Evidence {
-  id: string;
-  case_id: string;
-  filename: string;
-  file_type?: string;
-  file_size?: number;
-  file_hash?: string;
-  status: 'pending' | 'verified' | 'rejected';
-  verified_at?: string;
-  uploaded_at: string;
-  updated_at: string;
-}
-
-export interface EvidenceStats {
-  total: number;
-  pending: number;
-  verified: number;
-  rejected: number;
-  trust_score?: number;
-}
+import { apiClient } from './client';
 
 export const evidenceApi = {
-  /**
-   * Get evidence for a case
-   */
-  getByCase: async (caseId: string): Promise<Evidence[]> => {
-    try {
-      const response = await apiClient.get(`/api/v1/evidence/by-case/${caseId}`);
-      return response.data;
-    } catch (error) {
-      console.warn(`[Evidence API] Failed to fetch evidence for ${caseId}:`, error);
-      return [];
-    }
-  },
-
-  /**
-   * Get evidence statistics
-   */
-  getStats: async (): Promise<EvidenceStats> => {
-    try {
-      const response = await apiClient.get('/api/v1/evidence/stats');
-      return response.data;
-    } catch (error) {
-      console.warn('[Evidence API] Failed to fetch stats:', error);
-      return {
-        total: 0,
-        pending: 0,
-        verified: 0,
-        rejected: 0,
-        trust_score: 0,
-      };
-    }
-  },
+  // Get evidence by case
+  getEvidenceByCase: (caseId: string) => 
+    apiClient.get(`/api/v1/evidence/case/${caseId}`),
+  
+  // Get evidence stats
+  getStats: () => 
+    apiClient.get('/api/v1/evidence/stats'),
+  
+  // Get evidence graph
+  getGraph: (caseId: string) => 
+    apiClient.get(`/api/v1/evidence/graph/${caseId}`),
+  
+  // Get evidence metrics
+  getMetrics: () => 
+    apiClient.get('/api/v1/evidence/metrics'),
+  
+  // Get evidence quality
+  getQuality: () => 
+    apiClient.get('/api/v1/evidence/quality'),
+  
+  // Upload evidence
+  upload: (data: FormData) => 
+    apiClient.post('/api/v1/evidence/upload', data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  
+  // Verify evidence
+  verify: (evidenceId: string) => 
+    apiClient.post(`/api/v1/evidence/${evidenceId}/verify`),
+  
+  // Reject evidence
+  reject: (evidenceId: string) => 
+    apiClient.post(`/api/v1/evidence/${evidenceId}/reject`),
 };
 
 export default evidenceApi;

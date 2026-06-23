@@ -4,7 +4,7 @@ Schema Validator - Validate Data Against Schemas
 """
 
 from typing import Dict, Any, List, Tuple, Optional
-from backend.schema.registry import SchemaRegistry, SchemaVersion
+from schema.registry import SchemaRegistry, SchemaVersion
 
 
 class SchemaValidator:

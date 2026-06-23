@@ -9,7 +9,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from backend.audit.logger import AuditLogger
+from audit.logger import AuditLogger
 
 router = APIRouter(prefix="/audit", tags=["audit"])
 

@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends, Header
 from typing import List, Optional
 from uuid import UUID
 
-from backend.federation.models import FederationTenant, CrossTenantQuery, NationalRiskRegistry
+from federation.models import FederationTenant, CrossTenantQuery, NationalRiskRegistry
 
 router = APIRouter(prefix="/federation", tags=["federation"])
 

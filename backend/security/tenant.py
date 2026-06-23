@@ -34,8 +34,8 @@ class TenantIsolationMiddleware(BaseHTTPMiddleware):
                 # Jika institution_id tidak ada di token, coba dari database
                 if not institution_id and user_id:
                     from sqlalchemy import select
-                    from backend.infrastructure.database import AsyncSessionLocal
-                    from backend.security.models import User
+                    from infrastructure.database import AsyncSessionLocal
+                    from security.models import User
                     
                     async with AsyncSessionLocal() as session:
                         result = await session.execute(

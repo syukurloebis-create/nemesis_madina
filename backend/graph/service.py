@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from backend.graph.models import GraphEntity, GraphRelationship, CollusionDetection
+from graph.models import GraphEntity, GraphRelationship, CollusionDetection
 import uuid
 import logging
 

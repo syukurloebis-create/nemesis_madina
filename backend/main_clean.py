@@ -6,24 +6,24 @@ import json
 import asyncio
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, REGISTRY
 
-from backend.infrastructure.database import init_db, close_db
-from backend.metrics import router as metrics_router
-from backend.trust_metrics import router as trust_metrics_router
-from backend.replay_metrics import router as replay_metrics_router
-from backend.risk_metrics import router as risk_metrics_router
-from backend.alert_engine import router as alert_router
-from backend.cases.api import router as cases_router
-from backend.security import auth_routes
-from backend.routers.snapshot import router as snapshot_router
-from backend.routers.integrity import router as integrity_router
-from backend.routers.historical import router as historical_router
-from backend.routers.reports import router as reports_router
-from backend.routers.upload_processor import router as upload_processor_router
-from backend.routers.vendors import router as vendors_router
-from backend.routers.governance import router as governance_router
-from backend.routers.evidence import router as evidence_router
-from backend.routers.graph import router as graph_router
-from backend.routers.finding import router as finding_router
+from infrastructure.database import init_db, close_db
+from metrics import router as metrics_router
+from trust_metrics import router as trust_metrics_router
+from replay_metrics import router as replay_metrics_router
+from risk_metrics import router as risk_metrics_router
+from alert_engine import router as alert_router
+from cases.api import router as cases_router
+from security import auth_routes
+from routers.snapshot import router as snapshot_router
+from routers.integrity import router as integrity_router
+from routers.historical import router as historical_router
+from routers.reports import router as reports_router
+from routers.upload_processor import router as upload_processor_router
+from routers.vendors import router as vendors_router
+from routers.governance import router as governance_router
+from routers.evidence import router as evidence_router
+from routers.graph import router as graph_router
+from routers.finding import router as finding_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -109,7 +109,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             await websocket.close(code=1008, reason="Auth required")
             return
         token = auth_data.get("token")
-        from backend.security.auth import decode_token
+        from security.auth import decode_token
         payload = decode_token(token)
         if not payload:
             await websocket.close(code=1008, reason="Invalid token")
@@ -152,9 +152,9 @@ async def root():
 
 @app.get("/api/dashboard/summary")
 async def dashboard_summary():
-    from backend.infrastructure.database import AsyncSessionLocal
+    from infrastructure.database import AsyncSessionLocal
     from sqlalchemy import select, func
-    from backend.cases.models import Case
+    from cases.models import Case
     async with AsyncSessionLocal() as session:
         result = await session.execute(select(func.count()).select_from(Case))
         total_cases = result.scalar() or 0

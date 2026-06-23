@@ -1,7 +1,7 @@
 """Explainability Engine - Generate human-readable explanations"""
 
 from typing import Dict, Any, List
-from backend.decision_trace.models import DecisionTrace, ExplainabilityResult
+from decision_trace.models import DecisionTrace, ExplainabilityResult
 
 
 class ExplainabilityEngine:

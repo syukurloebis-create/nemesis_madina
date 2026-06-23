@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from typing import List, Dict, Any
 
-from backend.services.copilot import copilot
+from services.copilot import copilot
 
 router = APIRouter(prefix="/api/v1/copilot", tags=["copilot"])
 

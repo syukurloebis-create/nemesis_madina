@@ -1,8 +1,8 @@
 # DEPRECATED - Use backend.evidence instead
 import warnings
 warnings.warn(
-    "This module is deprecated. Use 'from backend.evidence import ...'",
+    "This module is deprecated. Use 'from evidence import ...'",
     DeprecationWarning,
     stacklevel=2
 )
-from backend.evidence import *
+from evidence import *

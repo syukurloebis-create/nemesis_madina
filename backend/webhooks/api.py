@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 
-from backend.webhooks.manager import webhook_manager
+from webhooks.manager import webhook_manager
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 

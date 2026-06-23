@@ -3,8 +3,8 @@ from typing import List, Optional, Dict, Any
 from uuid import UUID
 from datetime import datetime
 
-from backend.decision_trace.models import DecisionTrace, DecisionTraceCreate, DecisionType
-from backend.decision_trace.repository import DecisionTraceRepository
+from decision_trace.models import DecisionTrace, DecisionTraceCreate, DecisionType
+from decision_trace.repository import DecisionTraceRepository
 
 
 class DecisionTraceService:

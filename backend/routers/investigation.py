@@ -1,159 +1,313 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
-from backend.database import get_db
-from datetime import datetime, timedelta
+"""
+Investigasi Router - NEMESIS V8+
+"""
 
-router = APIRouter(prefix="/api/v1/investigation", tags=["investigation"])
+from fastapi import APIRouter, HTTPException, Query
+from typing import List, Optional
+from datetime import datetime
+from pydantic import BaseModel
+import uuid
 
-@router.get("/cases")
-async def get_investigation_cases(db: AsyncSession = Depends(get_db)):
-    """Get all investigation cases with priority"""
-    try:
-        result = await db.execute(text("""
-            SELECT 
-                c.id,
-                c.title,
-                c.risk_score,
-                c.risk_level,
-                c.workflow_stage,
-                c.status,
-                c.created_at,
-                c.assigned_to,
-                COUNT(e.id) as evidence_count,
-                COUNT(CASE WHEN e.status = 'verified' THEN 1 END) as verified_count,
-                (
-                    SELECT COUNT(*) 
-                    FROM recommendations r 
-                    WHERE r.case_id::text = c.id::text 
-                    AND r.status = 'PENDING'
-                ) as pending_recommendations
-            FROM cases c
-            LEFT JOIN evidence e ON c.id::text = e.case_id
-            GROUP BY c.id
-            ORDER BY c.risk_score DESC, c.created_at ASC
-        """))
-        rows = result.fetchall()
-        return [
-            {
-                "id": row[0],
-                "title": row[1],
-                "risk_score": float(row[2]) if row[2] else 0,
-                "risk_level": row[3] or "LOW",
-                "workflow_stage": row[4] or "REPORTED",
-                "status": row[5] or "OPEN",
-                "created_at": row[6].isoformat() if row[6] else None,
-                "assigned_to": row[7],
-                "evidence_count": row[8] or 0,
-                "verified_count": row[9] or 0,
-                "pending_recommendations": row[10] or 0,
-                "sla_status": get_sla_status(row[4], row[6])
-            }
-            for row in rows
-        ]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# ============================================
+# ROUTER - TANPA PREFIX (sudah di main.py)
+# ============================================
+router = APIRouter(prefix="/api/v1/investigation", tags=["Investigation"])
+
+print("[Router] Investigation router initialized with prefix: /api/v1/investigation")
+
+# ============================================
+# MODELS
+# ============================================
+
+class InvestigationBase(BaseModel):
+    case_id: str
+    title: str
+    description: Optional[str] = None
+    priority: str = "MEDIUM"
+    assigned_to: Optional[str] = None
+    department: Optional[str] = None
+    estimated_value: Optional[str] = None
+    tags: Optional[List[str]] = []
+
+class InvestigationCreate(InvestigationBase):
+    pass
+
+class InvestigationUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+    priority: Optional[str] = None
+    progress: Optional[int] = None
+    assigned_to: Optional[str] = None
+    department: Optional[str] = None
+    estimated_value: Optional[str] = None
+    tags: Optional[List[str]] = None
+
+class StatusUpdate(BaseModel):
+    status: str
+    progress: int
+
+class EscalateRequest(BaseModel):
+    reason: str
+    target_level: str
+
+# ============================================
+# MOCK DATA
+# ============================================
+
+mock_investigations = {
+    "446e216d-eb0e-487e-8e6b-ec943468ea20": [
+        {
+            "id": "inv-001",
+            "case_id": "446e216d-eb0e-487e-8e6b-ec943468ea20",
+            "title": "Investigasi Vendor X - Kolusi",
+            "description": "Deteksi pola kolusi antara Vendor X dengan pegawai internal",
+            "status": "IN_PROGRESS",
+            "priority": "HIGH",
+            "assigned_to": "Tim Investigasi Fraud",
+            "department": "Pengadaan",
+            "estimated_value": "Rp 3.2M",
+            "tags": ["Kolusi", "Vendor", "Internal"],
+            "progress": 65,
+            "evidence_count": 12,
+            "witnesses_count": 3,
+            "risk_score": 85,
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat(),
+            "created_by": "system"
+        },
+        {
+            "id": "inv-002",
+            "case_id": "446e216d-eb0e-487e-8e6b-ec943468ea20",
+            "title": "Investigasi Transaksi Mencurigakan",
+            "description": "Pola transaksi tidak wajar pada pengadaan IT",
+            "status": "REVIEW",
+            "priority": "MEDIUM",
+            "assigned_to": "Tim Analisis Keuangan",
+            "department": "IT",
+            "estimated_value": "Rp 2.5M",
+            "tags": ["Transaksi", "Keuangan", "IT"],
+            "progress": 85,
+            "evidence_count": 8,
+            "witnesses_count": 2,
+            "risk_score": 65,
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat(),
+            "created_by": "system"
+        },
+        {
+            "id": "inv-003",
+            "case_id": "446e216d-eb0e-487e-8e6b-ec943468ea20",
+            "title": "Investigasi Pengadaan Fiktif",
+            "description": "Indikasi pengadaan fiktif pada proyek infrastruktur",
+            "status": "PENDING",
+            "priority": "CRITICAL",
+            "assigned_to": "Tim Khusus Anti-Korupsi",
+            "department": "Infrastruktur",
+            "estimated_value": "Rp 5M",
+            "tags": ["Fiktif", "Infrastruktur", "Korupsi"],
+            "progress": 20,
+            "evidence_count": 5,
+            "witnesses_count": 1,
+            "risk_score": 92,
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat(),
+            "created_by": "system"
+        },
+        {
+            "id": "inv-004",
+            "case_id": "446e216d-eb0e-487e-8e6b-ec943468ea20",
+            "title": "Investigasi Vendor Y - Konflik Kepentingan",
+            "description": "Deteksi konflik kepentingan antara Vendor Y dengan pejabat pengadaan",
+            "status": "PENDING",
+            "priority": "HIGH",
+            "assigned_to": "Tim Investigasi Fraud",
+            "department": "Pengadaan",
+            "estimated_value": "Rp 1.8M",
+            "tags": ["Konflik", "Vendor", "Pejabat"],
+            "progress": 10,
+            "evidence_count": 3,
+            "witnesses_count": 0,
+            "risk_score": 78,
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat(),
+            "created_by": "system"
+        },
+        {
+            "id": "inv-005",
+            "case_id": "446e216d-eb0e-487e-8e6b-ec943468ea20",
+            "title": "Investigasi Mark-up Harga",
+            "description": "Indikasi mark-up harga pada paket pengadaan jasa konsultan",
+            "status": "COMPLETED",
+            "priority": "MEDIUM",
+            "assigned_to": "Tim Analisis Keuangan",
+            "department": "Konsultan",
+            "estimated_value": "Rp 800Jt",
+            "tags": ["Mark-up", "Konsultan", "Selesai"],
+            "progress": 100,
+            "evidence_count": 15,
+            "witnesses_count": 4,
+            "risk_score": 55,
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat(),
+            "created_by": "system"
+        }
+    ]
+}
+
+# ============================================
+# ENDPOINTS
+# ============================================
 
 @router.get("/stats")
-async def get_investigation_stats(db: AsyncSession = Depends(get_db)):
+async def get_stats(case_id: str = Query(...)):
     """Get investigation statistics"""
-    try:
-        result = await db.execute(text("SELECT COUNT(*) FROM cases WHERE status = 'OPEN'"))
-        total_cases = result.scalar() or 0
-        
-        result = await db.execute(text("""
-            SELECT COUNT(*) FROM cases 
-            WHERE workflow_stage IN ('SCREENING', 'ASSESSMENT', 'INVESTIGATION', 'FINDING_REVIEW')
-            AND status = 'OPEN'
-        """))
-        active = result.scalar() or 0
-        
-        result = await db.execute(text("""
-            SELECT COUNT(*) FROM cases 
-            WHERE workflow_stage IN ('SCREENING', 'ASSESSMENT', 'INVESTIGATION')
-            AND created_at < NOW() - INTERVAL '14 days'
-            AND status = 'OPEN'
-        """))
-        overdue = result.scalar() or 0
-        
-        result = await db.execute(text("""
-            SELECT COUNT(*) FROM cases 
-            WHERE risk_score >= 80 AND status = 'OPEN'
-        """))
-        critical = result.scalar() or 0
-        
+    print(f"[Router] GET /stats for case: {case_id}")
+    
+    if case_id not in mock_investigations:
         return {
-            "total_cases": total_cases,
-            "active": active,
-            "overdue": overdue,
-            "critical": critical
+            "total": 0,
+            "in_progress": 0,
+            "review": 0,
+            "completed": 0,
+            "pending": 0,
+            "escalated": 0
         }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/risk-trend")
-async def get_risk_trend(
-    days: int = Query(30, ge=7, le=90),
-    db: AsyncSession = Depends(get_db)
-):
-    """Get risk trend data for charts"""
-    try:
-        # Build query with hardcoded interval using f-string
-        # This avoids parameter binding issues with INTERVAL
-        query = text(f"""
-            SELECT 
-                DATE(created_at) as date,
-                COUNT(*) as total_cases,
-                COALESCE(ROUND(AVG(risk_score), 2), 0) as avg_risk,
-                COALESCE(MAX(risk_score), 0) as max_risk,
-                COUNT(CASE WHEN risk_score >= 80 THEN 1 END) as critical_count,
-                COUNT(CASE WHEN risk_score >= 60 AND risk_score < 80 THEN 1 END) as high_count
-            FROM cases
-            WHERE created_at >= NOW() - INTERVAL '{days} days'
-            GROUP BY DATE(created_at)
-            ORDER BY date ASC
-        """)
-        
-        result = await db.execute(query)
-        rows = result.fetchall()
-        
-        return [
-            {
-                "date": row[0].isoformat() if row[0] else None,
-                "total_cases": row[1] or 0,
-                "avg_risk": float(row[2]) if row[2] else 0,
-                "max_risk": float(row[3]) if row[3] else 0,
-                "critical_count": row[4] or 0,
-                "high_count": row[5] or 0
-            }
-            for row in rows
-        ]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-def get_sla_status(stage: str, created_at):
-    """Calculate SLA status based on stage"""
-    if not stage or not created_at:
-        return "UNKNOWN"
     
-    days_old = (datetime.now() - created_at).days
+    invs = mock_investigations[case_id]
+    return {
+        "total": len(invs),
+        "in_progress": len([i for i in invs if i["status"] == "IN_PROGRESS"]),
+        "review": len([i for i in invs if i["status"] == "REVIEW"]),
+        "completed": len([i for i in invs if i["status"] == "COMPLETED"]),
+        "pending": len([i for i in invs if i["status"] == "PENDING"]),
+        "escalated": len([i for i in invs if i["status"] == "ESCALATED"])
+    }
+
+@router.get("/case/{case_id}")
+async def get_investigations(case_id: str):
+    """Get all investigations for a case"""
+    print(f"[Router] GET /case/{case_id}")
     
-    if stage in ['REPORTED', 'SCREENING']:
-        if days_old > 7:
-            return "OVERDUE"
-        elif days_old > 5:
-            return "AT_RISK"
-        else:
-            return "ON_TRACK"
-    elif stage in ['ASSESSMENT', 'INVESTIGATION']:
-        if days_old > 14:
-            return "OVERDUE"
-        elif days_old > 10:
-            return "AT_RISK"
-        else:
-            return "ON_TRACK"
-    else:
-        if days_old > 7:
-            return "OVERDUE"
-        else:
-            return "ON_TRACK"
+    if case_id not in mock_investigations:
+        return []
+    return mock_investigations[case_id]
+
+@router.get("/{investigation_id}")
+async def get_investigation(investigation_id: str):
+    """Get investigation by ID"""
+    print(f"[Router] GET /{investigation_id}")
+    
+    for case_id, invs in mock_investigations.items():
+        for inv in invs:
+            if inv["id"] == investigation_id:
+                return inv
+    raise HTTPException(status_code=404, detail="Investigation not found")
+
+@router.post("/")
+async def create_investigation(data: InvestigationCreate):
+    """Create new investigation"""
+    print(f"[Router] POST / with data: {data}")
+    
+    inv_id = f"inv-{uuid.uuid4().hex[:8]}"
+    
+    new_inv = {
+        "id": inv_id,
+        "case_id": data.case_id,
+        "title": data.title,
+        "description": data.description,
+        "status": "PENDING",
+        "priority": data.priority,
+        "assigned_to": data.assigned_to,
+        "department": data.department or "Umum",
+        "estimated_value": data.estimated_value or "Rp 0",
+        "tags": data.tags or [],
+        "progress": 0,
+        "evidence_count": 0,
+        "witnesses_count": 0,
+        "risk_score": 0,
+        "created_at": datetime.now().isoformat(),
+        "updated_at": datetime.now().isoformat(),
+        "created_by": "system"
+    }
+    
+    if data.case_id not in mock_investigations:
+        mock_investigations[data.case_id] = []
+    mock_investigations[data.case_id].append(new_inv)
+    
+    return new_inv
+
+@router.patch("/{investigation_id}/status")
+async def update_status(investigation_id: str, data: StatusUpdate):
+    """Update investigation status"""
+    print(f"[Router] PATCH /{investigation_id}/status with data: {data}")
+    
+    for case_id, invs in mock_investigations.items():
+        for idx, inv in enumerate(invs):
+            if inv["id"] == investigation_id:
+                inv["status"] = data.status
+                inv["progress"] = data.progress
+                inv["updated_at"] = datetime.now().isoformat()
+                mock_investigations[case_id][idx] = inv
+                return {"message": "Status updated", "status": data.status, "progress": data.progress}
+    raise HTTPException(status_code=404, detail="Investigation not found")
+
+@router.post("/{investigation_id}/escalate")
+async def escalate_investigation(investigation_id: str, data: EscalateRequest):
+    """Escalate investigation"""
+    print(f"[Router] POST /{investigation_id}/escalate with data: {data}")
+    
+    for case_id, invs in mock_investigations.items():
+        for idx, inv in enumerate(invs):
+            if inv["id"] == investigation_id:
+                inv["status"] = "ESCALATED"
+                inv["priority"] = "CRITICAL"
+                inv["updated_at"] = datetime.now().isoformat()
+                mock_investigations[case_id][idx] = inv
+                return {"message": "Escalated", "reason": data.reason, "target_level": data.target_level}
+    raise HTTPException(status_code=404, detail="Investigation not found")
+
+@router.get("/{investigation_id}/evidence")
+async def get_evidence(investigation_id: str):
+    """Get evidence"""
+    return [
+        {"id": f"ev-{i}", "title": f"Evidence {i}", "type": "DOCUMENT"}
+        for i in range(1, 6)
+    ]
+
+@router.get("/{investigation_id}/team")
+async def get_team(investigation_id: str):
+    """Get team members"""
+    return [
+        {"id": f"member-{i}", "name": f"Member {i}", "role": ["LEAD", "ANALYST", "INVESTIGATOR"][i % 3]}
+        for i in range(1, 4)
+    ]
+
+@router.post("/{investigation_id}/notes")
+async def add_note(investigation_id: str, data: dict):
+    """Add note"""
+    return {
+        "id": f"note-{uuid.uuid4().hex[:8]}",
+        "content": data.get("content", ""),
+        "created_at": datetime.now().isoformat(),
+        "created_by_name": "System"
+    }
+
+@router.get("/{investigation_id}/notes")
+async def get_notes(investigation_id: str):
+    """Get notes"""
+    return [
+        {"id": f"note-{i}", "content": f"Note {i}", "created_at": datetime.now().isoformat()}
+        for i in range(1, 3)
+    ]
+
+print("[OK] Investigation endpoints registered:")
+print("  GET    /api/v1/investigation/stats")
+print("  GET    /api/v1/investigation/case/{case_id}")
+print("  GET    /api/v1/investigation/{id}")
+print("  POST   /api/v1/investigation/")
+print("  PATCH  /api/v1/investigation/{id}/status")
+print("  POST   /api/v1/investigation/{id}/escalate")
+print("  GET    /api/v1/investigation/{id}/evidence")
+print("  GET    /api/v1/investigation/{id}/team")
+print("  POST   /api/v1/investigation/{id}/notes")

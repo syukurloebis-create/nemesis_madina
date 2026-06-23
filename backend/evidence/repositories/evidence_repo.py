@@ -6,7 +6,7 @@ from uuid import UUID
 from datetime import datetime
 import json
 
-from backend.evidence.models import Evidence, EvidenceStatus, SourceSystem, EvidenceType
+from evidence.models import Evidence, EvidenceStatus, SourceSystem, EvidenceType
 
 
 class EvidenceRepository:

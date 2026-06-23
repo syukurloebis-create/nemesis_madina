@@ -3,7 +3,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 import logging
 
-from backend.monitoring.metrics import (
+from monitoring.metrics import (
     nemesis_ingested_packages,
     nemesis_normalized_packages,
     nemesis_entity_nodes,

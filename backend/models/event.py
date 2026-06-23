@@ -11,7 +11,7 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import synonym
 from sqlalchemy.sql import func
-from backend.database import Base
+from database import Base
 import uuid
 
 

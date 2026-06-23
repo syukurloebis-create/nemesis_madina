@@ -65,7 +65,7 @@ async def detailed_health():
     
     # Check evidence registry
     try:
-        from backend.evidence import EvidenceRegistry
+        from evidence import EvidenceRegistry
         registry = EvidenceRegistry()
         components["evidence"] = {
             "status": "healthy",
@@ -76,7 +76,7 @@ async def detailed_health():
     
     # Check event bus
     try:
-        from backend.core.events import EventBus
+        from core.events import EventBus
         bus = EventBus()
         components["event_bus"] = {
             "status": "healthy",
@@ -87,7 +87,7 @@ async def detailed_health():
     
     # Check WebSocket
     try:
-        from backend.websocket import ConnectionManager
+        from websocket import ConnectionManager
         ws = ConnectionManager()
         components["websocket"] = {
             "status": "healthy",
@@ -98,7 +98,7 @@ async def detailed_health():
     
     # Check graph
     try:
-        from backend.graph import GraphBuilder
+        from graph import GraphBuilder
         builder = GraphBuilder()
         graph = builder.get_graph()
         components["graph"] = {

@@ -6,7 +6,7 @@ from uuid import UUID
 import json
 from datetime import datetime
 
-from backend.investigation.models import (
+from investigation.models import (
     InvestigationCase, Finding, CaseStatus
 )
 

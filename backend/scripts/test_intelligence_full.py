@@ -8,7 +8,7 @@ import sys
 
 sys.path.insert(0, '.')
 
-from backend.infrastructure.database import AsyncSessionLocal
+from infrastructure.database import AsyncSessionLocal
 from sqlalchemy import text
 
 
@@ -107,8 +107,8 @@ async def test_intelligence_full():
         # TEST 7: COLLUSION DETECTION
         print("🚨 COLLUSION DETECTION:")
         try:
-            from backend.graph.relationship_graph import RelationshipGraph
-            from backend.intelligence.graph.collusion_detector import CollusionDetector
+            from graph.relationship_graph import RelationshipGraph
+            from intelligence.graph.collusion_detector import CollusionDetector
             
             result = await session.execute(
                 text("SELECT source_id, target_id, weight FROM graph_relationships")

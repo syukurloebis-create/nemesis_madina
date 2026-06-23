@@ -4,20 +4,20 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
 from uuid import UUID
 
-from backend.audit.services.report_generator import AuditReportGenerator
-from backend.audit.models import AuditReport, AuditReportRequest, ReportType, ReportFormat
+from audit.services.report_generator import AuditReportGenerator
+from audit.models import AuditReport, AuditReportRequest, ReportType, ReportFormat
 
 router = APIRouter(prefix="/audit", tags=["audit"])
 
 
 async def get_audit_generator():
-    from backend.infrastructure.database import get_pool
-    from backend.investigation.services.case_service import InvestigationCaseService
-    from backend.investigation.repositories.case_repo import InvestigationCaseRepository, FindingRepository
-    from backend.evidence.service import EvidenceService
-    from backend.evidence.repository import EvidenceRepository
-    from backend.decision_trace.services.decision_trace_service import DecisionTraceService
-    from backend.decision_trace.repositories.decision_trace_repo import DecisionTraceRepository
+    from infrastructure.database import get_pool
+    from investigation.services.case_service import InvestigationCaseService
+    from investigation.repositories.case_repo import InvestigationCaseRepository, FindingRepository
+    from evidence.service import EvidenceService
+    from evidence.repository import EvidenceRepository
+    from decision_trace.services.decision_trace_service import DecisionTraceService
+    from decision_trace.repositories.decision_trace_repo import DecisionTraceRepository
     
     pool = await get_pool()
     case_repo = InvestigationCaseRepository(pool)
