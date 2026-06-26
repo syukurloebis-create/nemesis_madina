@@ -471,7 +471,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ data, onAction }) => {
             getRiskLevelText={getRiskLevelText}
             getRiskLevelColor={getRiskLevelColor}
           />
-          <QuickActions onAction={handleAction} />
+          <QuickActions onAction={handleLocalAction} />
         </div>
 
         {/* Quick Stats */}
