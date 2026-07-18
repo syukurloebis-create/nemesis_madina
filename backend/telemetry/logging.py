@@ -1,119 +1,85 @@
-"""
-Logging - Structured Logging with JSON format
-"""
+# backend/telemetry/logging.py
 
 import logging
 import json
-import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional
+from uuid import uuid4
 from contextvars import ContextVar
 
+request_id_var = ContextVar("request_id", default=None)
 
-# Context variables for tracing
-trace_id_var: ContextVar[Optional[str]] = ContextVar('trace_id', default=None)
-span_id_var: ContextVar[Optional[str]] = ContextVar('span_id', default=None)
+class StructuredLogging:
+    """Structured logging with JSON format."""
+    
+    def __init__(self, service_name: str = "nemesis-dashboard"):
+        self.service_name = service_name
+        self._setup_logging()
+    
+    def _setup_logging(self):
+        """Setup structured logging."""
+        handler = logging.StreamHandler()
+        handler.setFormatter(JsonFormatter(self.service_name))
+        
+        logger = logging.getLogger()
+        logger.handlers = []
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+    
+    def get_logger(self, name: str) -> logging.Logger:
+        """Get structured logger."""
+        return logging.getLogger(name)
 
 
-class JSONFormatter(logging.Formatter):
-    """JSON formatter for structured logging"""
+class JsonFormatter(logging.Formatter):
+    """JSON formatter for structured logs."""
+    
+    def __init__(self, service_name: str):
+        super().__init__()
+        self.service_name = service_name
     
     def format(self, record: logging.LogRecord) -> str:
+        """Format log record as JSON."""
         log_entry = {
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "service": self.service_name,
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
-            "module": record.module,
-            "function": record.funcName,
-            "line": record.lineno
+            "request_id": request_id_var.get(),
         }
         
-        # Add trace context
-        trace_id = trace_id_var.get()
-        if trace_id:
-            log_entry["trace_id"] = trace_id
-        
-        span_id = span_id_var.get()
-        if span_id:
-            log_entry["span_id"] = span_id
-        
-        # Add exception info if present
-        if record.exc_info:
-            log_entry["exception"] = self.formatException(record.exc_info)
-        
         # Add extra fields
-        if hasattr(record, 'extra_data'):
-            log_entry["extra"] = record.extra_data
+        if hasattr(record, "extra"):
+            log_entry.update(record.extra)
         
-        return json.dumps(log_entry, default=str)
-
-
-class StructuredLogger:
-    """Structured logger with context support"""
-    
-    def __init__(self, name: str, level: int = logging.INFO):
-        self.logger = logging.getLogger(name)
-        self.logger.setLevel(level)
+        # Add exception info
+        if record.exc_info:
+            log_entry["exception"] = {
+                "type": record.exc_info[0].__name__,
+                "message": str(record.exc_info[1]),
+                "traceback": self.formatException(record.exc_info)
+            }
         
-        # Console handler
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setFormatter(JSONFormatter())
-        self.logger.addHandler(console_handler)
-        
-        # File handler
-        file_handler = logging.FileHandler(f"logs/{name}.log")
-        file_handler.setFormatter(JSONFormatter())
-        self.logger.addHandler(file_handler)
-    
-    def _log(self, level: int, msg: str, **kwargs):
-        """Internal log method with extra data"""
-        extra = kwargs.pop('extra', {})
-        if extra:
-            # Create a log record with extra data
-            self.logger.log(level, msg, extra={'extra_data': extra})
-        else:
-            self.logger.log(level, msg)
-    
-    def debug(self, msg: str, **kwargs):
-        self._log(logging.DEBUG, msg, **kwargs)
-    
-    def info(self, msg: str, **kwargs):
-        self._log(logging.INFO, msg, **kwargs)
-    
-    def warning(self, msg: str, **kwargs):
-        self._log(logging.WARNING, msg, **kwargs)
-    
-    def error(self, msg: str, **kwargs):
-        self._log(logging.ERROR, msg, **kwargs)
-    
-    def critical(self, msg: str, **kwargs):
-        self._log(logging.CRITICAL, msg, **kwargs)
-    
-    def exception(self, msg: str, **kwargs):
-        """Log exception with traceback"""
-        self.logger.exception(msg, extra={'extra_data': kwargs})
+        return json.dumps(log_entry)
 
 
-# Default logger
-default_logger = StructuredLogger("nemesis")
+# Global logger
+logger = StructuredLogging().get_logger(__name__)
 
 
-def get_logger(name: str = None) -> StructuredLogger:
-    """Get logger instance"""
-    if name:
-        return StructuredLogger(name)
-    return default_logger
+def log_with_context(message: str, level: str = "info", **kwargs):
+    """Log with context."""
+    extra = kwargs.get("extra", {})
+    extra["request_id"] = request_id_var.get()
+    getattr(logger, level.lower())(message, extra=extra)
 
 
-def set_trace_context(trace_id: str, span_id: str = None):
-    """Set trace context for current execution"""
-    trace_id_var.set(trace_id)
-    if span_id:
-        span_id_var.set(span_id)
+def set_request_id(request_id: str):
+    """Set current request ID."""
+    request_id_var.set(request_id)
 
 
-def clear_trace_context():
-    """Clear trace context"""
-    trace_id_var.set(None)
-    span_id_var.set(None)
+def generate_request_id() -> str:
+    """Generate a new request ID."""
+    return str(uuid4())

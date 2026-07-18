@@ -2,7 +2,7 @@
 
 from typing import List, Dict, Any, Set, Tuple
 from collections import defaultdict
-from graph.intelligence.models import CollusionDetectionResult, RelationshipType
+from backend.graph.intelligence.models import CollusionDetectionResult, RelationshipType
 
 
 class CollusionDetector:

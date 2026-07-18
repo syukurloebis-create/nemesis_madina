@@ -4,7 +4,7 @@ Collusion Detector - Detect collusion patterns in graph
 
 from typing import List, Set, Tuple, Dict, Any
 from collections import defaultdict
-from graph.models import Graph
+from backend.graph.models import Graph
 
 
 class CollusionDetector:

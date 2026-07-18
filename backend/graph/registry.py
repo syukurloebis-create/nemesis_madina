@@ -3,7 +3,7 @@ Extractor Registry - Register and manage graph extractors
 """
 
 from typing import Dict, Any, Callable, List, Tuple, Optional
-from graph.models import GraphNode, GraphEdge
+from backend.graph.models import GraphNode, GraphEdge
 
 
 class ExtractorRegistry:

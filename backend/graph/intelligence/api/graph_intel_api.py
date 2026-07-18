@@ -4,8 +4,8 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import List, Optional
 from uuid import UUID
 
-from graph.intelligence.repositories.entity_edge_repo import EntityEdgeRepository
-from graph.intelligence.models import (
+from backend.graph.intelligence.repositories.entity_edge_repo import EntityEdgeRepository
+from backend.graph.intelligence.models import (
     EntityNode, EntityEdge, CollusionDetectionResult,
     EntityType, RelationshipType
 )

@@ -1,8 +1,8 @@
 """Graph Builder - handles graph construction and manipulation"""
 
 from typing import Dict, List, Any, Optional
-from graph.models import GraphEntity, GraphRelationship
-from graph.metrics import GraphMetrics
+from backend.graph.models import GraphEntity, GraphRelationship
+from backend.graph.metrics import GraphMetrics
 
 
 class Graph:

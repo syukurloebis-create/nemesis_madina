@@ -1,4 +1,4 @@
-from cases.event_store import get_state_at_timestamp, get_event_diff
+from backend.cases.event_store import get_state_at_timestamp, get_event_diff
 
 class HistoricalService:
     """Historical reconstruction service."""

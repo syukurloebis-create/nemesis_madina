@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 import asyncio
 
-from infrastructure.database import get_db
-from telemetry.metrics import service_up
+from backend.infrastructure.database import get_db
+from backend.telemetry.metrics import service_up
 
 router = APIRouter(tags=["Health"])
 

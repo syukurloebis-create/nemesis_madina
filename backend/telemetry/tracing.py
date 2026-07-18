@@ -1,168 +1,63 @@
-"""
-Tracing - Distributed Tracing Support
-"""
+# backend/telemetry/tracing.py
 
-import uuid
-import time
-from datetime import datetime
-from typing import Dict, Any, List, Optional
-from contextlib import contextmanager
-from collections import defaultdict
-
-
-class Span:
-    """Single trace span"""
-    
-    def __init__(
-        self,
-        name: str,
-        trace_id: str = None,
-        parent_span_id: str = None,
-        span_id: str = None
-    ):
-        self.name = name
-        self.trace_id = trace_id or str(uuid.uuid4())
-        self.span_id = span_id or str(uuid.uuid4())
-        self.parent_span_id = parent_span_id
-        self.start_time = time.perf_counter()
-        self.end_time = None
-        self.attributes: Dict[str, Any] = {}
-        self.events: List[Dict[str, Any]] = []
-        self.status = "ok"
-    
-    def set_attribute(self, key: str, value: Any):
-        """Set span attribute"""
-        self.attributes[key] = value
-    
-    def add_event(self, name: str, attributes: Dict[str, Any] = None):
-        """Add event to span"""
-        self.events.append({
-            "name": name,
-            "timestamp": datetime.now().isoformat(),
-            "attributes": attributes or {}
-        })
-    
-    def set_status(self, status: str):
-        """Set span status"""
-        self.status = status
-    
-    def end(self):
-        """End the span"""
-        self.end_time = time.perf_counter()
-    
-    @property
-    def duration_ms(self) -> float:
-        """Get span duration in milliseconds"""
-        if self.end_time is None:
-            return 0
-        return (self.end_time - self.start_time) * 1000
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary"""
-        return {
-            "name": self.name,
-            "trace_id": self.trace_id,
-            "span_id": self.span_id,
-            "parent_span_id": self.parent_span_id,
-            "start_time": datetime.fromtimestamp(self.start_time).isoformat(),
-            "duration_ms": self.duration_ms,
-            "attributes": self.attributes,
-            "events": self.events,
-            "status": self.status
-        }
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+from contextlib import asynccontextmanager
+from typing import Optional, Dict, Any
+import os
 
 
-class Tracer:
-    """Distributed tracer - Singleton"""
+def setup_tracing(service_name: str = "nemesis-dashboard"):
+    """Setup OpenTelemetry tracing."""
+    provider = TracerProvider()
     
-    _instance = None
+    # Configure exporters
+    exporters = []
     
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._initialized = False
-        return cls._instance
+    # Console exporter for development
+    if os.getenv("ENV", "development") == "development":
+        exporters.append(ConsoleSpanExporter())
     
-    def __init__(self):
-        if self._initialized:
-            return
-        self._spans: List[Span] = []
-        self._active_spans: List[Span] = []
-        self._initialized = True
+    # OTLP exporter for production
+    if os.getenv("OTLP_ENDPOINT"):
+        exporters.append(OTLPSpanExporter(endpoint=os.getenv("OTLP_ENDPOINT")))
     
-    def start_span(
-        self,
-        name: str,
-        trace_id: str = None,
-        parent_span_id: str = None
-    ) -> Span:
-        """Start a new span"""
-        span = Span(name, trace_id, parent_span_id)
-        self._active_spans.append(span)
-        return span
+    for exporter in exporters:
+        processor = BatchSpanProcessor(exporter)
+        provider.add_span_processor(processor)
     
-    def end_span(self, span: Span):
-        """End a span"""
-        span.end()
-        self._spans.append(span)
-        if span in self._active_spans:
-            self._active_spans.remove(span)
+    trace.set_tracer_provider(provider)
     
-    @contextmanager
-    def trace(self, name: str, attributes: Dict[str, Any] = None):
-        """Context manager for tracing"""
-        span = self.start_span(name)
+    return trace.get_tracer(service_name)
+
+
+def instrument_fastapi(app, tracer):
+    """Instrument FastAPI application."""
+    FastAPIInstrumentor.instrument_app(
+        app,
+        tracer_provider=trace.get_tracer_provider(),
+        excluded_urls="/health,/metrics,/readiness"
+    )
+
+
+def instrument_database(engine):
+    """Instrument SQLAlchemy database."""
+    SQLAlchemyInstrumentor().instrument(
+        engine=engine,
+        tracer_provider=trace.get_tracer_provider()
+    )
+
+
+@asynccontextmanager
+async def trace_operation(name: str, attributes: Optional[Dict[str, Any]] = None):
+    """Context manager for tracing operations."""
+    tracer = trace.get_tracer(__name__)
+    with tracer.start_as_current_span(name) as span:
         if attributes:
             for key, value in attributes.items():
                 span.set_attribute(key, value)
-        
-        try:
-            yield span
-            span.set_status("ok")
-        except Exception as e:
-            span.set_status("error")
-            span.add_event("exception", {"error": str(e)})
-            raise
-        finally:
-            self.end_span(span)
-    
-    def get_current_span(self) -> Optional[Span]:
-        """Get current active span"""
-        if self._active_spans:
-            return self._active_spans[-1]
-        return None
-    
-    def get_all_spans(self) -> List[Span]:
-        """Get all completed spans"""
-        return self._spans.copy()
-    
-    def get_trace(self, trace_id: str) -> List[Span]:
-        """Get all spans for a trace"""
-        return [s for s in self._spans if s.trace_id == trace_id]
-    
-    def get_traces(self, limit: int = 100) -> Dict[str, Any]:
-        """Get recent traces summary"""
-        traces = defaultdict(list)
-        for span in self._spans[-limit:]:
-            traces[span.trace_id].append(span.to_dict())
-        
-        return dict(traces)
-    
-    def clear(self):
-        """Clear all spans"""
-        self._spans.clear()
-        self._active_spans.clear()
-
-
-# Global tracer
-tracer = Tracer()
-
-
-def trace(name: str, attributes: Dict[str, Any] = None):
-    """Decorator for tracing functions"""
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            with tracer.trace(name or func.__name__, attributes):
-                return func(*args, **kwargs)
-        return wrapper
-    return decorator
+        yield span

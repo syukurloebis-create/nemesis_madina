@@ -1,0 +1,65 @@
+# docs/roadmap/v9.x.yaml
+version: 1.0
+title: "NEMESIS Architecture Evolution Roadmap"
+base_version: "v8.2"
+
+phases:
+  - phase: "v9.0"
+    name: "Registry & Governance Expansion"
+    duration: "2 months"
+    features:
+      - "Registry Engine abstraction (YAML → Database)"
+      - "Rule Graph with DAG dependencies"
+      - "Complete Capability Lifecycle"
+      - "Typed Event Contracts"
+      - "Manifest Provenance"
+    dependencies:
+      - "v8.2 stable"
+    
+  - phase: "v9.1"
+    name: "Multi-language Scanner Expansion"
+    duration: "2 months"
+    features:
+      - "TypeScript/React plugin"
+      - "SQL plugin (schema analysis)"
+      - "YAML/Docker plugin"
+      - "OpenAPI plugin"
+      - "Cross-language dependency tracking"
+    dependencies:
+      - "v9.0"
+    
+  - phase: "v9.2"
+    name: "Intelligence & Automation"
+    duration: "2 months"
+    features:
+      - "AI-powered recommendations"
+      - "Automated impact analysis"
+      - "Architecture evolution tracking"
+      - "Automated technical debt reduction"
+      - "Smart violation prioritization"
+    dependencies:
+      - "v9.1"
+    
+  - phase: "v9.3"
+    name: "Real-time Platform"
+    duration: "2 months"
+    features:
+      - "Real-time architecture dashboard"
+      - "Live violation alerts"
+      - "WebSocket integration"
+      - "Architecture health monitoring"
+      - "SLA/SLO tracking"
+    dependencies:
+      - "v9.2"
+    
+  - phase: "v10.0"
+    name: "Enterprise Integration"
+    duration: "3 months"
+    features:
+      - "Integration with CI/CD platforms"
+      - "Integration with monitoring tools"
+      - "Integration with ticketing systems"
+      - "API-first architecture"
+      - "GraphQL federation"
+    dependencies:
+      - "v9.3"

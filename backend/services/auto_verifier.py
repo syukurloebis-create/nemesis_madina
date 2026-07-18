@@ -68,7 +68,7 @@ class AutoVerifier:
             
             # 4. Update database with proper transaction
             if is_verified:
-                from services.evidence_scoring import EvidenceScorer
+                from backend.services.evidence_scoring import EvidenceScorer
                 confidence = EvidenceScorer.calculate_confidence(
                     trust_score=score,
                     status="verified"

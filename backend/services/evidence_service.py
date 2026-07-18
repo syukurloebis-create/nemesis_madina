@@ -123,6 +123,31 @@ class EvidenceService:
         })
         
         await self.session.commit()
+
+
+        from backend.services.dashboard_cache_manager import (
+            dashboard_cache_manager
+        )
+
+
+        result = await self.session.execute(
+            text("""
+                SELECT id
+                FROM findings
+                WHERE case_id=:case_id
+            """),
+            {
+                "case_id": case_id
+            }
+        )
+
+        findings = result.fetchall()
+
+        for row in findings:
+
+            dashboard_cache_manager.invalidate_finding(
+                str(row.id)
+            )
         
         return {
             "id": str(evidence_id),
@@ -133,6 +158,7 @@ class EvidenceService:
             "uploaded_at": timestamp.isoformat()
         }
     
+
     async def verify_evidence_integrity(self, evidence_id: str) -> Dict[str, Any]:
         """Verify evidence file integrity by recalculating hash"""
         

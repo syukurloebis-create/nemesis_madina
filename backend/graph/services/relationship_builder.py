@@ -51,29 +51,66 @@ class RelationshipBuilder:
         return result.rowcount
     
     async def _build_vendor_similarity(self) -> int:
-        logger.info("  🔤 Building vendor similarity...")
+        logger.info("  🔤 Building vendor similarity (TRIGRAM)...")
         result = await self.session.execute(text("""
-            INSERT INTO graph_relationships (source_id, target_id, relationship_type, weight, case_id, created_at)
-            SELECT e1.id, e2.id, 'vendor_similarity',
-                   LEAST((CASE WHEN LOWER(e1.name) ILIKE '%' || split_part(LOWER(e2.name), ' ', 1) || '%' THEN 40
-                               WHEN LOWER(e1.name) ILIKE '%' || split_part(LOWER(e2.name), ' ', 2) || '%' THEN 30 ELSE 20 END) +
-                         (CASE WHEN LOWER(e1.name) ILIKE '%' || split_part(LOWER(e2.name), ' ', -1) || '%' THEN 20 ELSE 10 END), 100),
-                   CAST(:case_id AS VARCHAR), NOW()
+            INSERT INTO graph_relationships
+            (
+                source_id,
+                target_id,
+                relationship_type,
+                weight,
+                case_id,
+                created_at
+            )
+            SELECT
+                e1.id,
+                e2.id,
+                CASE
+                    WHEN similarity(
+                        LOWER(e1.name),
+                        LOWER(e2.name)
+                    ) >= 0.85
+                    THEN 'same_entity_candidate'
+                    ELSE 'vendor_name_similarity'
+                END,
+                LEAST(
+                    similarity(
+                        LOWER(e1.name),
+                        LOWER(e2.name)
+                    ) * 100,
+                    100
+                ),
+                CAST(:case_id AS VARCHAR),
+                NOW()
             FROM graph_entities e1
-            JOIN graph_entities e2 ON e1.id < e2.id
-            JOIN rup_paket_detailed r1 ON LOWER(r1.nama_penyedia) = LOWER(e1.name)
-            JOIN rup_paket_detailed r2 ON LOWER(r2.nama_penyedia) = LOWER(e2.name)
-            WHERE e1.entity_type = 'vendor' AND e2.entity_type = 'vendor'
-              AND e1.case_id = :case_id AND e2.case_id = :case_id
-              AND e1.name != e2.name
-              AND (LOWER(e1.name) ILIKE '%' || split_part(LOWER(e2.name), ' ', 1) || '%'
-                   OR LOWER(e1.name) ILIKE '%' || split_part(LOWER(e2.name), ' ', -1) || '%')
-            GROUP BY e1.id, e2.id, e1.name, e2.name
+            JOIN graph_entities e2
+                ON e1.id < e2.id
+            WHERE
+                e1.entity_type = 'vendor'
+                AND e2.entity_type = 'vendor'
+                AND e1.case_id = :case_id
+                AND e2.case_id = :case_id
+                AND e1.name <> e2.name
+                AND similarity(
+                    LOWER(e1.name),
+                    LOWER(e2.name)
+                ) >= 0.70
+            ORDER BY
+                similarity(
+                    LOWER(e1.name),
+                    LOWER(e2.name)
+                ) DESC
             LIMIT 2000
-        """), {"case_id": self.case_id})
+        """),
+        {
+            "case_id": self.case_id
+        })
         await self.session.commit()
-        logger.info(f"    ✅ {result.rowcount} edges")
+        logger.info(
+            f"    ✅ {result.rowcount} edges"
+        )
         return result.rowcount
+
     
     async def _build_method_similarity(self) -> int:
         logger.info("  📂 Building method similarity...")

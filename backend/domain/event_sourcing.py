@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import uuid
 import logging
 
-from events.repository import EventRepository
+from backend.events.repository import EventRepository
 
 logger = logging.getLogger(__name__)
 

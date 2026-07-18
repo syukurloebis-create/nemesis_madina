@@ -1,6 +1,6 @@
-from sqlalchemy import Column, String, Integer, DateTime, Float, JSON, Text
+from sqlalchemy import Column, String, Integer, DateTime, Float, JSON, Text, Index
 from sqlalchemy.sql import func
-from database import Base
+from backend.database import Base
 import uuid
 
 class GraphEntity(Base):
@@ -60,6 +60,26 @@ class CollusionDetection(Base):
     reviewed_by = Column(String, nullable=True)
     reviewed_at = Column(DateTime(timezone=True), nullable=True)
     detected_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class GraphMetadata(Base):
+    """ORM model for graph_metadata table."""
+    
+    __tablename__ = "graph_metadata"
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    case_id = Column(String, nullable=False, index=True)
+    version = Column(Integer, nullable=False)
+    checksum = Column(String, nullable=False)
+    reason = Column(String, nullable=True)
+    regenerated_by = Column(String, default="system")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    __table_args__ = (
+        Index("idx_graph_metadata_case_id", "case_id"),
+        Index("idx_graph_metadata_version", "version"),
+    )
+
 
 # ============================================================
 # ENUMS FOR GRAPH

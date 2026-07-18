@@ -6,7 +6,7 @@ from uuid import UUID
 import json
 from datetime import datetime
 
-from graph.intelligence.models import (
+from backend.graph.intelligence.models import (
     EntityNode, EntityEdge, RelationshipType, EntityType, NetworkMetrics
 )
 
