@@ -10,7 +10,7 @@ import logging
 from datetime import datetime
 import time
 
-from infrastructure.database import AsyncSessionLocal
+from backend.infrastructure.database import AsyncSessionLocal
 
 logger = logging.getLogger(__name__)
 

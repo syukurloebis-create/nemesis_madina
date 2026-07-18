@@ -6,7 +6,7 @@ from uuid import UUID
 from datetime import datetime
 import json
 
-from evidence.models import CustodyRecord, CustodyAction
+from .models import CustodyRecord, CustodyAction
 
 
 class CustodyRepository:

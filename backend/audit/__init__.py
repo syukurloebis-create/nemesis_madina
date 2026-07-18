@@ -1,6 +1,11 @@
-"""Audit Domain - Tamper-proof logging"""
+"""
+Audit Module
+"""
+from .audit_logger import AuditLogger, AuditAction, AuditEvent, audit_logger
 
-from audit.logger import AuditLogger
-from audit.api import router
-
-__all__ = ["AuditLogger", "router"]
+__all__ = [
+    'AuditLogger',
+    'AuditAction',
+    'AuditEvent',
+    'audit_logger'
+]

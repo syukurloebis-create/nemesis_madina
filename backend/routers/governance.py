@@ -4,9 +4,9 @@ Intelligence Governance Router
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Dict, Any
 
-from services.governance import governance
+from backend.services.governance import governance
 
-router = APIRouter(prefix="/api/v1/governance", tags=["governance"])
+router = APIRouter(prefix="/governance", tags=["governance"])
 
 @router.get("/model-registry")
 async def model_registry():

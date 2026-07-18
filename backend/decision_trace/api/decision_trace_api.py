@@ -12,7 +12,7 @@ router = APIRouter(prefix="/decision-traces", tags=["decision-traces"])
 
 
 async def get_decision_trace_service():
-    from infrastructure.database import get_pool
+    from backend.infrastructure.database import get_pool
     pool = await get_pool()
     repo = DecisionTraceRepository(pool)
     return DecisionTraceService(repo)

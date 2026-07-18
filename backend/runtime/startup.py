@@ -24,7 +24,7 @@ async def startup_handler():
     
     # Initialize evidence registry
     try:
-        from evidence import EvidenceRegistry
+        from backend.evidence import EvidenceRegistry
         registry = EvidenceRegistry()
         logger.info("Evidence registry initialized")
         print("  ✅ Evidence registry")

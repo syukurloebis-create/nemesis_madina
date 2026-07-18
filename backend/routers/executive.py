@@ -4,12 +4,12 @@ Executive Intelligence Router
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Dict, Any
 
-from services.executive import ExecutiveIntelligence
+from backend.services.executive import ExecutiveIntelligence
 
 # Create instance
 executive = ExecutiveIntelligence()
 
-router = APIRouter(prefix="/api/v1/executive", tags=["executive"])
+router = APIRouter(prefix="/executive", tags=["executive"])
 
 @router.get("/summary")
 async def executive_summary():

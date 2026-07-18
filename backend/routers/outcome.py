@@ -6,7 +6,7 @@ from typing import Optional
 import uuid
 from datetime import datetime
 
-from database import get_db
+from backend.database import get_db
 
 router = APIRouter(prefix="/outcome", tags=["outcome"])
 

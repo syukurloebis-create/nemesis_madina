@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 
-from database import get_db
+from backend.database import get_db
 from intelligence.graph.service import GraphIntelligenceService
 from intelligence.graph.graph_store import graph_store
-from cases.service import CaseService
+from backend.cases.service import CaseService
 
 logger = logging.getLogger(__name__)
 

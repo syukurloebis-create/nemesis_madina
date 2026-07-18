@@ -1,53 +1,69 @@
-"""Add graph intelligence tables
-
-Revision ID: graph_intelligence_001
-Revises:
-Create Date: 2026-06-20
 """
+Graph Intelligence bootstrap tables
+✅ Core graph tables needed for intelligence engine
+✅ Created before graph entity metrics
+"""
+
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID
+
+# ============================================================================
+# ALEMBIC METADATA
+# ============================================================================
+
+revision = "graph_intelligence_001"
+down_revision = "7e9dcf0e5a5d"  # Parent: add_intelligence_graph_schema
+branch_labels = None
+depends_on = None
+
+# ============================================================================
+# MIGRATION
+# ============================================================================
 
 def upgrade():
+    """Create graph_intelligence core tables."""
+    
     # 1. graph_node_scores
-    op.create_table(
-        'graph_node_scores',
-        sa.Column('id', sa.Integer, primary_key=True, autoincrement=True),
-        sa.Column('entity_id', sa.String(36), nullable=False),
-        sa.Column('pagerank', sa.Float, nullable=True),
-        sa.Column('degree', sa.Integer, nullable=True),
-        sa.Column('weighted_degree', sa.Float, nullable=True),
-        sa.Column('calculated_at', sa.TIMESTAMP, server_default=sa.func.now()),
-        sa.ForeignKeyConstraint(['entity_id'], ['graph_entities.id']),
-        sa.UniqueConstraint('entity_id', name='uq_entity_score')
+    op.execute("""
+    CREATE TABLE IF NOT EXISTS graph_node_scores (
+        id SERIAL PRIMARY KEY,
+        entity_id VARCHAR(36) NOT NULL,
+        pagerank FLOAT,
+        degree INTEGER,
+        weighted_degree FLOAT,
+        calculated_at TIMESTAMP DEFAULT now(),
+        CONSTRAINT uq_entity_score UNIQUE(entity_id)
     )
-    
+    """)
+
     # 2. graph_clusters
-    op.create_table(
-        'graph_clusters',
-        sa.Column('id', sa.Integer, primary_key=True, autoincrement=True),
-        sa.Column('entity_id', sa.String(36), nullable=False),
-        sa.Column('cluster_id', sa.Integer, nullable=False),
-        sa.Column('case_id', sa.String(36), nullable=True),
-        sa.Column('created_at', sa.TIMESTAMP, server_default=sa.func.now()),
-        sa.ForeignKeyConstraint(['entity_id'], ['graph_entities.id'])
+    op.execute("""
+    CREATE TABLE IF NOT EXISTS graph_clusters (
+        id SERIAL PRIMARY KEY,
+        entity_id VARCHAR(36) NOT NULL,
+        cluster_id INTEGER NOT NULL,
+        case_id VARCHAR(36),
+        created_at TIMESTAMP DEFAULT now()
     )
-    
+    """)
+
     # 3. fraud_evidence
-    op.create_table(
-        'fraud_evidence',
-        sa.Column('id', sa.Integer, primary_key=True, autoincrement=True),
-        sa.Column('case_id', sa.String(36), nullable=False),
-        sa.Column('entity_id', sa.String(36), nullable=True),
-        sa.Column('evidence_type', sa.String(100), nullable=True),
-        sa.Column('description', sa.Text, nullable=True),
-        sa.Column('score', sa.Float, nullable=True),
-        sa.Column('confidence', sa.Float, nullable=True),
-        sa.Column('created_at', sa.TIMESTAMP, server_default=sa.func.now()),
-        sa.ForeignKeyConstraint(['entity_id'], ['graph_entities.id'])
+    op.execute("""
+    CREATE TABLE IF NOT EXISTS fraud_evidence (
+        id SERIAL PRIMARY KEY,
+        case_id VARCHAR(36) NOT NULL,
+        entity_id VARCHAR(36),
+        evidence_type VARCHAR(100),
+        description TEXT,
+        score FLOAT,
+        confidence FLOAT,
+        created_at TIMESTAMP DEFAULT now()
     )
+    """)
+
 
 def downgrade():
-    op.drop_table('fraud_evidence')
-    op.drop_table('graph_clusters')
-    op.drop_table('graph_node_scores')
+    """Drop graph_intelligence core tables."""
+    op.drop_table("fraud_evidence")
+    op.drop_table("graph_clusters")
+    op.drop_table("graph_node_scores")

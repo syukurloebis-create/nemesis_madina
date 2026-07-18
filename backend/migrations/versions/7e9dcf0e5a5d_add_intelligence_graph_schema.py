@@ -1,10 +1,20 @@
-"""add_intelligence_graph_schema
+"""
+add_intelligence_graph_schema
 
 Revision ID: 7e9dcf0e5a5d
 Revises: 8fc3f98fb015
 Create Date: 2026-06-14 09:43:19.564754
 
+Creates:
+- findings
+- cases
+- collusion_detections
+- finding_comments
+- audit_log
+- graph_entities
+- graph_relationships
 """
+
 from typing import Sequence, Union
 
 from alembic import op

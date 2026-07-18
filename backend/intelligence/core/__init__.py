@@ -3,7 +3,7 @@ Intelligence Core V8+
 Stable risk, trust, and intelligence layer
 """
 
-from intelligence.core.feature_engine import FeatureEngine
+from backend.intelligence.core.feature_engine import FeatureEngine
 from intelligence.core.risk_model import RiskModel
 from intelligence.core.trust_model import TrustModel
 from intelligence.core.calibration import Calibration

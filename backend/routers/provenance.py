@@ -6,10 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from typing import Dict, Any
 
-from database import get_db
-from services.provenance import get_provenance
+from backend.database import get_db
+from backend.services.provenance import get_provenance
 
-router = APIRouter(prefix="/api/v1/provenance", tags=["provenance"])
+router = APIRouter(prefix="/provenance", tags=["provenance"])
 
 @router.get("/case/{case_id}")
 async def get_case_provenance(case_id: str):

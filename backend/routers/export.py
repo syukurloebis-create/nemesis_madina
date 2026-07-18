@@ -1,13 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends, Query, Response
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-from database import get_db
+from backend.database import get_db
 import json
 from datetime import datetime
 import csv
 from io import StringIO
 
-router = APIRouter(prefix="/api/v1/export", tags=["export"])
+router = APIRouter(prefix="/export", tags=["export"])
 
 @router.get("/cases")
 async def export_cases(

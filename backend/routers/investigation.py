@@ -11,7 +11,7 @@ import uuid
 # ============================================
 # ROUTER - TANPA PREFIX (sudah di main.py)
 # ============================================
-router = APIRouter(prefix="/api/v1/investigation", tags=["Investigation"])
+router = APIRouter(prefix="/investigation", tags=["Investigation"])
 
 print("[Router] Investigation router initialized with prefix: /api/v1/investigation")
 

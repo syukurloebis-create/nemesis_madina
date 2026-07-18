@@ -5,8 +5,8 @@ from typing import Dict, Any, List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 
-from evidence.service import EvidenceService
-from evidence.registry import EvidenceStatus
+from .service import EvidenceService
+from .registry import EvidenceStatus
 
 router = APIRouter(prefix="/evidence", tags=["evidence"])
 

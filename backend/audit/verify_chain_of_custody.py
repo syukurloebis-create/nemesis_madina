@@ -4,10 +4,10 @@ import sys
 sys.path.insert(0, '.')
 
 from sqlalchemy import text
-from database import get_db
-from events.verifier import IntegrityVerifier
-from events.repository import EventRepository
-from config import settings
+from backend.database import get_db
+from backend.events.verifier import IntegrityVerifier
+from backend.events.repository import EventRepository
+from backend.config import settings
 
 
 async def audit_chain_of_custody():

@@ -1,42 +1,21 @@
-from fastapi import APIRouter, Request
-from core.analytics.risk_engine import RiskEngine
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.database import get_db
+from backend.services.dashboard_intelligence_analytics_service import (
+    dashboard_intelligence_analytics_service,
+)
 
 router = APIRouter()
 
+
 @router.get("/api/dashboard/summary")
-async def dashboard_summary():
-
-    pool = await create_pool()
-
-    async with pool.acquire() as conn:
-
-        total_events = await conn.fetchval(
-            "SELECT COUNT(*) FROM event_lineage"
-        )
-
-        total_aggregates = await conn.fetchval(
-            """
-            SELECT COUNT(DISTINCT aggregate_id)
-            FROM event_lineage
-            """
-        )
-
-        broken = 0
-
-    integrity_rate = 100
-
-    return {
-        "status": "ok",
-
-        "total_events":
-            total_events,
-
-        "total_aggregates":
-            total_aggregates,
-
-        "integrity_rate":
-            integrity_rate,
-
-        "broken_chains":
-            broken
-    }
+async def dashboard_summary(
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Legacy endpoint.
+    Dipertahankan agar kompatibel dengan frontend lama,
+    tetapi seluruh logika dipindahkan ke DashboardIntelligenceAnalyticsService.
+    """
+    return await dashboard_intelligence_analytics_service.get_dashboard_summary(db)

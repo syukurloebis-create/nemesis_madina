@@ -3,7 +3,7 @@ import asyncio
 import uuid
 from datetime import datetime, timezone
 from fastapi import APIRouter, Request, HTTPException
-from models.event import EventEnvelope
+from backend.models.event import EventEnvelope
 
 router = APIRouter(prefix="/federation", tags=["federation"])
 

@@ -12,7 +12,7 @@ router = APIRouter(prefix="/cases", tags=["investigation-cases"])
 
 
 async def get_case_service():
-    from infrastructure.database import get_pool
+    from backend.infrastructure.database import get_pool
     pool = await get_pool()
     case_repo = InvestigationCaseRepository(pool)
     finding_repo = FindingRepository(pool)

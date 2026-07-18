@@ -55,13 +55,11 @@ class AuditTrailValidator:
         report.append(f"Chain Valid: {validation['valid']}")
         
         if validation['issues']:
-            report.append("
-Issues Found:")
+            report.append("Issues Found:")
             for issue in validation['issues']:
                 report.append(f"  - {issue}")
         
-        report.append("
-Recent Entries:")
+        report.append("Recent Entries:")
         for entry in self.audit_entries[-5:]:
             report.append(f"  {entry['timestamp']}: {entry['action']} by {entry['actor']}")
         

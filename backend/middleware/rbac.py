@@ -1,6 +1,6 @@
 from fastapi import Request, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
-from security.auth import decode_token
+from backend.security.auth import decode_token
 import logging
 
 logger = logging.getLogger(__name__)

@@ -1,10 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from infrastructure.database import get_db
-from finding.models import Finding
-from finding.service import FindingService, AnomalyScoringService
-from security.auth import decode_token
+from backend.infrastructure.database import get_db
+from backend.finding.models import Finding
+from backend.finding.service import (
+    FindingService,
+    AnomalyScoringService
+)
+from backend.services.finding_assignment_service import (
+    FindingAssignmentService
+)
+from backend.security.auth import decode_token
 from pydantic import BaseModel
 from typing import Optional, List
 import logging
@@ -19,8 +25,19 @@ class FindingCreate(BaseModel):
     evidence_ids: List[str]
     financial_loss: Optional[float] = None
 
+class FindingTransitionRequest(BaseModel):
+    status: str
+    notes: Optional[str] = None
+
 class AnomalyRequest(BaseModel):
     evidence_ids: List[str]
+
+class FindingAssignmentRequest(BaseModel):
+    analyst_id: Optional[str] = None
+    analyst_name: str
+    role: Optional[str] = None
+    assigned_by: str
+    notes: Optional[str] = None
 
 
 def get_user_info(request: Request):
@@ -130,6 +147,118 @@ async def get_findings_summary(
     except Exception as e:
         logger.error(f"Error getting summary: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{finding_id}/transition")
+async def transition_finding(
+    finding_id: str,
+    request: FindingTransitionRequest,
+    db: AsyncSession = Depends(get_db)
+):
+
+    from backend.services.finding_lifecycle_service import (
+        FindingLifecycleService
+    )
+
+
+    service = FindingLifecycleService(db)
+
+
+    try:
+
+        await service.transition(
+            finding_id=finding_id,
+            new_status=request.status,
+            actor="case_manager",
+            notes=request.notes
+        )
+
+
+        return {
+            "message":
+                "Finding status updated",
+
+            "finding_id":
+                finding_id,
+
+            "new_status":
+                request.status
+        }
+
+
+    except Exception as e:
+
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
+
+
+@router.post("/{finding_id}/assign")
+async def assign_finding(
+    finding_id: str,
+    data: FindingAssignmentRequest,
+    db: AsyncSession = Depends(get_db)
+):
+
+    try:
+
+        service = FindingAssignmentService(db)
+
+        result = await service.assign(
+            finding_id=finding_id,
+            analyst_id=data.analyst_id,
+            analyst_name=data.analyst_name,
+            assigned_by=data.assigned_by,
+            role=data.role,
+            notes=data.notes,
+        )
+
+
+        return {
+            "message": "Finding assigned successfully",
+            **result
+        }
+
+
+    except Exception as e:
+
+        logger.error(
+            f"Assignment error: {e}"
+        )
+
+        await db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+@router.get("/{finding_id}/assignments")
+async def get_finding_assignments(
+    finding_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+
+    try:
+
+        service = FindingAssignmentService(db)
+
+        return await service.get_assignments(
+            finding_id
+        )
+
+
+    except Exception as e:
+
+        logger.error(
+            f"Get assignment error: {e}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
 
 
 @router.post("/anomaly/calculate")

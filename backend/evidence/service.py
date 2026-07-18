@@ -1,9 +1,9 @@
 """Evidence Service - Business logic layer for evidence"""
 
 from typing import Dict, Any, Optional, List
-from evidence.registry import EvidenceRegistry
-from evidence.hashing import EvidenceHasher
-from evidence.package import EvidencePackage
+from .registry import EvidenceRegistry
+from .hashing import EvidenceHasher
+from .package import EvidencePackage
 
 
 class EvidenceService:

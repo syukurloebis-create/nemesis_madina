@@ -1,7 +1,7 @@
 """Evidence API Endpoints (V8+ FIXED)"""
 
 from fastapi import APIRouter, HTTPException
-from evidence.service import EvidenceService
+from .service import EvidenceService
 from pydantic import BaseModel
 from typing import Dict, Any
 

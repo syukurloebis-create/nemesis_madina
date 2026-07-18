@@ -10,8 +10,8 @@ import logging
 from datetime import datetime
 import time
 
-from infrastructure.database import AsyncSessionLocal
-from cases.models import Case
+from backend.infrastructure.database import AsyncSessionLocal
+from backend.cases.models import Case
 
 logger = logging.getLogger(__name__)
 

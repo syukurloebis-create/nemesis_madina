@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from datetime import datetime, timedelta
 import uuid
-from database import get_db
+from backend.database import get_db
 from sqlalchemy.orm import Session
 
 # Data investigasi

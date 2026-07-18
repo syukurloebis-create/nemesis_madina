@@ -5,9 +5,9 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 import uuid
 
-from models.event import Event
-from cases.models import Case, CaseStatus, CasePriority
-from cases.event_store import (
+from backend.models.event import Event
+from backend.cases.models import Case, CaseStatus, CasePriority
+from backend.cases.event_store import (
     append_event, 
     get_case_events, 
     get_last_event,

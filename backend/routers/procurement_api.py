@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import text
-from infrastructure.database import get_db
+from backend.infrastructure.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/api/procurement", tags=["procurement"])
@@ -9,7 +9,7 @@ router = APIRouter(prefix="/api/procurement", tags=["procurement"])
 async def list_procurement(limit: int = 100):
     """List procurement tanpa auth untuk testing"""
     try:
-        from infrastructure.database import AsyncSessionLocal
+        from backend.infrastructure.database import AsyncSessionLocal
         
         async with AsyncSessionLocal() as db:
             result = await db.execute(text("""
@@ -39,7 +39,7 @@ async def list_procurement(limit: int = 100):
 async def procurement_stats():
     """Statistik procurement tanpa auth"""
     try:
-        from infrastructure.database import AsyncSessionLocal
+        from backend.infrastructure.database import AsyncSessionLocal
         
         async with AsyncSessionLocal() as db:
             result = await db.execute(text("""
@@ -66,7 +66,7 @@ async def procurement_stats():
 async def vendor_analysis():
     """Analisis vendor tanpa auth"""
     try:
-        from infrastructure.database import AsyncSessionLocal
+        from backend.infrastructure.database import AsyncSessionLocal
         
         async with AsyncSessionLocal() as db:
             result = await db.execute(text("""

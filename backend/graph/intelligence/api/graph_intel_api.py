@@ -14,7 +14,7 @@ router = APIRouter(prefix="/graph-intel", tags=["graph-intelligence"])
 
 
 async def get_edge_repo():
-    from infrastructure.database import get_pool
+    from backend.infrastructure.database import get_pool
     pool = await get_pool()
     return EntityEdgeRepository(pool)
 

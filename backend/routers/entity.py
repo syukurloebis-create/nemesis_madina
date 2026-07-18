@@ -6,7 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/entity", tags=["entity"])
+router = APIRouter(prefix="/entity", tags=["entity"])
 
 @router.post("/resolve")
 async def resolve_entities(

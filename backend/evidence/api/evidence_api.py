@@ -4,8 +4,8 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends, s
 from typing import List, Optional
 from uuid import UUID
 
-from evidence.services.evidence_service import EvidenceService
-from evidence.models import Evidence, EvidenceVerification, CustodyRecord, SourceSystem, EvidenceType
+from .services.evidence_service import EvidenceService
+from .models import Evidence, EvidenceVerification, CustodyRecord, SourceSystem, EvidenceType
 
 router = APIRouter(prefix="/evidence", tags=["evidence"])
 
@@ -91,9 +91,9 @@ async def get_evidence_statistics(
 
 # Dependency
 async def get_evidence_service() -> EvidenceService:
-    from infrastructure.database import get_pool
-    from evidence.repositories.evidence_repo import EvidenceRepository
-    from evidence.repositories.custody_repo import CustodyRepository
+    from backend.infrastructure.database import get_pool
+    from .repositories.evidence_repo import EvidenceRepository
+    from .repositories.custody_repo import CustodyRepository
     
     pool = await get_pool()
     evidence_repo = EvidenceRepository(pool)

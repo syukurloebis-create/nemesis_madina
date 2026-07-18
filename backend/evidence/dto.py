@@ -68,7 +68,7 @@ class Evidence:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Evidence":
         """Create from dictionary"""
-        from evidence.dto import CustodyEvent, EvidenceType
+        from .dto import CustodyEvent, EvidenceType
         
         return cls(
             id=data["id"],

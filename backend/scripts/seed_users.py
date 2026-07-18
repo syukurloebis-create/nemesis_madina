@@ -2,8 +2,8 @@
 import asyncio
 import uuid
 from sqlalchemy import text
-from infrastructure.database import AsyncSessionLocal
-from security.hashing import get_password_hash
+from backend.infrastructure.database import AsyncSessionLocal
+from backend.security.hashing import get_password_hash
 
 async def seed_users():
     async with AsyncSessionLocal() as db:

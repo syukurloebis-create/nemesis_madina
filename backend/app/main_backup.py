@@ -54,7 +54,7 @@ app.include_router(graph_router)
 
 # Evidence API
 try:
-    from evidence.api import router as evidence_router
+    from backend.evidence.api import router as evidence_router
     app.include_router(evidence_router)
     print("✅ Evidence API registered at /evidence")
 except Exception as e:

@@ -1,7 +1,9 @@
 """verify_no_changes
 
-Revision ID: 04a7600b53fa
-Revises: f5ce90326d99
+revision = "04a7600b53fa"
+down_revision = "f5ce90326d99"
+branch_labels = None
+depends_on = None
 Create Date: 2026-06-14 10:35:46.712072
 
 """

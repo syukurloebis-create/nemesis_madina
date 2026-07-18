@@ -7,7 +7,7 @@ import asyncio
 import sys
 sys.path.insert(0, '/app')
 
-from infrastructure.database import AsyncSessionLocal
+from backend.infrastructure.database import AsyncSessionLocal
 from sqlalchemy import text
 
 

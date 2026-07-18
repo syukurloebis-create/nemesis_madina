@@ -4,10 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from typing import Optional
 
-from infrastructure.database import get_db
-from services.snapshot_service import SnapshotService
-from cases.event_store import EventStore
-from security.dependencies import require_role
+from backend.infrastructure.database import get_db
+from backend.services.snapshot_service import SnapshotService
+from backend.cases.event_store import EventStore
+from backend.security.dependencies import require_role
 
 router = APIRouter(prefix="/snapshots", tags=["Snapshots"])
 

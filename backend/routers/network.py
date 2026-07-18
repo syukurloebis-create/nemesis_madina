@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from typing import List, Dict, Any
 
-from services.network_intelligence import get_key_actors, get_communities
+from backend.services.network_intelligence import get_key_actors, get_communities
 
-router = APIRouter(prefix="/api/v1/network", tags=["network"])
+router = APIRouter(prefix="/network", tags=["network"])
 
 @router.get("/key-actors")
 async def key_actors():

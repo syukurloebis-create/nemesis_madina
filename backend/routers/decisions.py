@@ -2,14 +2,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from database import get_db
+from backend.database import get_db
 from typing import Optional
 import uuid
 import logging
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/decisions", tags=["decisions"])
+router = APIRouter(prefix="/decisions", tags=["decisions"])
 
 @router.get("/")
 async def get_decisions(

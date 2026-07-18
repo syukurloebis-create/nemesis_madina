@@ -107,9 +107,6 @@ class AnomalyDetector:
             return "Dalam batas normal, lanjutkan monitoring rutin"
 
 
-# Singleton instance for backward compatibility
-detector = AnomalyDetector()
-
     @staticmethod
     def detect_anomaly_calibrated(procurement_data: Dict[str, Any]) -> Dict[str, Any]:
         """Detect anomalies with calibrated risk scoring"""
@@ -132,3 +129,8 @@ detector = AnomalyDetector()
             result["score"] = calibrated.calibrated_score
         
         return result
+
+# Singleton instance for backward compatibility
+detector = AnomalyDetector()
+
+

@@ -4,7 +4,7 @@ from sqlalchemy import text
 from datetime import datetime, timedelta
 import uuid
 
-from database import get_db
+from backend.database import get_db
 
 router = APIRouter(prefix="/predictive", tags=["predictive"])
 

@@ -4,7 +4,7 @@ Lineage Verifier - Verify Lineage Integrity
 
 from typing import List, Dict, Any, Tuple
 from lineage.tracker import LineageTracker, LineageNode
-from evidence.hashing import EvidenceHasher
+from backend.evidence.hashing import EvidenceHasher
 
 
 class LineageVerifier:

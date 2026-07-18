@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
-from infrastructure.database import get_db
-from security.dependencies import get_current_user
+from backend.infrastructure.database import get_db
+from backend.security.dependencies import get_current_user
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/procurement", tags=["procurement"])

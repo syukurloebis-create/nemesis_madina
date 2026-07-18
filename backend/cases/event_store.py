@@ -1,11 +1,11 @@
+"""
+Event Store - SINGLE SOURCE OF TRUTH
+Semua operasi event sourcing harus melalui file ini.
+"""
+
 import uuid
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
-
-"""
-Core Event Store - SINGLE SOURCE OF TRUTH
-Semua operasi event sourcing harus melalui file ini.
-"""
 
 import hashlib
 import json
@@ -14,8 +14,13 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text, desc
 
-from models.event import Event
-from cases.models import Case
+from backend.models.event import Event
+
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from backend.cases.models import Case
 
 # ============================================
 # HASHING UTILITIES

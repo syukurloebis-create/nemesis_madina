@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, '.')
 
 from sqlalchemy import text
-from database import get_db
+from backend.database import get_db
 
 
 async def audit_cryptographic_integrity():

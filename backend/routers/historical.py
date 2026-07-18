@@ -6,10 +6,10 @@ from datetime import datetime
 from typing import Optional, List
 import logging
 
-from infrastructure.database import get_db
-from services.historical_service import HistoricalService
-from security.dependencies import require_role
-from cases.event_store import get_case_events
+from backend.infrastructure.database import get_db
+from backend.services.historical_service import HistoricalService
+from backend.security.dependencies import require_role
+from backend.cases.event_store import get_case_events
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ async def get_case_state_at_time(
     session: AsyncSession = Depends(get_db)
 ):
     """Get case state at specific timestamp (Time Travel)"""
-    from services.replay_service import ReplayService
+    from backend.services.replay_service import ReplayService
 
     try:
         target_time = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
@@ -149,7 +149,7 @@ async def compare_versions(
     _: any = Depends(require_role(["ADMIN", "INVESTIGATOR"]))
 ):
     """Compare two versions of a case with detailed diff"""
-    from services.replay_service import ReplayService
+    from backend.services.replay_service import ReplayService
 
     result = await db.execute(
         text("SELECT id FROM cases WHERE id = :id"),

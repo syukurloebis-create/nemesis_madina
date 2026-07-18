@@ -4,7 +4,7 @@ Chain Validator - Validate Evidence Chains
 
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
-from evidence.hashing import EvidenceHasher
+from .hashing import EvidenceHasher
 
 
 class ChainValidator:

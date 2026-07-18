@@ -5,7 +5,7 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID
 import json
 
-from evidence.models import Evidence, EvidenceStatus
+from .models import Evidence, EvidenceStatus
 
 
 class EvidenceRepository:

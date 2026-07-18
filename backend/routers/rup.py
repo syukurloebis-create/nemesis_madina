@@ -2,13 +2,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from database import get_db
+from backend.database import get_db
 from typing import Optional
 import logging
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/rup", tags=["rup"])
+router = APIRouter(prefix="/rup", tags=["rup"])
 
 @router.get("/data")
 async def get_rup_data(

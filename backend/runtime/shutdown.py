@@ -1,63 +1,50 @@
-"""
-Shutdown Handler - Clean up services on application shutdown
-"""
+# backend/runtime/shutdown.py
 
-import logging
 import asyncio
+import signal
+import logging
+from typing import List, Callable, Awaitable
 
 logger = logging.getLogger(__name__)
 
 
-async def shutdown_handler():
-    """Clean up services"""
-    print("\n" + "="*60)
-    print("NEMESIS SHUTDOWN")
-    print("="*60)
+class ShutdownManager:
+    """Manages graceful shutdown of services."""
     
-    # Close WebSocket connections
-    try:
-        from websocket import ConnectionManager
-        ws_manager = ConnectionManager()
-        
-        # Broadcast shutdown message
-        await ws_manager.broadcast({
-            "type": "shutdown",
-            "message": "Server is shutting down"
-        })
-        
-        # Close all connections
-        for client_id in list(ws_manager.connections.keys()):
-            await ws_manager.disconnect(client_id)
-        
-        logger.info("WebSocket connections closed")
-        print("  ✅ WebSocket connections closed")
-    except Exception as e:
-        logger.error(f"WebSocket shutdown error: {e}")
-        print(f"  ❌ WebSocket shutdown: {e}")
+    def __init__(self):
+        self._shutdown_hooks: List[Callable[[], Awaitable[None]]] = []
+        self._shutdown_event = asyncio.Event()
     
-    # Save state if needed
-    try:
-        from core.events import EventBus
-        bus = EventBus()
+    def add_shutdown_hook(self, hook: Callable[[], Awaitable[None]]):
+        """Add a shutdown hook."""
+        self._shutdown_hooks.append(hook)
+    
+    async def shutdown(self):
+        """Execute all shutdown hooks."""
+        logger.info("Starting graceful shutdown...")
         
-        # Take final snapshot
-        from core.events.snapshots import EventSnapshot
-        snapshot = EventSnapshot()
-        snapshot_id = snapshot.create_snapshot({
-            "events": bus.get_history(limit=1000),
-            "timestamp": datetime.now().isoformat()
-        })
-        logger.info(f"Final snapshot saved: {snapshot_id}")
-        print(f"  ✅ Final snapshot: {snapshot_id}")
-    except Exception as e:
-        logger.warning(f"Snapshot save failed: {e}")
-        print(f"  ⚠️ Snapshot save: {e}")
+        for hook in self._shutdown_hooks:
+            try:
+                await hook()
+            except Exception as e:
+                logger.error(f"Error in shutdown hook: {e}")
+        
+        self._shutdown_event.set()
+        logger.info("Graceful shutdown complete")
     
-    print("\n" + "="*60)
-    print("NEMESIS SHUTDOWN COMPLETE")
-    print("="*60 + "\n")
-    
-    return True
+    async def wait_for_shutdown(self):
+        """Wait for shutdown signal."""
+        loop = asyncio.get_running_loop()
+        
+        # Register signal handlers
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            loop.add_signal_handler(
+                sig,
+                lambda: asyncio.create_task(self.shutdown())
+            )
+        
+        await self._shutdown_event.wait()
 
 
-from datetime import datetime
+# Global shutdown manager
+shutdown_manager = ShutdownManager()

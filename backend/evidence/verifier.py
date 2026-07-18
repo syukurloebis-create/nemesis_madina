@@ -3,7 +3,7 @@
 import hashlib
 import json
 from typing import Dict, Any
-from evidence.hashing import EvidenceHasher
+from .hashing import EvidenceHasher
 
 class EvidenceVerifier:
     @staticmethod

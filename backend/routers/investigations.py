@@ -1,175 +1,92 @@
-from fastapi import APIRouter, HTTPException
-from typing import List, Optional
-from datetime import datetime
+from fastapi import APIRouter, Query
+from typing import Optional
 import uuid
+from datetime import datetime, timedelta
 
 router = APIRouter()
 
-# Data investigasi (seeded)
-INVESTIGATIONS_DATA = [
+# Mock investigations data
+MOCK_INVESTIGATIONS = [
     {
         "id": "inv-001",
         "case_id": "446e216d-eb0e-487e-8e6b-ec943468ea20",
         "title": "Investigasi Vendor X - Kolusi",
-        "description": "Deteksi pola kolusi antara Vendor X dengan pegawai internal dalam pengadaan barang",
+        "description": "Deteksi pola kolusi antara Vendor X dengan pegawai internal",
         "status": "IN_PROGRESS",
         "priority": "HIGH",
-        "assigned_to": "team-fraud",
-        "assigned_to_name": "Tim Investigasi Fraud",
-        "created_at": "2026-06-20T00:00:00Z",
-        "updated_at": "2026-06-23T00:00:00Z",
-        "evidence_count": 12,
-        "witness_count": 3,
+        "assigned_to": "Tim Investigasi Fraud",
         "progress": 65,
+        "evidence_count": 12,
         "tags": ["Kolusi", "Vendor", "Internal"]
     },
     {
         "id": "inv-002",
         "case_id": "446e216d-eb0e-487e-8e6b-ec943468ea20",
         "title": "Investigasi Transaksi Mencurigakan",
-        "description": "Pola transaksi tidak wajar pada pengadaan IT dengan nilai Rp 2.5M",
+        "description": "Pola transaksi tidak wajar pada pengadaan IT",
         "status": "REVIEW",
         "priority": "MEDIUM",
-        "assigned_to": "team-finance",
-        "assigned_to_name": "Tim Analisis Keuangan",
-        "created_at": "2026-06-18T00:00:00Z",
-        "updated_at": "2026-06-22T00:00:00Z",
-        "evidence_count": 8,
-        "witness_count": 2,
+        "assigned_to": "Tim Analisis Keuangan",
         "progress": 85,
+        "evidence_count": 8,
         "tags": ["Transaksi", "Keuangan", "IT"]
     },
     {
         "id": "inv-003",
         "case_id": "446e216d-eb0e-487e-8e6b-ec943468ea20",
         "title": "Investigasi Pengadaan Fiktif",
-        "description": "Indikasi pengadaan fiktif pada proyek infrastruktur dengan kerugian potensial Rp 5M",
+        "description": "Indikasi pengadaan fiktif pada proyek infrastruktur",
         "status": "PENDING",
         "priority": "CRITICAL",
-        "assigned_to": "team-anticorruption",
-        "assigned_to_name": "Tim Khusus Anti-Korupsi",
-        "created_at": "2026-06-22T00:00:00Z",
-        "updated_at": "2026-06-22T00:00:00Z",
-        "evidence_count": 5,
-        "witness_count": 1,
+        "assigned_to": "Tim Khusus Anti-Korupsi",
         "progress": 20,
+        "evidence_count": 5,
         "tags": ["Fiktif", "Infrastruktur", "Korupsi"]
-    },
-    {
-        "id": "inv-004",
-        "case_id": "446e216d-eb0e-487e-8e6b-ec943468ea20",
-        "title": "Investigasi Vendor Y - Konflik Kepentingan",
-        "description": "Deteksi konflik kepentingan antara Vendor Y dengan pejabat pengadaan",
-        "status": "PENDING",
-        "priority": "HIGH",
-        "assigned_to": "team-fraud",
-        "assigned_to_name": "Tim Investigasi Fraud",
-        "created_at": "2026-06-21T00:00:00Z",
-        "updated_at": "2026-06-21T00:00:00Z",
-        "evidence_count": 3,
-        "witness_count": 0,
-        "progress": 10,
-        "tags": ["Konflik", "Vendor", "Pejabat"]
-    },
-    {
-        "id": "inv-005",
-        "case_id": "446e216d-eb0e-487e-8e6b-ec943468ea20",
-        "title": "Investigasi Mark-up Harga",
-        "description": "Indikasi mark-up harga pada paket pengadaan jasa konsultan",
-        "status": "COMPLETED",
-        "priority": "MEDIUM",
-        "assigned_to": "team-finance",
-        "assigned_to_name": "Tim Analisis Keuangan",
-        "created_at": "2026-06-10T00:00:00Z",
-        "updated_at": "2026-06-19T00:00:00Z",
-        "evidence_count": 15,
-        "witness_count": 4,
-        "progress": 100,
-        "tags": ["Mark-up", "Konsultan", "Selesai"]
     }
 ]
 
 @router.get("/case/{case_id}")
 async def get_investigations_by_case(case_id: str):
     """Get all investigations for a case"""
-    result = [inv for inv in INVESTIGATIONS_DATA if inv["case_id"] == case_id]
+    result = [inv for inv in MOCK_INVESTIGATIONS if inv["case_id"] == case_id]
     return result
+
+@router.get("/stats")
+async def get_investigations_stats(case_id: str = Query(...)):
+    """Get investigation statistics"""
+    investigations = [inv for inv in MOCK_INVESTIGATIONS if inv["case_id"] == case_id]
+    
+    return {
+        "total": len(investigations),
+        "in_progress": len([i for i in investigations if i["status"] == "IN_PROGRESS"]),
+        "pending": len([i for i in investigations if i["status"] == "PENDING"]),
+        "review": len([i for i in investigations if i["status"] == "REVIEW"]),
+        "completed": len([i for i in investigations if i["status"] == "COMPLETED"])
+    }
 
 @router.get("/{investigation_id}")
 async def get_investigation(investigation_id: str):
     """Get investigation by ID"""
-    for inv in INVESTIGATIONS_DATA:
+    for inv in MOCK_INVESTIGATIONS:
         if inv["id"] == investigation_id:
             return inv
-    raise HTTPException(status_code=404, detail="Investigation not found")
-
-@router.post("/")
-async def create_investigation(data: dict):
-    """Create new investigation"""
-    new_inv = {
-        "id": f"inv-{uuid.uuid4().hex[:8]}",
-        "case_id": data.get("case_id"),
-        "title": data.get("title"),
-        "description": data.get("description", ""),
-        "status": "PENDING",
-        "priority": data.get("priority", "MEDIUM"),
-        "assigned_to": data.get("assigned_to", ""),
-        "assigned_to_name": data.get("assigned_to_name", ""),
-        "created_at": datetime.now().isoformat(),
-        "updated_at": datetime.now().isoformat(),
-        "evidence_count": 0,
-        "witness_count": 0,
-        "progress": 0,
-        "tags": data.get("tags", [])
-    }
-    INVESTIGATIONS_DATA.append(new_inv)
-    return new_inv
+    return {"error": "Investigation not found"}
 
 @router.patch("/{investigation_id}/status")
-async def update_status(investigation_id: str, data: dict):
+async def update_investigation_status(investigation_id: str, status: str = Query(...)):
     """Update investigation status"""
-    for inv in INVESTIGATIONS_DATA:
+    for inv in MOCK_INVESTIGATIONS:
         if inv["id"] == investigation_id:
-            inv["status"] = data.get("status")
-            if "progress" in data:
-                inv["progress"] = data.get("progress")
-            inv["updated_at"] = datetime.now().isoformat()
-            return inv
-    raise HTTPException(status_code=404, detail="Investigation not found")
-
-@router.post("/{investigation_id}/escalate")
-async def escalate_investigation(investigation_id: str, data: dict):
-    """Escalate investigation"""
-    for inv in INVESTIGATIONS_DATA:
-        if inv["id"] == investigation_id:
-            inv["status"] = "ESCALATED"
-            inv["updated_at"] = datetime.now().isoformat()
-            return {
-                "message": f"Investigation {investigation_id} escalated", 
-                "reason": data.get("reason"),
-                "target_level": data.get("target_level", "HIGH")
-            }
-    raise HTTPException(status_code=404, detail="Investigation not found")
+            inv["status"] = status
+            return {"message": f"Status updated to {status}", "investigation": inv}
+    return {"error": "Investigation not found"}
 
 @router.post("/{investigation_id}/notes")
-async def add_note(investigation_id: str, data: dict):
+async def add_investigation_note(investigation_id: str, note: str = Query(...)):
     """Add note to investigation"""
-    # In production, save to database
     return {
-        "message": f"Note added to {investigation_id}", 
-        "note": data.get("note"),
+        "message": "Note added successfully",
+        "investigation_id": investigation_id,
+        "note": note,
         "timestamp": datetime.now().isoformat()
-    }
-
-@router.get("/stats")
-async def get_stats(case_id: str):
-    """Get investigation stats for a case"""
-    case_investigations = [inv for inv in INVESTIGATIONS_DATA if inv["case_id"] == case_id]
-    return {
-        "total": len(case_investigations),
-        "in_progress": len([i for i in case_investigations if i["status"] == "IN_PROGRESS"]),
-        "pending": len([i for i in case_investigations if i["status"] == "PENDING"]),
-        "completed": len([i for i in case_investigations if i["status"] == "COMPLETED"]),
-        "review": len([i for i in case_investigations if i["status"] == "REVIEW"]),
-        "escalated": len([i for i in case_investigations if i["status"] == "ESCALATED"])
     }

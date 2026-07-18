@@ -5,9 +5,9 @@ import uuid
 import json
 import logging
 
-from security.dependencies import get_current_active_user
-from security.models import User
-from infrastructure.database import get_db
+from backend.security.dependencies import get_current_active_user
+from backend.security.models import User
+from backend.infrastructure.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 

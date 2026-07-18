@@ -12,7 +12,7 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 import enum
 import uuid
 
-from database import Base
+from backend.database import Base
 
 
 class RiskLevel(str, enum.Enum):
@@ -177,4 +177,34 @@ class IntelligenceReport(Base):
     
     __table_args__ = (
         Index("idx_report_case_type", "case_id", "report_type"),
+    )
+
+
+class FraudDetection(Base):
+    __tablename__="fraud_detections"
+    id = Column(
+        String,
+        primary_key=True,
+        default=lambda:str(uuid.uuid4())
+    )
+    case_id = Column(
+        String,
+        nullable=False
+    )
+    risk_level = Column(
+        String
+    )
+    risk_score = Column(
+        Float
+    )
+    confidence = Column(
+        Float
+    )
+    signals = Column(
+        JSON,
+        default=dict
+    )
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now()
     )

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 import logging
 
-from infrastructure.database import get_db
+from backend.infrastructure.database import get_db
 
 logger = logging.getLogger(__name__)
 

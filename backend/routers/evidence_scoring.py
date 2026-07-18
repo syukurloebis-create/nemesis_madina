@@ -4,10 +4,10 @@ Evidence Scoring Router - Fixed
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from database import get_db
-from services.evidence_scoring import calculate_score
+from backend.database import get_db
+from backend.services.evidence_scoring import calculate_score
 
-router = APIRouter(prefix="/api/v1/evidence", tags=["evidence"])
+router = APIRouter(prefix="/evidence", tags=["evidence"])
 
 @router.get("/{evidence_id}/score")
 async def get_evidence_score(evidence_id: str):

@@ -11,11 +11,11 @@ router = APIRouter(prefix="/audit", tags=["audit"])
 
 
 async def get_audit_generator():
-    from infrastructure.database import get_pool
+    from backend.infrastructure.database import get_pool
     from investigation.services.case_service import InvestigationCaseService
     from investigation.repositories.case_repo import InvestigationCaseRepository, FindingRepository
-    from evidence.service import EvidenceService
-    from evidence.repository import EvidenceRepository
+    from backend.evidence.service import EvidenceService
+    from backend.evidence.repository import EvidenceRepository
     from decision_trace.services.decision_trace_service import DecisionTraceService
     from decision_trace.repositories.decision_trace_repo import DecisionTraceRepository
     

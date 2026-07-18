@@ -3,9 +3,9 @@
 from typing import Optional
 from fastapi import Depends
 
-from evidence import EvidenceRegistry
+from backend.evidence import EvidenceRegistry
 from websocket import ConnectionManager
-from core.events import EventBus
+from backend.core.events import EventBus
 from graph import RelationshipGraph
 
 

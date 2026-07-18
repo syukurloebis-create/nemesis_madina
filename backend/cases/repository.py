@@ -3,7 +3,7 @@ from sqlalchemy import select
 from typing import List, Optional, Dict, Any
 import uuid
 
-from cases.models import Case, CasePriority
+from backend.cases.models import Case, CasePriority
 
 
 class CaseRepository:

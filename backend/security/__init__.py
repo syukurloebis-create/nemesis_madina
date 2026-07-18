@@ -1,5 +1,5 @@
 # backend/security/__init__.py
-from security.auth import (
+from backend.security.auth import (
     get_current_user,
     get_current_active_user,
     authenticate_user,

@@ -1,13 +1,13 @@
-from intelligence.core.feature_engine import FeatureEngine
+from backend.intelligence.core.feature_engine import FeatureEngine
 from intelligence.core.risk_model import RiskModel
 from intelligence.core.trust_model import TrustModel
 from intelligence.core.confidence_model import ConfidenceModel
 from intelligence.core.calibration import Calibration
 from intelligence.core.explainability_engine import ExplainabilityEngine
 
-from core.chain_of_custody import ChainOfCustody
-from core.registry import EventRegistry
-from core.entity_memory import EntityMemory
+from backend.core.chain_of_custody import ChainOfCustody
+from backend.core.registry import EventRegistry
+from backend.core.entity_memory import EntityMemory
 
 
 class IntelligenceEngine:

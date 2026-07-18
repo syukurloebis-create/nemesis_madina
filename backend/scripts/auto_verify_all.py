@@ -8,8 +8,8 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlalchemy import text
-from database import get_db
-from services.auto_verifier import AutoVerifier
+from backend.database import get_db
+from backend.services.auto_verifier import AutoVerifier
 
 async def auto_verify_all():
     """Auto-verify all pending evidence"""

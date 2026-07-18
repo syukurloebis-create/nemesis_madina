@@ -10,7 +10,7 @@ from datetime import datetime
 
 from orchestrator.registry import ExecutionRegistry
 from orchestrator.watchdog import HealthWatchdog
-from core.events.bus import EventBusV2, RoutingDecision
+from backend.core.events.bus import EventBusV2, RoutingDecision
 from orchestrator.scheduler_layer import SchedulerLayer
 from orchestrator.models import ExecutionJob, JobStatus, ReplayResult, HealthReport, EventType
 

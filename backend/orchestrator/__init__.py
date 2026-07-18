@@ -6,7 +6,7 @@ Execution Governance untuk Event-Driven Intelligence System
 from orchestrator.core import NemesisOrchestrator
 from orchestrator.registry import ExecutionRegistry
 from orchestrator.watchdog import HealthWatchdog
-from core.events.bus import EventBusV2
+from backend.core.events.bus import EventBusV2
 from orchestrator.scheduler_layer import SchedulerLayer
 from orchestrator.models import ExecutionJob, JobStatus, HealthReport, ReplayResult, EventType
 

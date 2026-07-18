@@ -7,7 +7,7 @@ from decision_trace.models import (
     DecisionTrace, DecisionTraceCreate, ExplainabilityResult, DecisionType
 )
 from decision_trace.repositories.decision_trace_repo import DecisionTraceRepository
-from core.hash.hasher import UnifiedHasher
+from backend.core.hash.hasher import UnifiedHasher
 
 
 class DecisionTraceService:

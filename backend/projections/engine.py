@@ -44,7 +44,7 @@ class ProjectionEngine:
         last_id = None
         total_processed = 0
         
-        from events.repository import EventRepository
+        from backend.events.repository import EventRepository
         
         while True:
             # Get batch of events

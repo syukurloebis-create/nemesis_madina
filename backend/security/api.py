@@ -4,10 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import logging
 
-from infrastructure.database import get_db
-from security.models import User, Institution
-from security.auth import create_access_token
-from security.dependencies import get_current_user
+from backend.infrastructure.database import get_db
+from backend.security.models import User, Institution
+from backend.security.auth import create_access_token
+from backend.security.dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
 

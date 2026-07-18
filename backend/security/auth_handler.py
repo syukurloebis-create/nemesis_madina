@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 # IMPORT FROM EXISTING AUTH SYSTEM
 # ============================================
 
-from security.auth import create_access_token, decode_token
+from backend.security.auth import create_access_token, decode_token
 
 # ============================================
 # WEBSOCKET TOKEN VERIFICATION

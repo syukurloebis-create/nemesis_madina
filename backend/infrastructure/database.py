@@ -1,74 +1,47 @@
 """
-Compatibility database layer.
+Legacy compatibility layer.
 
-Legacy modules import:
-    from infrastructure.database import ...
+This module exists only for older code importing:
 
-Current implementation lives in:
-    database
+    infrastructure.database
+
+The actual implementation lives in:
+
+    backend.database
 """
 
-from database import (
+from backend.database import (
     engine,
     Base,
-    get_db,
+    AsyncSessionLocal,
+    SessionFactory,
     async_session_maker,
+    get_db,
+    get_db_session,
+    run_with_new_session,
+    init_db,
+    close_db,
+    check_db_health,
 )
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import AsyncGenerator
+# Legacy aliases
+SessionLocal = AsyncSessionLocal
+get_pool = AsyncSessionLocal
+check_db_connection = check_db_health
 
-
-# ============================================================
-# Legacy alias
-# ============================================================
-
-AsyncSessionLocal = async_session_maker
-
-
-# ============================================================
-# Initialization compatibility
-# ============================================================
-
-async def init_db():
-    """
-    Legacy startup hook.
-    Creates SQLAlchemy tables if needed.
-    """
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-
-async def close_db():
-    """
-    Legacy shutdown hook.
-    """
-    await engine.dispose()
-
-
-# ============================================================
-# Dependency compatibility
-# ============================================================
-
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session_maker() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
-        finally:
-            await session.close()
-
-
-# ============================================================
-# Pool compatibility
-# ============================================================
-
-async def get_pool():
-    """
-    Some legacy modules expect a pool object.
-    SQLAlchemy async engine provides equivalent access.
-    """
-    return engine
+__all__ = [
+    "engine",
+    "Base",
+    "AsyncSessionLocal",
+    "SessionFactory",
+    "async_session_maker",
+    "SessionLocal",
+    "get_db",
+    "get_db_session",
+    "get_pool",
+    "run_with_new_session",
+    "init_db",
+    "close_db",
+    "check_db_health",
+    "check_db_connection",
+]

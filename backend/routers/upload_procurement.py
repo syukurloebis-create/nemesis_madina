@@ -8,8 +8,8 @@ import os
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from infrastructure.database import get_db
-from security.dependencies import get_current_user
+from backend.infrastructure.database import get_db
+from backend.security.dependencies import get_current_user
 
 router = APIRouter(prefix="/upload/procurement", tags=["procurement"])
 

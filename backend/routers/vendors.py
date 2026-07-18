@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Optional, Dict, Any
 from datetime import datetime
-from security.dependencies import get_current_active_user
-from security.models import User
+from backend.security.dependencies import get_current_active_user
+from backend.security.models import User
 
 router = APIRouter(prefix="/vendors", tags=["vendors"])
 

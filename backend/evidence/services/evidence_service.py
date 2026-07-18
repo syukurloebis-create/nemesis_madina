@@ -5,13 +5,13 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID
 from datetime import datetime
 
-from evidence.models import (
+from .models import (
     Evidence, EvidenceCreate, EvidenceVerification, CustodyRecord, CustodyAction,
     EvidenceStatus, SourceSystem, EvidenceType
 )
-from evidence.repositories.evidence_repo import EvidenceRepository
-from evidence.repositories.custody_repo import CustodyRepository
-from core.hash.hasher import UnifiedHasher
+from .repositories.evidence_repo import EvidenceRepository
+from .repositories.custody_repo import CustodyRepository
+from backend.core.hash.hasher import UnifiedHasher
 
 
 class EvidenceService:

@@ -1,5 +1,5 @@
 from typing import Dict, List
-from evidence.registry import EvidenceRegistry
+from backend.evidence.registry import EvidenceRegistry
 
 
 class ChainOfCustody:
@@ -30,7 +30,7 @@ class ChainOfCustody:
             actual = temp.pop("hash", None)
 
             # re-hash
-            from evidence.hashing import EvidenceHashing
+            from backend.evidence.hashing import EvidenceHashing
             recalculated = EvidenceHashing.hash(temp)
 
             if recalculated != expected:

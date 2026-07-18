@@ -65,7 +65,7 @@ async def detailed_health():
     
     # Check evidence registry
     try:
-        from evidence import EvidenceRegistry
+        from backend.evidence import EvidenceRegistry
         registry = EvidenceRegistry()
         components["evidence"] = {
             "status": "healthy",

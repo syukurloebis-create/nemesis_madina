@@ -3,7 +3,7 @@ import asyncio
 import sys
 sys.path.insert(0, '.')
 
-from infrastructure.database import AsyncSessionLocal
+from backend.infrastructure.database import AsyncSessionLocal
 from sqlalchemy import text
 
 async def create_table():
