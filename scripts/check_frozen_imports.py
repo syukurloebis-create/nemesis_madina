@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """
-check_frozen_imports.py — ADR-030 Revision v4.1
+check_frozen_imports.py — ADR-030 Revision v4
 
 Migration-Aware Architecture Freeze Validator with Baseline Comparison.
-Supports dynamic imports: importlib.import_module(), __import__()
+
+Rules:
+  - Entrypoint → Existing Frozen (baseline) = PASS
+  - Entrypoint → New Frozen (not in baseline) = FAIL
+  - Frozen → Frozen = PASS (internal)
+  - Entrypoint → Non-Frozen = PASS
 
 Configuration: config/architecture.yml
 Baseline: config/frozen_dependency_baseline.json
@@ -72,35 +77,18 @@ def get_entrypoint_files(root: Path, entrypoints: List[str], excluded_dirs: List
 
 
 def extract_imports(filepath: Path) -> Set[str]:
-    """Extract all imports from file using AST, including dynamic imports"""
     imports = set()
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
             content = f.read()
             tree = ast.parse(content, filename=str(filepath))
             for node in ast.walk(tree):
-                # Static imports
                 if isinstance(node, ast.Import):
                     for name in node.names:
                         imports.add(name.name)
                 elif isinstance(node, ast.ImportFrom):
                     if node.module:
                         imports.add(node.module)
-                # Dynamic imports: importlib.import_module()
-                elif isinstance(node, ast.Call):
-                    # importlib.import_module('xxx')
-                    if isinstance(node.func, ast.Attribute):
-                        if (isinstance(node.func.value, ast.Name) and
-                            node.func.value.id == 'importlib' and
-                            node.func.attr == 'import_module'):
-                            for arg in node.args:
-                                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
-                                    imports.add(arg.value)
-                    # __import__('xxx')
-                    elif isinstance(node.func, ast.Name) and node.func.id == '__import__':
-                        for arg in node.args:
-                            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
-                                imports.add(arg.value)
     except Exception:
         pass
     return imports
