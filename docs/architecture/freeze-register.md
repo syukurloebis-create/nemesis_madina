@@ -1,15 +1,38 @@
-# Freeze Register
+# Freeze Register — ADR-030 Revision v2
 
-Komponen-komponen yang dibekukan (frozen) berdasarkan [ADR-030](adr/ADR-030-architecture-freeze.md).
+## Scope: Only truly dormant components are frozen.
 
-| ID | Component | Type | Reason | Since | Architecture Owner | Created | Last Review | Next Review | Reviewer | Status | Runtime Reachable | Current State |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| FR-001 | GetDashboardQueryHandler | Dormant Runtime | Not active in production execution path | ADR-030 | Architecture Team | Sprint 17 | Sprint 17 | Sprint 19 | Architecture Board | KEEP FROZEN | No | Frozen |
-| FR-002 | GetDashboardQuery | Dormant Runtime | Not active in production execution path | ADR-030 | Architecture Team | Sprint 17 | Sprint 17 | Sprint 19 | Architecture Board | KEEP FROZEN | No | Frozen |
-| FR-003 | DashboardReadRepository | Dormant Runtime | Not active in production execution path | ADR-030 | Architecture Team | Sprint 17 | Sprint 17 | Sprint 19 | Architecture Board | KEEP FROZEN | No | Frozen |
-| FR-004 | DashboardProjection | Dormant Runtime | Not active in production execution path | ADR-030 | Architecture Team | Sprint 17 | Sprint 17 | Sprint 19 | Architecture Board | KEEP FROZEN | No | Frozen |
-| FR-005 | WorkflowService | Dormant Runtime | Not active in production execution path | ADR-030 | Architecture Team | Sprint 17 | Sprint 17 | Sprint 19 | Architecture Board | KEEP FROZEN | No | Frozen |
-| FR-006 | ProjectionRebuilder | Architectural Preservation | Referenced by ADR-027 | ADR-030 | Architecture Team | Sprint 17 | Sprint 17 | Sprint 19 | Architecture Board | KEEP FROZEN | No | Frozen |
-| FR-007 | ProjectionCheckpoint | Architectural Preservation | Referenced by ADR-027 | ADR-030 | Architecture Team | Sprint 17 | Sprint 17 | Sprint 19 | Architecture Board | KEEP FROZEN | No | Frozen |
-| FR-008 | OutboxPublisher | Architectural Preservation | Referenced by ADR-020 | ADR-030 | Architecture Team | Sprint 17 | Sprint 17 | Sprint 19 | Architecture Board | KEEP FROZEN | No | Frozen |
-| FR-009 | AnalyzeCaseCommandHandler | Architectural Preservation | Referenced by ADR-020 | ADR-030 | Architecture Team | Sprint 17 | Sprint 17 | Sprint 19 | Architecture Board | KEEP FROZEN | No | Frozen |
+### Type A — DORMANT (Blocked from Runtime)
+
+| ID | Component | File | Status |
+| :--- | :--- | :--- | :--- |
+| FR-001 | GetDashboardQueryHandler | `backend/application/queries/get_dashboard_handler.py` | FROZEN |
+| FR-002 | GetDashboardQuery | `backend/application/queries/dashboard_query.py` | FROZEN |
+| FR-005 | WorkflowService | `backend/services/workflow_service.py` | FROZEN |
+
+### Type B — ACTIVE DEVELOPMENT (Not Frozen)
+
+| ID | Component | File | Status |
+| :--- | :--- | :--- | :--- |
+| FR-003 | DashboardReadRepository | `backend/infrastructure/repositories/dashboard_read_repository.py` | ACTIVE |
+| FR-004 | DashboardProjection | `backend/infrastructure/projections/dashboard_projection.py` | ACTIVE |
+| FR-007 | ProjectionCheckpoint | `backend/infrastructure/models/projection_checkpoint.py` | ACTIVE |
+
+### Type C — PRESERVED ARCHITECTURAL RUNTIME
+
+Components are frozen from redesign, but may remain reachable in production runtime.
+
+**Allowed:**
+- compatibility fixes
+- security patches
+- operational maintenance
+
+**Blocked:**
+- feature expansion
+- architectural redesign
+- responsibility migration
+
+| ID | Component | File | Status |
+| :--- | :--- | :--- | :--- |
+| FR-008 | OutboxPublisher | `backend/infrastructure/outbox/publisher.py` | FROZEN |
+| FR-009 | AnalyzeCaseCommandHandler | `backend/application/commands/analysis_mapper.py` | FROZEN |
