@@ -10,15 +10,13 @@ freeze_policy:
     existing_dependencies_source: baseline
     new_dependencies_blocked: true
     internal_frozen_dependencies_allowed: true
+    preserved_runtime_exception: true
 
-  runtime:
-    behavior_change_forbidden: true
-    api_change_forbidden: true
-    schema_change_forbidden: true
-
-  review_cycle:
-    sprint: 2
-    next_review: Sprint 19
+  scope:
+    version: v2
+    frozen_components: 5
+    active_components: 3
+    total_components: 8
 
   governance:
     baseline_change_requires_adr: true
