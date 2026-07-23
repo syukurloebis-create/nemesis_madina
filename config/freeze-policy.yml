@@ -1,0 +1,26 @@
+freeze_policy:
+  semantics:
+    frozen_is_not_legacy: true
+    deletion_allowed: false
+    modification_allowed: false
+    unfreeze_allowed: true
+
+  dependency:
+    existing_dependencies_allowed: true
+    existing_dependencies_source: baseline
+    new_dependencies_blocked: true
+    internal_frozen_dependencies_allowed: true
+
+  runtime:
+    behavior_change_forbidden: true
+    api_change_forbidden: true
+    schema_change_forbidden: true
+
+  review_cycle:
+    sprint: 2
+    next_review: Sprint 19
+
+  governance:
+    baseline_change_requires_adr: true
+    unfreeze_requires_adr: true
+    removal_requires_adr: true
