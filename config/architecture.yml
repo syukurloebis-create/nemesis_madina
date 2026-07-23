@@ -1,0 +1,50 @@
+# ADR-030 Freeze Scope Revision v2
+
+freeze_policy:
+  model: classification_based_governance
+  description: |
+    Only truly dormant components are frozen.
+    Active development components are excluded from freeze.
+
+  rules:
+    active_to_dormant: BLOCKED
+    active_to_preserved: BLOCKED
+    preserved_to_active: ALLOWED
+    frozen_to_frozen: ALLOWED
+
+frozen_components:
+  # Type A — DORMANT (BLOCKED)
+  FR-001:
+    module: backend.application.queries.get_dashboard_handler
+    classification: dormant
+  FR-002:
+    module: backend.application.queries.dashboard_query
+    classification: dormant
+  FR-005:
+    module: backend.services.workflow_service
+    classification: dormant
+
+  # Type C — PRESERVED ARCHITECTURAL RUNTIME (ALLOWED)
+  FR-008:
+    module: backend.infrastructure.outbox.publisher
+    classification: preserved_runtime
+  FR-009:
+    module: backend.application.commands.analysis_mapper
+    classification: preserved_runtime
+
+runtime_entrypoints:
+  - backend.main
+  - backend.api
+  - backend.routers
+  - backend.bootstrap
+
+excluded_directories:
+  - tests
+  - docs
+  - migrations
+  - scripts
+  - archive
+  - __pycache__
+  - .git
+  - .venv
+  - node_modules
