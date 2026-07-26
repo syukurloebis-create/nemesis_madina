@@ -1,0 +1,31 @@
+{
+  "name": "@nemesis/kernel-core",
+  "version": "1.1.0-a",
+  "description": "NEMESIS Madina - Kernel Core (Layer 2)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@nemesis/contracts-common": "workspace:*",
+    "@nemesis/contracts-core": "workspace:*",
+    "@nemesis/contracts-execution": "workspace:*",
+    "@nemesis/contracts-events": "workspace:*",
+    "@nemesis/contracts-diagnostics": "workspace:*",
+    "@nemesis/contracts-provider": "workspace:*",
+    "@nemesis/spi-provider": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
+
+"exports": {
+  ".": {
+    "types": "./dist/index.d.ts",
+    "import": "./dist/index.js",
+    "require": "./dist/index.js"
+  }
+}

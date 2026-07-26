@@ -1,53 +1,77 @@
-import { useQuery } from '@tanstack/react-query';
-import { getExecutiveOverview, getEvidenceStats, getGovernanceMetrics, getKeyActors, getCommunities } from '../api/nemesisApi';
-import { getKeyActors } from '../services/api';
+import { useEffect, useState, useCallback } from 'react';
+import intelligenceService, {
+  HealthResponse,
+  CaseStats,
+  FraudStats,
+  GraphMetrics,
+  RiskStats,
+} from '../services/intelligence';
 
-export const useExecutiveOverview = () => {
-  return useQuery({
-    queryKey: ['executiveOverview'],
-    queryFn: async () => {
-      const res = await getExecutiveOverview();
-      return res.data;
-    },
-  });
-};
+interface DashboardData {
+  health: HealthResponse | null;
+  cases: CaseStats | null;
+  fraud: FraudStats | null;
+  graph: GraphMetrics | null;
+  risk: RiskStats | null;
+}
 
-export const useEvidenceStats = () => {
-  return useQuery({
-    queryKey: ['evidenceStats'],
-    queryFn: async () => {
-      const res = await getEvidenceStats();
-      return res.data;
-    },
-  });
-};
+interface UseDashboardReturn {
+  data: DashboardData;
+  loading: boolean;
+  error: Error | null;
+  refetch: () => Promise<void>;
+  isRefreshing: boolean;
+}
 
-export const useGovernanceMetrics = () => {
-  return useQuery({
-    queryKey: ['governanceMetrics'],
-    queryFn: async () => {
-      const res = await getGovernanceMetrics();
-      return res.data;
-    },
+export function useDashboard(): UseDashboardReturn {
+  const [data, setData] = useState<DashboardData>({
+    health: null,
+    cases: null,
+    fraud: null,
+    graph: null,
+    risk: null,
   });
-};
+  const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-export const useKeyActors = () => {
-  return useQuery({
-    queryKey: ['keyActors'],
-    queryFn: async () => {
-      const res = await getKeyActors();
-      return res.data;
-    },
-  });
-};
+  const fetchData = useCallback(async () => {
+    try {
+      setIsRefreshing(true);
+      const [health, cases, fraud, graph, risk] = await Promise.all([
+        intelligenceService.getHealth(),
+        intelligenceService.getCaseStats(),
+        intelligenceService.getFraudStats(),
+        intelligenceService.getGraphMetrics(),
+        intelligenceService.getRiskStats(),
+      ]);
 
-export const useCommunities = () => {
-  return useQuery({
-    queryKey: ['communities'],
-    queryFn: async () => {
-      const res = await getCommunities();
-      return res.data;
-    },
-  });
-};
+      setData({ health, cases, fraud, graph, risk });
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to fetch dashboard data'));
+      console.error('Dashboard error:', err);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+  return {
+    data,
+    loading,
+    error,
+    refetch: fetchData,
+    isRefreshing,
+  };
+}
+
+export default useDashboard;

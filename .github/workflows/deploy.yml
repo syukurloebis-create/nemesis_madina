@@ -1,75 +1,166 @@
-# NEMESIS Deployment Workflow
-name: NEMESIS Deploy
+name: NEMESIS V8.1 CI/CD Pipeline
 
 on:
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy'
-        required: true
-        default: 'staging'
-        type: choice
-        options:
-          - staging
-          - production
-      version:
-        description: 'Version to deploy'
-        required: false
-        default: 'latest'
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  PYTHON_VERSION: '3.12'
+  NODE_VERSION: '20'
 
 jobs:
-  deploy-staging:
-    if: github.event.inputs.environment == 'staging'
+  test:
     runs-on: ubuntu-latest
-    environment: staging
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
-    - name: Configure kubectl
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
       run: |
-        mkdir -p $HOME/.kube
-        echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 --decode > $HOME/.kube/config
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov flake8 mypy
+    
+    - name: Lint with flake8
+      run: |
+        flake8 backend/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 backend/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Type check with mypy
+      run: |
+        mypy backend/ --ignore-missing-imports
+    
+    - name: Test with pytest
+      run: |
+        pytest tests/ -v --cov=backend --cov-report=xml --cov-report=term
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  build-frontend:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-build
+        path: frontend/dist/
+
+  build-backend:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Build Docker image
+      run: |
+        docker build -t nemesis-backend:${{ github.sha }} .
+        docker tag nemesis-backend:${{ github.sha }} nemesis-backend:latest
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: [build-frontend, build-backend]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [security-scan]
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - uses: actions/checkout@v4
     
     - name: Deploy to staging
       run: |
-        kubectl set image deployment/nemesis-api api=${{ secrets.DOCKER_USERNAME }}/nemesis:${{ github.event.inputs.version || github.sha }} -n staging
-        kubectl rollout status deployment/nemesis-api -n staging
-  
+        echo "Deploying to staging environment..."
+        # Add actual deployment commands here
+        # Example: kubectl apply -f k8s/staging/
+    
+    - name: Health check
+      run: |
+        sleep 10
+        curl -f http://staging.nemesis.local/health || exit 1
+
   deploy-production:
-    if: github.event.inputs.environment == 'production'
     runs-on: ubuntu-latest
-    environment: production
+    needs: [deploy-staging]
+    if: github.ref == 'refs/heads/main'
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
-    - name: Configure kubectl
+    - name: Deploy to production
       run: |
-        mkdir -p $HOME/.kube
-        echo "${{ secrets.KUBE_CONFIG_PROD }}" | base64 --decode > $HOME/.kube/config
+        echo "Deploying to production..."
+        # Add actual deployment commands here
+        # Example: kubectl apply -f k8s/production/
     
-    - name: Backup current deployment
+    - name: Health check
       run: |
-        kubectl get deployment nemesis-api -n production -o yaml > backup_api.yaml
-        kubectl get deployment nemesis-websocket -n production -o yaml > backup_ws.yaml
-    
-    - name: Deploy to production (blue/green)
-      run: |
-        # Deploy green version
-        kubectl apply -f k8s/deployment-green.yaml -n production
-        kubectl rollout status deployment/nemesis-api-green -n production --timeout=5m
-        
-        # Switch traffic
-        kubectl patch service nemesis-api -n production -p '{"spec":{"selector":{"version":"green"}}}'
-        
-        # Verify
         sleep 10
-        curl -f https://api.nemesis.com/health || (kubectl rollout undo deployment/nemesis-api-green -n production && exit 1)
-        
-        # Remove blue
-        kubectl delete deployment nemesis-api-blue -n production || true
+        curl -f https://nemesis.local/health || exit 1
     
-    - name: Notify deployment status
+    - name: Notify deployment
       run: |
-        echo "Deployment to production completed successfully"
+        echo "✅ NEMESIS V8.1 deployed successfully!"

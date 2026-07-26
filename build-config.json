@@ -1,0 +1,32 @@
+{
+    "compilerOptions": {},
+    "references": [
+        {
+            "path": "packages/contracts-common"
+        },
+        {
+            "path": "packages/contracts-core"
+        },
+        {
+            "path": "packages/contracts-diagnostics"
+        },
+        {
+            "path": "packages/contracts-execution"
+        },
+        {
+            "path": "packages/contracts-events"
+        },
+        {
+            "path": "packages/contracts-provider"
+        },
+        {
+            "path": "packages/spi-provider"
+        },
+        {
+            "path": "packages/kernel-core"
+        },
+        {
+            "path": "packages/artifacts"
+        }
+    ]
+}

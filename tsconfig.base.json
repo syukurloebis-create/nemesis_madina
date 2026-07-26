@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2020"],
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0", 
+    "paths": {
+      "@nemesis/contracts-common": ["./packages/contracts-common/src/index.ts"],
+      "@nemesis/contracts-core": ["./packages/contracts-core/src/index.ts"],
+      "@nemesis/contracts-diagnostics": ["./packages/contracts-diagnostics/src/index.ts"],
+      "@nemesis/contracts-execution": ["./packages/contracts-execution/src/index.ts"],
+      "@nemesis/contracts-events": ["./packages/contracts-events/src/index.ts"],
+      "@nemesis/contracts-provider": ["./packages/contracts-provider/src/index.ts"],
+      "@nemesis/spi-provider": ["./packages/spi-provider/src/index.ts"],
+      "@nemesis/kernel-core": ["./packages/kernel-core/src/index.ts"],
+      "@nemesis/artifacts": ["./packages/artifacts/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
+}

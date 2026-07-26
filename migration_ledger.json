@@ -1,0 +1,369 @@
+{
+  "components": {
+    "backend.graph.domain.aggregate.GraphAggregate": {
+      "source": "backend.graph.domain.aggregate.GraphAggregate",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 18,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 18
+    },
+    "backend.graph.domain.checksum.GraphChecksumService": {
+      "source": "backend.graph.domain.checksum.GraphChecksumService",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 3,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 3
+    },
+    "backend.graph.domain.validators.SyntaxValidator": {
+      "source": "backend.graph.domain.validators.SyntaxValidator",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 3,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 3
+    },
+    "backend.graph.domain.validators.SemanticValidator": {
+      "source": "backend.graph.domain.validators.SemanticValidator",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 3,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 3
+    },
+    "backend.graph.domain.validators.BusinessValidator": {
+      "source": "backend.graph.domain.validators.BusinessValidator",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 3,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 3
+    },
+    "backend.graph.infrastructure.mappers.to_domain.OrmToGraphMapper": {
+      "source": "backend.graph.infrastructure.mappers.to_domain.OrmToGraphMapper",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 3,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 3
+    },
+    "backend.graph.infrastructure.mappers.to_orm.GraphToOrmMapper": {
+      "source": "backend.graph.infrastructure.mappers.to_orm.GraphToOrmMapper",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 3,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 3
+    },
+    "backend.graph.application.assembler.GraphAssembler": {
+      "source": "backend.graph.application.assembler.GraphAssembler",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 2,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 2
+    },
+    "backend.graph.validators.graph_invariant_validator.GraphInvariantValidator": {
+      "source": "backend.graph.validators.graph_invariant_validator.GraphInvariantValidator",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 2,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 2
+    },
+    "backend.graph.infrastructure.factories.metadata.MetadataFactory": {
+      "source": "backend.graph.infrastructure.factories.metadata.MetadataFactory",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 2,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 2
+    },
+    "backend.graph.infrastructure.repositories.metadata.GraphMetadataRepository": {
+      "source": "backend.graph.infrastructure.repositories.metadata.GraphMetadataRepository",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 2,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 2
+    },
+    "backend.graph.infrastructure.services.checksum.CanonicalChecksumService": {
+      "source": "backend.graph.infrastructure.services.checksum.CanonicalChecksumService",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 2,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 2
+    },
+    "backend.graph.service.GraphIntelligenceService": {
+      "source": "backend.graph.service.GraphIntelligenceService",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 1,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 1
+    },
+    "backend.graph.application.service.GraphRegenerationService": {
+      "source": "backend.graph.application.service.GraphRegenerationService",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 1,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 1
+    },
+    "backend.graph.domain.policy.GraphPolicy": {
+      "source": "backend.graph.domain.policy.GraphPolicy",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 1,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 1
+    },
+    "backend.graph.domain.policy.NoVendorSelfReferencePolicy": {
+      "source": "backend.graph.domain.policy.NoVendorSelfReferencePolicy",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 1,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 1
+    },
+    "backend.graph.domain.policy.NoDuplicateVendorPolicy": {
+      "source": "backend.graph.domain.policy.NoDuplicateVendorPolicy",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 1,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 1
+    },
+    "backend.graph.domain.statistics.GraphStatisticsService": {
+      "source": "backend.graph.domain.statistics.GraphStatisticsService",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 1,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 1
+    },
+    "backend.graph.infrastructure.repositories.postgres.PostgresGraphRepository": {
+      "source": "backend.graph.infrastructure.repositories.postgres.PostgresGraphRepository",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 1,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 1
+    },
+    "backend.graph.intelligence.repositories.entity_edge_repo.EntityEdgeRepository": {
+      "source": "backend.graph.intelligence.repositories.entity_edge_repo.EntityEdgeRepository",
+      "phase": "Baseline",
+      "owner": "Graph Context",
+      "dependents_count": 1,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 1
+    },
+    "backend.graph.adapters.vendor_graph_builder_adapter.VendorGraphBuilderAdapter": {
+      "source": "backend.graph.adapters.vendor_graph_builder_adapter.VendorGraphBuilderAdapter",
+      "phase": "Baseline",
+      "owner": "Candidate for Review",
+      "dependents_count": 0,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 0
+    },
+    "backend.graph.application.dto.VendorDTO": {
+      "source": "backend.graph.application.dto.VendorDTO",
+      "phase": "Baseline",
+      "owner": "Candidate for Review",
+      "dependents_count": 0,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 0
+    },
+    "backend.graph.application.dto.PackageDTO": {
+      "source": "backend.graph.application.dto.PackageDTO",
+      "phase": "Baseline",
+      "owner": "Candidate for Review",
+      "dependents_count": 0,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 0
+    },
+    "backend.graph.application.dto.OfficerDTO": {
+      "source": "backend.graph.application.dto.OfficerDTO",
+      "phase": "Baseline",
+      "owner": "Candidate for Review",
+      "dependents_count": 0,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 0
+    },
+    "backend.graph.application.dto.InstitutionDTO": {
+      "source": "backend.graph.application.dto.InstitutionDTO",
+      "phase": "Baseline",
+      "owner": "Candidate for Review",
+      "dependents_count": 0,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 0
+    },
+    "backend.graph.application.dto.RelationshipDTO": {
+      "source": "backend.graph.application.dto.RelationshipDTO",
+      "phase": "Baseline",
+      "owner": "Candidate for Review",
+      "dependents_count": 0,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 0
+    },
+    "backend.graph.services.collusion_service.CollusionService": {
+      "source": "backend.graph.services.collusion_service.CollusionService",
+      "phase": "Baseline",
+      "owner": "Candidate for Review",
+      "dependents_count": 0,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 0
+    },
+    "backend.graph.services.graph_regeneration_service.GraphRegenerationService": {
+      "source": "backend.graph.services.graph_regeneration_service.GraphRegenerationService",
+      "phase": "Baseline",
+      "owner": "Candidate for Review",
+      "dependents_count": 0,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 0
+    },
+    "backend.graph.storage.collusion_repository.CollusionRepository": {
+      "source": "backend.graph.storage.collusion_repository.CollusionRepository",
+      "phase": "Baseline",
+      "owner": "Candidate for Review",
+      "dependents_count": 0,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 0
+    },
+    "backend.graph.domain.services.checksum.GraphChecksumService": {
+      "source": "backend.graph.domain.services.checksum.GraphChecksumService",
+      "phase": "Baseline",
+      "owner": "Candidate for Review",
+      "dependents_count": 0,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 0
+    },
+    "backend.graph.infrastructure.factories.metadata.GraphPersistenceRepository": {
+      "source": "backend.graph.infrastructure.factories.metadata.GraphPersistenceRepository",
+      "phase": "Baseline",
+      "owner": "Candidate for Review",
+      "dependents_count": 0,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 0
+    },
+    "backend.graph.infrastructure.interfaces.unit_of_work.VendorGraphBuilderAdapter": {
+      "source": "backend.graph.infrastructure.interfaces.unit_of_work.VendorGraphBuilderAdapter",
+      "phase": "Baseline",
+      "owner": "Candidate for Review",
+      "dependents_count": 0,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 0
+    },
+    "backend.graph.infrastructure.repositories.persistence.GraphPersistenceRepository": {
+      "source": "backend.graph.infrastructure.repositories.persistence.GraphPersistenceRepository",
+      "phase": "Baseline",
+      "owner": "Candidate for Review",
+      "dependents_count": 0,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 0
+    },
+    "backend.graph.infrastructure.repositories.persistence.GraphRegenerationService": {
+      "source": "backend.graph.infrastructure.repositories.persistence.GraphRegenerationService",
+      "phase": "Baseline",
+      "owner": "Candidate for Review",
+      "dependents_count": 0,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 0
+    },
+    "backend.graph.infrastructure.repositories.strategies.GraphPersistenceRepository": {
+      "source": "backend.graph.infrastructure.repositories.strategies.GraphPersistenceRepository",
+      "phase": "Baseline",
+      "owner": "Candidate for Review",
+      "dependents_count": 0,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 0
+    },
+    "backend.graph.infrastructure.services.checksum.GraphPersistenceRepository": {
+      "source": "backend.graph.infrastructure.services.checksum.GraphPersistenceRepository",
+      "phase": "Baseline",
+      "owner": "Candidate for Review",
+      "dependents_count": 0,
+      "wrapper_created": false,
+      "compatibility_tests": false,
+      "migrated_imports": 0,
+      "remaining_imports": 0
+    }
+  },
+  "summary": {
+    "total_components": 36,
+    "active_components": 20,
+    "total_dependents": 54
+  }
+}

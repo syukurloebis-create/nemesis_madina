@@ -1,81 +1,35 @@
-// src/components/dashboard/layers/ExecutiveOverview.tsx
 import React from 'react';
+import { ExecutiveData, StatsData } from '@/types/dashboard';
 
 interface ExecutiveOverviewProps {
-  cases: any[];
-  stats: any;
-  graphData: any;
+  data: ExecutiveData;
+  stats: StatsData;
+  loading: boolean;
 }
 
-export const ExecutiveOverview: React.FC<ExecutiveOverviewProps> = ({ cases, stats, graphData }) => {
-  const totalCases = stats?.total || cases?.length || 0;
-  const openCases = stats?.open || 0;
-  const criticalCases = cases?.filter((c: any) => c.priority === 'CRITICAL').length || 0;
-  const avgRiskScore = cases?.length > 0
-    ? (cases.reduce((acc: number, c: any) => acc + (c.risk_score || 0), 0) / cases.length).toFixed(1)
-    : '0.0';
+const ExecutiveOverview: React.FC<ExecutiveOverviewProps> = ({ data, stats, loading }) => {
+  if (loading) {
+    return <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse">Loading...</div>;
+  }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Executive Overview</h2>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Total Cases</p>
-          <p className="text-2xl font-bold text-gray-800 dark:text-white">{totalCases}</p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Open Cases</p>
-          <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{openCases}</p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Critical</p>
-          <p className="text-2xl font-bold text-red-600 dark:text-red-400">{criticalCases}</p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Avg Risk Score</p>
-          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{avgRiskScore}</p>
-        </div>
-      </div>
-
-      {/* Recent Cases */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Recent Cases</h3>
-        </div>
-        <div className="divide-y divide-gray-200 dark:divide-gray-700">
-          {cases?.slice(0, 5).map((caseItem: any) => (
-            <div key={caseItem.id} className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-800 dark:text-white">{caseItem.title}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {caseItem.status} • {caseItem.workflow_stage}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  caseItem.risk_level === 'HIGH'
-                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                    : caseItem.risk_level === 'MEDIUM'
-                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                    : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                }`}>
-                  {caseItem.risk_level || 'LOW'}
-                </span>
-                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                  {caseItem.risk_score || 0}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+    <div className="bg-white dark:bg-dark-card rounded-lg shadow p-4">
+      <h2 className="text-xl font-bold mb-4">Executive Overview</h2>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <MetricCard label="Total Cases" value={data.totalCases} />
+        <MetricCard label="Active Cases" value={data.activeCases} />
+        <MetricCard label="High Risk" value={data.highRiskCases} />
+        <MetricCard label="Critical Alerts" value={data.criticalAlerts} />
       </div>
     </div>
   );
 };
+
+const MetricCard: React.FC<{ label: string; value: number }> = ({ label, value }) => (
+  <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded">
+    <p className="text-sm text-gray-500">{label}</p>
+    <p className="text-2xl font-bold">{value}</p>
+  </div>
+);
 
 export default ExecutiveOverview;

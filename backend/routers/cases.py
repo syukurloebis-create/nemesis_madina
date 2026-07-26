@@ -4,6 +4,8 @@ from datetime import datetime
 from functools import lru_cache
 from datetime import datetime, timedelta
 
+from backend.database import get_db
+
 
 router = APIRouter()
 

@@ -1,189 +1,86 @@
 import React, { useState, useEffect } from 'react';
-import { useAuthStore } from '../stores/authStore';
-import { procurementService } from '../services/procurementService';
-import type { ProcurementPackage, ProcurementStats } from '../types/procurement';
+import { api } from '../services/api';
 
-const ProcurementDashboard: React.FC = () => {
+interface ProcurementPackage {
+  id: string;
+  title: string;
+  vendor: string;
+  amount: number;
+  status: string;
+}
+
+interface ProcurementStats {
+  total: number;
+  active: number;
+  completed: number;
+  total_value: number;
+}
+
+export default function ProcurementDashboard() {
   const [packages, setPackages] = useState<ProcurementPackage[]>([]);
-  const [stats, setStats] = useState<ProcurementStats | null>(null);
+  const [stats, setStats] = useState<ProcurementStats>({
+    total: 0,
+    active: 0,
+    completed: 0,
+    total_value: 0,
+  });
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const { token } = useAuthStore();
 
   useEffect(() => {
-    fetchData();
-  }, [filterStatus]);
-
-  const fetchData = async () => {
-    try {
+    const loadData = async () => {
       setLoading(true);
-      const [pkgData, statsData] = await Promise.all([
-        procurementService.getPackages(filterStatus === 'all' ? {} : { status: filterStatus }),
-        procurementService.getStats()
-      ]);
-      setPackages(pkgData);
-      setStats(statsData);
-    } catch (error) {
-      console.error('Failed to fetch procurement data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value);
-  };
-
-  const getStatusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      planning: 'bg-blue-500/20 text-blue-400',
-      tendering: 'bg-yellow-500/20 text-yellow-400',
-      contract: 'bg-green-500/20 text-green-400',
-      completed: 'bg-gray-500/20 text-gray-400',
-      cancelled: 'bg-red-500/20 text-red-400'
+      try {
+        const [packagesRes, statsRes] = await Promise.all([
+          api.get('/api/v1/procurement/packages'),
+          api.get('/api/v1/procurement/stats'),
+        ]);
+        setPackages(packagesRes?.data || []);
+        setStats(statsRes?.data || { total: 0, active: 0, completed: 0, total_value: 0 });
+      } catch (error) {
+        console.error('Failed to load procurement data:', error);
+      } finally {
+        setLoading(false);
+      }
     };
-    const labels: Record<string, string> = {
-      planning: 'Perencanaan',
-      tendering: 'Tender',
-      contract: 'Kontrak',
-      completed: 'Selesai',
-      cancelled: 'Batal'
-    };
-    return { color: colors[status] || 'bg-gray-500/20 text-gray-400', label: labels[status] || status };
-  };
-
-  const getRiskBadge = (score?: number) => {
-    if (!score) return { color: 'bg-gray-500/20 text-gray-400', label: 'N/A' };
-    if (score >= 85) return { color: 'bg-red-500/20 text-red-400', label: 'Kritis' };
-    if (score >= 70) return { color: 'bg-orange-500/20 text-orange-400', label: 'Tinggi' };
-    if (score >= 40) return { color: 'bg-yellow-500/20 text-yellow-400', label: 'Sedang' };
-    return { color: 'bg-green-500/20 text-green-400', label: 'Rendah' };
-  };
+    loadData();
+  }, []);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
-      </div>
-    );
+    return <div className="p-6 text-white">Loading procurement data...</div>;
   }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
-        <h1 className="text-2xl font-bold text-white">Data Paket & Anggaran Pengadaan</h1>
-        <p className="text-gray-400 text-sm mt-1">Rencana Umum Pengadaan (RUP) - Analisis paket dan anggaran</p>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-white">Procurement Dashboard</h1>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+        <StatCard label="Total" value={stats.total} />
+        <StatCard label="Active" value={stats.active} />
+        <StatCard label="Completed" value={stats.completed} />
+        <StatCard label="Total Value" value={`Rp ${(stats.total_value / 1000000000).toFixed(1)}B`} />
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-          <p className="text-gray-400 text-sm">Total Paket</p>
-          <p className="text-2xl font-bold text-white">{stats?.total_packages || 0}</p>
-        </div>
-        <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-          <p className="text-gray-400 text-sm">Total Anggaran</p>
-          <p className="text-2xl font-bold text-green-400">{formatCurrency(stats?.total_budget || 0)}</p>
-        </div>
-        <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-          <p className="text-gray-400 text-sm">Nilai Kontrak</p>
-          <p className="text-2xl font-bold text-blue-400">{formatCurrency(stats?.total_contract_value || 0)}</p>
-        </div>
-        <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-          <p className="text-gray-400 text-sm">Rata-rata Risiko</p>
-          <p className={`text-2xl font-bold ${(stats?.avg_risk_score || 0) >= 70 ? 'text-red-400' : (stats?.avg_risk_score || 0) >= 40 ? 'text-yellow-400' : 'text-green-400'}`}>
-            {Math.round(stats?.avg_risk_score || 0)}%
-          </p>
-        </div>
-      </div>
-
-      {/* Filter */}
-      <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-        <div className="flex gap-2 overflow-x-auto">
-          <button
-            onClick={() => setFilterStatus('all')}
-            className={`px-3 py-1 rounded-lg text-sm ${filterStatus === 'all' ? 'bg-green-500/20 text-green-400' : 'bg-gray-700 text-gray-400'}`}
-          >
-            Semua
-          </button>
-          <button
-            onClick={() => setFilterStatus('planning')}
-            className={`px-3 py-1 rounded-lg text-sm ${filterStatus === 'planning' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-700 text-gray-400'}`}
-          >
-            Perencanaan
-          </button>
-          <button
-            onClick={() => setFilterStatus('tendering')}
-            className={`px-3 py-1 rounded-lg text-sm ${filterStatus === 'tendering' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-700 text-gray-400'}`}
-          >
-            Tender
-          </button>
-          <button
-            onClick={() => setFilterStatus('contract')}
-            className={`px-3 py-1 rounded-lg text-sm ${filterStatus === 'contract' ? 'bg-green-500/20 text-green-400' : 'bg-gray-700 text-gray-400'}`}
-          >
-            Kontrak
-          </button>
-        </div>
-      </div>
-
-      {/* Procurement Table */}
-      <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-900">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">Nama Paket</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">Anggaran</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">Metode</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">Risiko</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">Vendor</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-700">
-              {packages.map((pkg) => {
-                const status = getStatusBadge(pkg.status);
-                const risk = getRiskBadge(pkg.risk_score);
-                return (
-                  <tr key={pkg.id} className="hover:bg-gray-700/30">
-                    <td className="px-4 py-3 text-white">{pkg.package_name}</td>
-                    <td className="px-4 py-3 text-gray-300">{formatCurrency(pkg.budget)}</td>
-                    <td className="px-4 py-3 text-gray-300">{pkg.procurement_method}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs ${status.color}`}>
-                        {status.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {pkg.risk_score && (
-                        <span className={`px-2 py-1 rounded-full text-xs ${risk.color}`}>
-                          {risk.label} ({pkg.risk_score}%)
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {pkg.vendor_name ? (
-                        <span className="text-blue-400 hover:underline cursor-pointer">
-                          {pkg.vendor_name}
-                        </span>
-                      ) : (
-                        <span className="text-gray-500">-</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+      <div className="mt-6 bg-gray-800 rounded-xl border border-gray-700 p-4">
+        <h2 className="text-white font-semibold">Recent Packages</h2>
+        {packages.length === 0 ? (
+          <p className="text-gray-400 mt-2">No packages found</p>
+        ) : (
+          <ul className="mt-2 space-y-2">
+            {packages.slice(0, 5).map((pkg) => (
+              <li key={pkg.id} className="text-gray-300 border-b border-gray-700 pb-2">
+                {pkg.title} - {pkg.vendor} (Rp {(pkg.amount / 1000000).toFixed(1)}M)
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
-};
+}
 
-export default ProcurementDashboard;
+function StatCard({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
+      <p className="text-gray-400 text-sm">{label}</p>
+      <p className="text-white text-2xl font-bold mt-1">{value}</p>
+    </div>
+  );
+}

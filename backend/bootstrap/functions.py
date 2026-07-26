@@ -1,9 +1,12 @@
+"""
+Bootstrap Functions - Infrastructure Setup
+"""
+
 import os
 import logging
 from dataclasses import dataclass
 from typing import Optional
 
-# ✅ Load .env file
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -17,38 +20,9 @@ from backend.infrastructure.parallel_executor import ParallelExecutor
 from backend.infrastructure.event_bus import InMemoryEventBus
 from backend.infrastructure.unit_of_work import UnitOfWorkFactory
 from backend.calculators.config import CalculatorConfig
+from backend.config import settings
 
 logger = logging.getLogger(__name__)
-
-
-def _build_database_url() -> str:
-    """
-    Build DATABASE_URL from environment variables.
-    
-    Precedence:
-    1. DATABASE_URL (if set directly)
-    2. DB_* variables (DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD)
-    """
-    # Check if DATABASE_URL is set directly
-    database_url = os.getenv("DATABASE_URL")
-    if database_url:
-        return database_url
-    
-    # Build from DB_* variables
-    host = os.getenv("DB_HOST", "localhost")
-    port = os.getenv("DB_PORT", "5432")
-    name = os.getenv("DB_NAME")
-    user = os.getenv("DB_USER")
-    password = os.getenv("DB_PASSWORD")
-    
-    # Validate required variables
-    if not all([name, user, password]):
-        raise ValueError(
-            "DATABASE_URL or DB_NAME, DB_USER, and DB_PASSWORD "
-            "must be configured in environment"
-        )
-    
-    return f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{name}"
 
 
 @dataclass
@@ -57,55 +31,80 @@ class BootstrapResult:
     engine: Optional[AsyncEngine] = None
 
 
-def bootstrap_infrastructure() -> BootstrapResult:
+def bootstrap_infrastructure(
+    *,
+    engine: Optional[AsyncEngine] = None,
+    session_factory: Optional[async_sessionmaker] = None,
+    sql_repo: Optional[SQLRepository] = None,
+    uow_factory: Optional[UnitOfWorkFactory] = None,
+    event_bus: Optional[InMemoryEventBus] = None,
+    parallel_executor: Optional[ParallelExecutor] = None,
+    calculator_config: Optional[CalculatorConfig] = None,
+    version: Optional[VersionInfo] = None,
+) -> BootstrapResult:
     """
     Bootstrap infrastructure dependencies.
+
+    All dependencies can be overridden for testing.
+    Production uses defaults.
+
+    Args:
+        engine: Pre-configured async engine (for testing)
+        session_factory: Pre-configured session factory (for testing)
+        sql_repo: Pre-configured SQL repository (for testing)
+        uow_factory: Pre-configured UoW factory (for testing)
+        event_bus: Pre-configured event bus (for testing)
+        parallel_executor: Pre-configured executor (for testing)
+        calculator_config: Pre-configured calculator config (for testing)
+        version: Pre-configured version info (for testing)
     """
     logger.info("Bootstrapping infrastructure...")
 
-    # 1. Database - Build URL
-    database_url = _build_database_url()
-    # Hide password in logs
-    safe_url = database_url.replace(
-        os.getenv("DB_PASSWORD", ""), "***"
-    ) if os.getenv("DB_PASSWORD") else database_url
-    logger.info(f"Using database: {safe_url}")
+    # 1. Database
+    if engine is None:
+        database_url = settings.database.url
+        logger.info("Database configured (%s)", settings.database.host)
+        engine = create_async_engine(
+            database_url,
+            echo=settings.database.echo,
+            pool_pre_ping=True,
+            poolclass=NullPool,
+        )
 
-    engine = create_async_engine(
-        database_url,
-        echo=os.getenv("SQL_ECHO", "false").lower() == "true",
-        pool_pre_ping=True,
-        poolclass=NullPool,
-    )
+    # 2. Session Factory
+    if session_factory is None:
+        session_factory = async_sessionmaker(
+            engine,
+            expire_on_commit=False,
+            autocommit=False,
+            autoflush=False,
+        )
 
-    session_factory = async_sessionmaker(
-        engine,
-        expire_on_commit=False,
-        autocommit=False,
-        autoflush=False,
-    )
+    # 3. SQL Repository
+    if sql_repo is None:
+        sql_repo = SQLRepository().initialize()
 
-    # ... rest of function remains the same
+    # 4. Unit of Work Factory
+    if uow_factory is None:
+        uow_factory = UnitOfWorkFactory(session_factory)
 
-    # 2. SQL Repository
-    sql_repo = SQLRepository().initialize()
+    # 5. Event Bus
+    if event_bus is None:
+        event_bus = InMemoryEventBus()
 
-    # 3. Unit of Work Factory
-    uow_factory = UnitOfWorkFactory(session_factory)
+    # 6. Parallel Executor
+    if parallel_executor is None:
+        parallel_executor = ParallelExecutor()
 
-    # 4. Event Bus
-    event_bus = InMemoryEventBus()
+    # 7. Calculator Config
+    if calculator_config is None:
+        calculator_config = CalculatorConfig.from_environment()
 
-    # 5. Parallel Executor
-    parallel_executor = ParallelExecutor()
+    # 8. Version Info
+    if version is None:
+        version = VersionInfo.from_environment()
 
-    # 6. Calculator Config
-    calculator_config = CalculatorConfig.default()
-
-    # 7. Version Info
-    version = VersionInfo.from_environment()
-
-    # 8. Infrastructure Container
+    # 9. Infrastructure Container
     infrastructure = InfrastructureContainer(
         version=version,
         sql_repo=sql_repo,
@@ -122,24 +121,3 @@ def bootstrap_infrastructure() -> BootstrapResult:
         infrastructure=infrastructure,
         engine=engine,
     )
-
-
-@classmethod
-def from_env(cls) -> "CalculatorConfig":
-    """
-    Build calculator configuration from environment.
-
-    CALCULATOR_PROFILE:
-        default
-        government
-    """
-
-    profile = os.getenv(
-        "CALCULATOR_PROFILE",
-        "default",
-    ).lower()
-
-    if profile == "government":
-        return cls.government()
-
-    return cls.default()

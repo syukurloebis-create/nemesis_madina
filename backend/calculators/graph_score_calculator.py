@@ -1,11 +1,14 @@
+# backend/calculators/graph_score_calculator.py
+
 """
 Graph Score Calculator — Pure Function.
 """
 
+from typing import Optional
 from dataclasses import dataclass
 
 from backend.dtos.collector_dtos import GraphCollectorDTO
-from backend.calculators.config import GraphWeights
+from backend.calculators.config import GraphWeights, CalculatorConfig
 from backend.domain.enums import EngineStatus
 
 
@@ -26,9 +29,13 @@ class GraphScoreCalculator:
     def calculate(
         cls,
         dto: GraphCollectorDTO,
-        weights: GraphWeights
+        weights: Optional[GraphWeights] = None,
     ) -> CalculatedGraph:
         """Calculate graph score from DTO."""
+        if weights is None:
+            config = CalculatorConfig.default()
+            weights = config.get_graph_weights()
+
         if dto.entities == 0:
             return CalculatedGraph(
                 score=0,
@@ -40,13 +47,13 @@ class GraphScoreCalculator:
 
         # Density = relationships / entities
         density = dto.relationships / dto.entities if dto.entities > 0 else 0
-        
-        # ✅ Entity score: menggunakan parameter dari weights
+
+        # Entity score: menggunakan parameter dari weights
         entity_score = min(weights.max_entity_score, dto.entities * weights.entity_scale)
-        
-        # ✅ Relationship score: menggunakan parameter dari weights
+
+        # Relationship score: menggunakan parameter dari weights
         relationship_score = min(weights.max_relationship_score, density * weights.density_scale)
-        
+
         # Weighted score
         score = (
             entity_score * weights.entity_weight +

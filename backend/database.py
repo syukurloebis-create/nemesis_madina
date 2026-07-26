@@ -43,8 +43,8 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.pool import NullPool
 
-# Import config - using new settings API
 from backend.config import settings
 
 logger = logging.getLogger(__name__)
@@ -53,20 +53,25 @@ logger = logging.getLogger(__name__)
 # ENGINE - USING NEW SETTINGS API
 # ============================================================
 
-# Use settings.database.url instead of settings.DATABASE_URL
+database_url = settings.database.url
+
 engine: AsyncEngine = create_async_engine(
-    settings.database.url,
-    pool_size=settings.database.pool_size,
-    max_overflow=settings.database.max_overflow,
+    database_url,
+    echo=settings.database.echo,
     pool_pre_ping=True,
-    pool_recycle=settings.database.pool_recycle,
-    pool_timeout=settings.database.pool_timeout,
-    echo=settings.base.debug,  # Use settings.base.debug instead of settings.DEBUG
+    poolclass=NullPool,
 )
 
 # ============================================================
 # SESSION FACTORY - SINGLE SOURCE OF TRUTH
 # ============================================================
+
+async_session_maker = async_sessionmaker(
+    engine,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
+)
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,

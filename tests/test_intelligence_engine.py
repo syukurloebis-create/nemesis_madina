@@ -24,9 +24,16 @@ class TestIntelligenceEngine:
             anomaly_score=0
         )
 
-        assert "risk_score" in result
-        assert "trust_score" in result
-        assert "confidence_score" in result
+        assert "risk" in result
+        assert "trust" in result
+        assert "confidence" in result
+
+        assert isinstance(result["risk"], float)
+        assert isinstance(result["trust"], dict)
+        assert isinstance(result["confidence"], float)
+
+        assert "trust_score" in result["trust"]
+        assert "trust_level" in result["trust"]
 
     def test_low_risk_entity(self):
 
@@ -41,10 +48,7 @@ class TestIntelligenceEngine:
             anomaly_score=0
         )
 
-        assert result["risk_level"] in [
-            "LOW",
-            "MEDIUM"
-        ]
+        assert result["risk"] < 0.5
 
     def test_high_confidence_entity(self):
 
@@ -59,7 +63,7 @@ class TestIntelligenceEngine:
             anomaly_score=0
         )
 
-        assert result["confidence_level"] == "HIGH"
+        assert result["confidence"] >= 0.7
 
     def test_anomaly_impacts_risk(self):
 
@@ -80,11 +84,7 @@ class TestIntelligenceEngine:
             anomaly_score=10
         )
 
-        assert (
-            anomalous["risk_score"]
-            >
-            normal["risk_score"]
-        )
+        assert anomalous["risk"] > normal["risk"]
 
     def test_empty_events(self):
 
@@ -94,6 +94,6 @@ class TestIntelligenceEngine:
             anomaly_score=0
         )
 
-        assert result["risk_score"] >= 0
-        assert result["trust_score"] >= 0
-        assert result["confidence_score"] >= 0
+        assert result["risk"] >= 0
+        assert result["trust"]["trust_score"] >= 0
+        assert result["confidence"] >= 0

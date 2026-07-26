@@ -5,6 +5,7 @@ Pure DDD Value Object
 
 from enum import Enum
 from typing import Union
+from backend.domain.enums.severity import Severity
 
 
 class RiskLevel(str, Enum):
@@ -16,13 +17,13 @@ class RiskLevel(str, Enum):
 
     @classmethod
     def from_string(cls, value: str) -> "RiskLevel":
-        """Case-insensitive lookup."""
         if not value:
-            return cls.INFO
+            return cls.UNKNOWN
+
         try:
-            return cls(value.lower())
+            return cls(value.strip().upper())
         except ValueError:
-            return cls.INFO
+            return cls.UNKNOWN
     
     @classmethod
     def from_score(cls, score: Union[int, float]) -> "RiskLevel":
@@ -36,6 +37,18 @@ class RiskLevel(str, Enum):
         elif score >= 0.1:
             return cls.LOW
         return cls.UNKNOWN
+
+    @classmethod
+    def from_severity(cls, severity: "Severity") -> "RiskLevel":
+        """Convert Severity enum to RiskLevel."""
+        mapping = {
+            Severity.UNKNOWN: cls.UNKNOWN,
+            Severity.LOW: cls.LOW,
+            Severity.MEDIUM: cls.MEDIUM,
+            Severity.HIGH: cls.HIGH,
+            Severity.CRITICAL: cls.CRITICAL,
+        }
+        return mapping.get(severity, cls.UNKNOWN)
     
     def __lt__(self, other: "RiskLevel") -> bool:
         """Compare risk levels."""

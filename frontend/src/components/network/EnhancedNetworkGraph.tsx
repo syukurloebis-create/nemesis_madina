@@ -1,60 +1,224 @@
-// src/components/network/EnhancedNetworkGraph.tsx
-import React from 'react';
+import React from "react";
 
-interface NetworkNode {
-  id: string;
-  name: string;
-  risk_score?: number;
-  connections?: number;
+
+interface Node {
+
+id:string;
+
+name:string;
+
+risk_score?:number;
+
+connections?:number;
+
+pagerank?:number;
+
 }
 
-interface EnhancedNetworkGraphProps {
-  data: NetworkNode[];
-  className?: string;
-  height?: number;
-  onNodeClick?: (node: NetworkNode) => void;
+
+
+interface Props {
+
+data:Node[];
+
+height?:number;
+
+className?:string;
+
+onNodeClick?:(node:Node)=>void;
+
 }
 
-export const EnhancedNetworkGraph: React.FC<EnhancedNetworkGraphProps> = ({
-  data = [],
-  className = '',
-  height = 400,
-  onNodeClick,
-}) => {
-  if (!data || data.length === 0) {
-    return (
-      <div className={`bg-dark-card rounded-xl shadow-lg border border-gray-700/50 p-6 ${className}`}>
-        <p className="text-gray-400 text-center">Tidak ada data jaringan</p>
-      </div>
-    );
-  }
 
-  return (
-    <div className={`bg-dark-card rounded-xl shadow-lg border border-gray-700/50 p-4 ${className}`}>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        {data.slice(0, 10).map((node) => (
-          <div
-            key={node.id}
-            onClick={() => onNodeClick?.(node)}
-            className="bg-dark-bg border border-gray-700/50 rounded-lg p-3 hover:border-blue-500/50 transition cursor-pointer"
-          >
-            <p className="text-white text-sm font-medium truncate" title={node.name}>
-              {node.name || 'Tidak Diketahui'}
-            </p>
-            <div className="flex justify-between text-xs text-gray-400 mt-1">
-              <span>Risiko: {node.risk_score ?? 0}%</span>
-              <span>Koneksi: {node.connections ?? 0}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-      {data.length > 10 && (
-        <p className="text-xs text-gray-500 text-center mt-4">
-          Menampilkan 10 dari {data.length} aktor
-        </p>
-      )}
-    </div>
-  );
+
+export const EnhancedNetworkGraph =({
+
+data=[],
+
+onNodeClick,
+
+className=""
+
+}:Props)=>{
+
+
+if(!data.length)
+
+return (
+
+<div className="
+p-6
+text-center
+text-gray-400
+">
+
+No graph intelligence data
+
+</div>
+
+);
+
+
+
+return (
+
+<div
+
+className={`
+relative
+${className}
+`}
+
+>
+
+
+<div className="
+grid
+grid-cols-2
+md:grid-cols-3
+gap-4
+">
+
+
+{
+data
+.slice(0,12)
+.map(
+node=>(
+
+
+<div
+
+key={node.id}
+
+onClick={()=>onNodeClick?.(node)}
+
+className={`
+rounded-xl
+border
+p-4
+cursor-pointer
+transition
+bg-gray-900
+${
+
+(node.risk_score??0)>=80
+
+?
+
+"border-red-500/50"
+
+:
+
+(node.risk_score??0)>=50
+
+?
+
+"border-orange-500/50"
+
+:
+
+"border-gray-700"
+
+}
+`}
+
+>
+
+
+<p className="
+text-white
+font-semibold
+truncate
+">
+
+{node.name}
+
+</p>
+
+
+
+<div className="
+mt-2
+text-xs
+text-gray-400
+space-y-1
+">
+
+
+<div>
+
+Risk:
+<span className="
+text-white
+">
+
+{node.risk_score ?? 0}
+
+%
+
+</span>
+
+</div>
+
+<div className="
+h-2
+bg-gray-700
+rounded
+overflow-hidden
+">
+
+<div
+className="
+h-full
+bg-red-500
+"
+style={{
+width:`${node.risk_score}%`
+}}
+/>
+
+</div>
+
+
+<div>
+
+Connections:
+
+<span className="
+text-white
+">
+
+{node.connections ?? 0}
+
+</span>
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+)
+
+)
+
+}
+
+
+</div>
+
+
+</div>
+
+);
+
 };
+
+
 
 export default EnhancedNetworkGraph;

@@ -32,8 +32,7 @@ from backend.calculators.evidence_score_calculator import EvidenceScoreCalculato
 from backend.calculators.config import CalculatorConfig
 from backend.services.domain.confidence_calculator import ConfidenceCalculator
 from backend.services.domain.status_calculator import StatusCalculator
-
-# ===== NEW IMPORT =====
+from backend.dashboard.snapshot import DashboardSnapshot
 from backend.presenters.finding_presenter import FindingPresenter
 
 logger = logging.getLogger(__name__)
@@ -86,28 +85,44 @@ class CaseIntelligenceFactory:
 
         # ===== 2. Build findings =====
         findings = self._build_findings(
-            fraud=fraud_summary,
-            graph=graph_summary,
-            risk=risk_summary,
-            evidence=evidence_summary,
-            procurement=procurement_summary,
+            fraud_summary,
+            graph_summary,
+            risk_summary,
+            evidence_summary,
+            procurement_summary,
         )
 
         # ===== 3. Calculate confidence & status =====
         confidence_result = self._confidence_calculator.calculate(
-            fraud=fraud_summary,
-            graph=graph_summary,
-            risk=risk_summary,
-            evidence=evidence_summary,
-            procurement=procurement_summary,
+            fraud_summary,
+            graph_summary,
+            risk_summary,
+            evidence_summary,
+            procurement_summary,
         )
 
         status_result = self._status_calculator.calculate(
+            fraud_summary,
+            graph_summary,
+            risk_summary,
+            evidence_summary,
+            procurement_summary,
+        )
+
+        confidence_score = confidence_result.score
+        status_str = status_result.status.value
+
+        return DashboardIntelligenceDTO(
+            case_id=case_id,
             fraud=fraud_summary,
             graph=graph_summary,
             risk=risk_summary,
             evidence=evidence_summary,
             procurement=procurement_summary,
+            confidence=confidence_score,
+            status=status_str,
+            generated_at=datetime.now(timezone.utc),
+            version=self._version,
         )
 
         # ===== 4. Serialize findings via Presenter =====
@@ -366,3 +381,120 @@ class CaseIntelligenceFactory:
                 )
             )
         return findings
+
+    def _assemble_case_intelligence(
+        self,
+        case_id: UUID,
+        fraud_summary: FraudSummary,
+        graph_summary: GraphSummary,
+        risk_summary: RiskSummary,
+        evidence_summary: EvidenceSummary,
+        procurement_summary: ProcurementSummary,
+        context: ExecutionContext,
+    ) -> CaseIntelligence:
+        """Pure assembly logic — shared by both collector and read model paths.
+        
+        This is the SINGLE SOURCE OF TRUTH for CaseIntelligence construction.
+        """
+        # Build findings from summaries
+        findings = self._build_findings(
+            fraud_summary,
+            graph_summary,
+            risk_summary,
+            evidence_summary,
+            procurement_summary,
+        )
+
+        # Calculate confidence & status
+        confidence_result = self._confidence_calculator.calculate(
+            fraud_summary,
+            graph_summary,
+            risk_summary,
+            evidence_summary,
+            procurement_summary,
+        )
+
+        status_result = self._status_calculator.calculate(
+            fraud_summary,
+            graph_summary,
+            risk_summary,
+            evidence_summary,
+            procurement_summary,
+        )
+
+        # Serialize findings
+        serialized_findings = FindingPresenter.present_list(findings)
+
+        # Aggregate stats
+        total = len(findings)
+        critical = sum(1 for f in findings if f.severity == "CRITICAL")
+        high = sum(1 for f in findings if f.severity == "HIGH")
+        medium = sum(1 for f in findings if f.severity == "MEDIUM")
+
+        return CaseIntelligence(
+            case_id=str(case_id),
+            total=total,
+            critical=critical,
+            high=high,
+            medium=medium,
+            findings=serialized_findings,
+            fraud=fraud_summary,
+            graph=graph_summary,
+            risk=risk_summary,
+            evidence=evidence_summary,
+            procurement=procurement_summary,
+            recovery=RecoverySummary(),
+            confidence=confidence_result.score,
+            status=status_result.status.value,
+            generated_at=datetime.now(timezone.utc),
+            request_id=context.request_id,
+            trace_id=context.trace_id,
+            version=context.version.to_dict() if context.version else None,
+        )
+
+    def create_from_results(
+        self,
+        case_id: UUID,
+        results: CollectorResultRegistry,
+        context: ExecutionContext,
+    ) -> CaseIntelligence:
+        """Create CaseIntelligence from CollectorResultRegistry."""
+        # Build summaries from results
+        fraud_summary = self._build_fraud(results)
+        graph_summary = self._build_graph(results)
+        risk_summary = self._build_risk(results)
+        evidence_summary = self._build_evidence(results)
+        procurement_summary = self._build_procurement(results)
+
+        # Delegate to shared assembly
+        return self._assemble_case_intelligence(
+            case_id=case_id,
+            fraud_summary=fraud_summary,
+            graph_summary=graph_summary,
+            risk_summary=risk_summary,
+            evidence_summary=evidence_summary,
+            procurement_summary=procurement_summary,
+            context=context,
+        )
+
+    def create_from_snapshot(
+        self,
+        case_id: UUID,
+        snapshot: DashboardSnapshot,
+        context: ExecutionContext,
+    ) -> CaseIntelligence:
+        """Create CaseIntelligence from DashboardSnapshot (CQRS read model).
+        
+        This method extracts summaries from the snapshot and delegates
+        to the same assembly logic used by the collector path.
+        """
+        # Extract summaries from snapshot
+        return self._assemble_case_intelligence(
+            case_id=case_id,
+            fraud_summary=snapshot.fraud_summary,
+            graph_summary=snapshot.graph_summary,
+            risk_summary=snapshot.risk_summary,
+            evidence_summary=snapshot.evidence_summary,
+            procurement_summary=snapshot.procurement_summary,
+            context=context,
+        )

@@ -1,0 +1,590 @@
+{
+  "timestamp": "2026-07-17T14:59:12.612474",
+  "project_root": "C:\\Users\\LENOVO\\nemesis_madina",
+  "summary": {
+    "PASS": 55,
+    "FAIL": 4,
+    "WARN": 4,
+    "SKIP": 1
+  },
+  "results": [
+    {
+      "name": "Directory: backend",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: backend/core",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\core"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: backend/domain",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\domain"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: backend/infrastructure",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\infrastructure"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: backend/services",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\services"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: backend/repositories",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\repositories"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: backend/routers",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\routers"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: backend/collectors",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\collectors"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: backend/calculators",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\calculators"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: backend/mappers",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\mappers"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: backend/presenters",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\presenters"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: backend/factories",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\factories"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: backend/dtos",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\dtos"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: backend/bootstrap",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\bootstrap"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: backend/graph",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\graph"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: backend/graph/domain",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\graph\\domain"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: backend/graph/application",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\graph\\application"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: backend/graph/infrastructure",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\graph\\infrastructure"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: tests",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\tests"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: tests/unit",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\tests\\unit"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: tests/integration",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\tests\\integration"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Directory: scripts",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\scripts"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: backend/main.py",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\main.py",
+        "size": 13899
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: backend/core/container.py",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\core\\container.py",
+        "size": 3166
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: backend/core/version.py",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\core\\version.py",
+        "size": 2892
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: backend/core/logging_config.py",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\core\\logging_config.py",
+        "size": 1921
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: backend/bootstrap/container_builder.py",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\bootstrap\\container_builder.py",
+        "size": 11677
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: backend/bootstrap/functions.py",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\bootstrap\\functions.py",
+        "size": 2606
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: backend/infrastructure/unit_of_work.py",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\infrastructure\\unit_of_work.py",
+        "size": 6062
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: backend/infrastructure/event_bus.py",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\infrastructure\\event_bus.py",
+        "size": 4208
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: backend/infrastructure/parallel_executor.py",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\infrastructure\\parallel_executor.py",
+        "size": 13921
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: backend/infrastructure/sql_repository.py",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\infrastructure\\sql_repository.py",
+        "size": 4357
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: backend/repositories/interfaces/__init__.py",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\repositories\\interfaces\\__init__.py",
+        "size": 117
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: backend/graph/domain/aggregate.py",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\graph\\domain\\aggregate.py",
+        "size": 10311
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: backend/graph/domain/node.py",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\graph\\domain\\node.py",
+        "size": 1421
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: backend/graph/domain/edge.py",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\graph\\domain\\edge.py",
+        "size": 2104
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: backend/graph/infrastructure/models.py",
+      "status": "FAIL",
+      "message": "Missing",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\graph\\infrastructure\\models.py"
+      },
+      "suggestion": "Create file: backend/graph/infrastructure/models.py"
+    },
+    {
+      "name": "File: backend/graph/infrastructure/mappers/to_orm.py",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\graph\\infrastructure\\mappers\\to_orm.py",
+        "size": 3381
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: backend/graph/infrastructure/mappers/to_domain.py",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\graph\\infrastructure\\mappers\\to_domain.py",
+        "size": 3917
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: backend/graph/infrastructure/repositories/postgres.py",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\graph\\infrastructure\\repositories\\postgres.py",
+        "size": 14778
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: backend/graph/infrastructure/repositories/metadata.py",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\backend\\graph\\infrastructure\\repositories\\metadata.py",
+        "size": 2706
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: docker-compose.yml",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\docker-compose.yml",
+        "size": 2149
+      },
+      "suggestion": null
+    },
+    {
+      "name": "File: .env.example",
+      "status": "FAIL",
+      "message": "Missing",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\.env.example"
+      },
+      "suggestion": "Create file: .env.example"
+    },
+    {
+      "name": "File: requirements.txt",
+      "status": "PASS",
+      "message": "Exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\requirements.txt",
+        "size": 2126
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Import: backend.core.container",
+      "status": "PASS",
+      "message": "Import successful",
+      "details": {
+        "spec": "ModuleSpec(name='backend.core.container', loader=<_frozen_importlib_external.SourceFileLoader object at 0x0000020D9F1AD3A0>, origin='C:\\\\Users\\\\LENOVO\\\\nemesis_madina\\\\backend\\\\core\\\\container.py')"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Import: backend.core.version",
+      "status": "PASS",
+      "message": "Import successful",
+      "details": {
+        "spec": "ModuleSpec(name='backend.core.version', loader=<_frozen_importlib_external.SourceFileLoader object at 0x0000020D9F183AD0>, origin='C:\\\\Users\\\\LENOVO\\\\nemesis_madina\\\\backend\\\\core\\\\version.py')"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Import: backend.bootstrap.container_builder",
+      "status": "PASS",
+      "message": "Import successful",
+      "details": {
+        "spec": "ModuleSpec(name='backend.bootstrap.container_builder', loader=<_frozen_importlib_external.SourceFileLoader object at 0x0000020D9F1AD3D0>, origin='C:\\\\Users\\\\LENOVO\\\\nemesis_madina\\\\backend\\\\bootstrap\\\\container_builder.py')"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Import: backend.graph.domain.aggregate",
+      "status": "FAIL",
+      "message": "Import failed: name 'GraphAggregate' is not defined",
+      "details": {
+        "error": "name 'GraphAggregate' is not defined"
+      },
+      "suggestion": "Fix import: backend.graph.domain.aggregate"
+    },
+    {
+      "name": "Import: backend.graph.infrastructure.models",
+      "status": "FAIL",
+      "message": "Import failed - module not found",
+      "details": {},
+      "suggestion": "Check module path: backend.graph.infrastructure.models"
+    },
+    {
+      "name": "Import: backend.graph.infrastructure.repositories.postgres",
+      "status": "PASS",
+      "message": "Import successful",
+      "details": {
+        "spec": "ModuleSpec(name='backend.graph.infrastructure.repositories.postgres', loader=<_frozen_importlib_external.SourceFileLoader object at 0x0000020DA3C6EC30>, origin='C:\\\\Users\\\\LENOVO\\\\nemesis_madina\\\\backend\\\\graph\\\\infrastructure\\\\repositories\\\\postgres.py')"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Import: backend.infrastructure.unit_of_work",
+      "status": "PASS",
+      "message": "Import successful",
+      "details": {
+        "spec": "ModuleSpec(name='backend.infrastructure.unit_of_work', loader=<_frozen_importlib_external.SourceFileLoader object at 0x0000020DA3C6F380>, origin='C:\\\\Users\\\\LENOVO\\\\nemesis_madina\\\\backend\\\\infrastructure\\\\unit_of_work.py')"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Database Connection",
+      "status": "SKIP",
+      "message": "asyncpg not installed: No module named 'backend.core.settings'",
+      "details": {},
+      "suggestion": "Install asyncpg: pip install asyncpg"
+    },
+    {
+      "name": "Environment: .env",
+      "status": "PASS",
+      "message": ".env file exists",
+      "details": {
+        "path": "C:\\Users\\LENOVO\\nemesis_madina\\.env"
+      },
+      "suggestion": null
+    },
+    {
+      "name": "ENV: DATABASE_URL",
+      "status": "WARN",
+      "message": "Not set",
+      "details": {},
+      "suggestion": "Add DATABASE_URL to .env"
+    },
+    {
+      "name": "ENV: SECRET_KEY",
+      "status": "PASS",
+      "message": "Set",
+      "details": {},
+      "suggestion": null
+    },
+    {
+      "name": "ENV: ENABLE_HEALTH",
+      "status": "WARN",
+      "message": "Not set",
+      "details": {},
+      "suggestion": "Add ENABLE_HEALTH to .env"
+    },
+    {
+      "name": "ENV: VERSION",
+      "status": "PASS",
+      "message": "Set",
+      "details": {},
+      "suggestion": null
+    },
+    {
+      "name": "Environment: .env.example",
+      "status": "WARN",
+      "message": ".env.example missing",
+      "details": {},
+      "suggestion": "Create .env.example with required variables"
+    },
+    {
+      "name": "Dependencies: requirements.txt",
+      "status": "PASS",
+      "message": "requirements.txt exists",
+      "details": {},
+      "suggestion": null
+    },
+    {
+      "name": "Dependencies: Parse",
+      "status": "WARN",
+      "message": "Could not parse: 'charmap' codec can't decode byte 0x90 in position 806: character maps to <undefined>",
+      "details": {},
+      "suggestion": null
+    },
+    {
+      "name": "Code: Python files",
+      "status": "PASS",
+      "message": "12127 Python files found",
+      "details": {
+        "count": 12127
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Code: __init__.py files",
+      "status": "PASS",
+      "message": "1231 __init__.py files found",
+      "details": {
+        "count": 1231
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Code: Type hints",
+      "status": "PASS",
+      "message": "Type hints found in 18 files",
+      "details": {
+        "files_with_type_hints": 18
+      },
+      "suggestion": null
+    },
+    {
+      "name": "Code: Docstrings",
+      "status": "PASS",
+      "message": "Docstrings found in 22 files",
+      "details": {
+        "files_with_docstrings": 22
+      },
+      "suggestion": null
+    }
+  ]
+}

@@ -1,120 +1,30 @@
-// src/pages/menu/DashboardMenu.tsx - CLEAN VERSION
 import React from 'react';
 import { useDashboardData } from '../../hooks/useDashboardData';
-import { AIStatusBar } from '../../components/intelligence/AIStatusBar';
-import { AIRiskScore } from '../../components/intelligence/AIRiskScore';
-import IntelligenceKPICards from '../../components/intelligence/IntelligenceKPICards';
-import { EnhancedNetworkGraph } from '../../components/network/EnhancedNetworkGraph';
 
-// ============ KOMPONEN BARU ============
-import { HighRiskPackages } from '../../components/dashboard/HighRiskPackages';
-import { SharedPackageDetail } from '../../components/fraud/SharedPackageDetail';
-import { CollusionIndicators } from '../../components/fraud/CollusionIndicators';
+export default function DashboardMenu() {
+  const { data, loading, error } = useDashboardData();
 
-interface Props {
-  caseId: string;
-  evidenceId: string;
-}
-
-export const DashboardMenu: React.FC<Props> = ({ caseId, evidenceId }) => {
-  const { loading, error, data, refetch } = useDashboardData(caseId);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-400">Memuat data dashboard...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-500/10 border border-red-500/30 p-6 rounded-xl text-red-400">
-        <p className="font-semibold">⚠️ Error Memuat Dashboard</p>
-        <p className="text-sm mt-2">{error}</p>
-        <button
-          onClick={() => refetch()}
-          className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-        >
-          🔄 Coba Lagi
-        </button>
-      </div>
-    );
-  }
-
-  const { strategic, keyActors, intelligence, graphRisk } = data || {
-    strategic: null,
-    keyActors: [],
-    intelligence: null,
-    graphRisk: null,
-  };
+  if (loading) return <div className="p-4 text-white">Loading...</div>;
+  if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
 
   return (
-    <div className="space-y-6">
-      {/* AI Status Bar */}
-      <AIStatusBar 
-        isActive={!!intelligence}
-        lastUpdate={intelligence?.timestamp || new Date().toISOString()}
-      />
-
-      {/* Intelligence KPICards */}
-      {intelligence && (
-        <IntelligenceKPICards
-          riskScore={intelligence.risk_score}
-          riskLevel={intelligence.risk_level}
-          components={intelligence.components}
-        />
-      )}
-
-      {/* AI Risk Score */}
-      {intelligence && graphRisk && (
-        <AIRiskScore
-          intelligence={intelligence}
-          graphRisk={graphRisk}
-          caseId={caseId}
-        />
-      )}
-
-      {/* ============ KOMPONEN BARU ============ */}
-      
-      {/* 1. HIGH RISK PACKAGES */}
-      <HighRiskPackages caseId={caseId} />
-
-      {/* 2. SHARED PACKAGE DETAIL */}
-      <SharedPackageDetail caseId={caseId} />
-
-      {/* 3. COLLUSION INDICATORS */}
-      <CollusionIndicators caseId={caseId} />
-
-      {/* Strategic Dashboard */}
-      {strategic && (
-        <div className="bg-dark-card rounded-xl shadow-lg border border-gray-700/50 p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">📊 Ringkasan Strategis</h3>
-          <pre className="text-xs text-gray-400 overflow-auto max-h-60">
-            {JSON.stringify(strategic, null, 2)}
-          </pre>
-        </div>
-      )}
-
-      {/* Network Graph */}
-      {keyActors && keyActors.length > 0 && (
-        <div className="bg-dark-card rounded-xl shadow-lg border border-gray-700/50 p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">🌐 Jaringan Aktor Kunci</h3>
-          <EnhancedNetworkGraph data={keyActors} />
-        </div>
-      )}
-
-      {/* Intelligence Metadata */}
-      {intelligence && (
-        <div className="text-xs text-gray-500 text-right border-t border-gray-700/50 pt-4 mt-4">
-          <p>Kasus: {intelligence.case_id}</p>
-          <p>Versi: {intelligence.version}</p>
-          <p>Diperbarui: {new Date(intelligence.timestamp).toLocaleString('id-ID')}</p>
-        </div>
-      )}
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        <MetricCard title="Total Cases" value={data?.cases?.total || 0} />
+        <MetricCard title="Open Cases" value={data?.cases?.open || 0} />
+        <MetricCard title="Fraud Alerts" value={data?.fraud?.active_alerts || 0} />
+        <MetricCard title="Risk Score" value={data?.risk?.total_risk || 0} />
+      </div>
     </div>
   );
-};
+}
 
-export default DashboardMenu;
+function MetricCard({ title, value }: { title: string; value: number }) {
+  return (
+    <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
+      <p className="text-gray-400 text-sm">{title}</p>
+      <p className="text-white text-2xl font-bold mt-1">{value}</p>
+    </div>
+  );
+}

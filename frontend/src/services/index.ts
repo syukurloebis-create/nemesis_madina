@@ -1,47 +1,31 @@
-/**
- * NEMESIS V8+ - Services Barrel Export
- */
+// ============================================================
+// SERVICES INDEX - SINGLE SOURCE
+// ============================================================
 
-// Dashboard Service
-export { default as dashboardService } from './dashboard';
-export * from './dashboard';
+// API - semua export dari api
+export * from './api';
 
-// Intelligence Service
-export { default as intelligenceService } from './intelligence';
+// Intelligence
 export * from './intelligence';
 
-// Decision Service
-export { default as decisionService } from './decision';
-export * from './decision';
+// Alert
+export { alertService } from './alert';
 
-// Alert Service
-export { default as alertService } from './alert';
-export * from './alert';
+// Investigations
+export { investigationService } from './investigations';
 
-// API Modules - Re-export from api folder
-export {
-  casesApi,
-  evidenceApi,
-  graphApi,
-  fraudApi,
-  riskApi,
-  intelligenceApi,
-  procurementApi,
-  recommendationApi,
-} from './api';
+// Decision
+export { decisionService } from './decision';
 
-// API Client
-export { apiClient, default as client } from './api/client';
+// Cache
+export { cacheService } from './cache';
 
-// Legacy Services
-export { default as vendorService } from './vendorService';
-export { default as websocketService } from './websocket';
-export { default as procurementService } from './procurementService';
+// Performance
+export { default as performanceMonitor } from './performance';
+export { performanceMonitor as performanceMonitorAlias } from './performance';
 
-// Default export
-export default {
-  dashboard: dashboardService,
-  intelligence: intelligenceService,
-  decision: decisionService,
-  alert: alertService,
-};
+// WebSocket
+export { default as wsService } from './websocket';
+
+// Auth
+export { default as authService } from './auth';

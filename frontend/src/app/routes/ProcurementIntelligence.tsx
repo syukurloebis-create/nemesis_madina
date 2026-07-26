@@ -24,7 +24,7 @@ export default function ProcurementIntelligence() {
     setError(null);
     try {
       const [statsRes, vendorsRes] = await Promise.all([
-        getProcurementStats(),
+        getProcurementStats({ case_id: undefined }),
         getProcurementVendors(50)
       ]);
       setStats(statsRes.data);

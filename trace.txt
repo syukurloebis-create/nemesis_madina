@@ -1,0 +1,155 @@
+File 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/package.json' does not exist.
+Found 'package.json' at 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/package.json'.
+======== Resolving module './ContractMetadata.js' from 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/ContractDescriptor.ts'. ========
+Explicitly specified module resolution kind: 'NodeNext'.
+Resolving in ESM mode with conditions 'import', 'types', 'node'.
+Loading module as file / folder, candidate module location 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/ContractMetadata.js', target file types: TypeScript, JavaScript, Declaration, JSON.
+File name 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/ContractMetadata.js' has a '.js' extension - stripping it.
+File 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/ContractMetadata.ts' exists - use it as a name resolution result.
+======== Module name './ContractMetadata.js' was successfully resolved to 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/ContractMetadata.ts'. ========
+File 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/package.json' exists according to earlier cached lookups.
+======== Resolving module '@nemesis/contracts-common' from 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/ContractMetadata.ts'. ========
+Explicitly specified module resolution kind: 'NodeNext'.
+Resolving in ESM mode with conditions 'import', 'types', 'node'.
+'paths' option is specified, looking for a pattern to match module name '@nemesis/contracts-common'.
+Module name '@nemesis/contracts-common', matched pattern '@nemesis/contracts-common'.
+Trying substitution './packages/contracts-common/src', candidate module location: './packages/contracts-common/src'.
+Loading module as file / folder, candidate module location 'C:/Users/LENOVO/nemesis_madina/packages/contracts-common/src', target file types: TypeScript, JavaScript, Declaration, JSON.
+File 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/package.json' exists according to earlier cached lookups.
+Entering conditional exports.
+Matched 'exports' condition 'types'.
+Using 'exports' subpath '.' with target './dist/index.d.ts'.
+File 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/index.ts' exists - use it as a name resolution result.
+'package.json' does not have a 'peerDependencies' field.
+Resolved under condition 'types'.
+Exiting conditional exports.
+======== Module name '@nemesis/contracts-common' was successfully resolved to 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/index.ts' with Package ID '@nemesis/contracts-common/src/index.ts@1.1.0-a'. ========
+======== Resolving module './StabilityLevel.js' from 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/ContractMetadata.ts'. ========
+Explicitly specified module resolution kind: 'NodeNext'.
+Resolving in ESM mode with conditions 'import', 'types', 'node'.
+Loading module as file / folder, candidate module location 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/StabilityLevel.js', target file types: TypeScript, JavaScript, Declaration, JSON.
+File name 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/StabilityLevel.js' has a '.js' extension - stripping it.
+File 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/StabilityLevel.ts' exists - use it as a name resolution result.
+======== Module name './StabilityLevel.js' was successfully resolved to 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/StabilityLevel.ts'. ========
+======== Resolving module './FreezeStatus.js' from 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/ContractMetadata.ts'. ========
+Explicitly specified module resolution kind: 'NodeNext'.
+Resolving in ESM mode with conditions 'import', 'types', 'node'.
+Loading module as file / folder, candidate module location 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/FreezeStatus.js', target file types: TypeScript, JavaScript, Declaration, JSON.
+File name 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/FreezeStatus.js' has a '.js' extension - stripping it.
+File 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/FreezeStatus.ts' exists - use it as a name resolution result.
+======== Module name './FreezeStatus.js' was successfully resolved to 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/FreezeStatus.ts'. ========
+File 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/package.json' exists according to earlier cached lookups.
+======== Resolving module './ContractDescriptor.js' from 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/index.ts'. ========
+Explicitly specified module resolution kind: 'NodeNext'.
+Resolving in ESM mode with conditions 'import', 'types', 'node'.
+Loading module as file / folder, candidate module location 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/ContractDescriptor.js', target file types: TypeScript, JavaScript, Declaration, JSON.
+File name 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/ContractDescriptor.js' has a '.js' extension - stripping it.
+File 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/ContractDescriptor.ts' exists - use it as a name resolution result.
+======== Module name './ContractDescriptor.js' was successfully resolved to 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/ContractDescriptor.ts'. ========
+======== Resolving module './ContractMetadata.js' from 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/index.ts'. ========
+Resolution for module './ContractMetadata.js' was found in cache from location 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src'.
+======== Module name './ContractMetadata.js' was successfully resolved to 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/ContractMetadata.ts'. ========
+======== Resolving module './StabilityLevel.js' from 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/index.ts'. ========
+Resolution for module './StabilityLevel.js' was found in cache from location 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src'.
+======== Module name './StabilityLevel.js' was successfully resolved to 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/StabilityLevel.ts'. ========
+======== Resolving module './FreezeStatus.js' from 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/index.ts'. ========
+Resolution for module './FreezeStatus.js' was found in cache from location 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src'.
+======== Module name './FreezeStatus.js' was successfully resolved to 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/FreezeStatus.ts'. ========
+File 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/src/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/packages/contracts-core/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist.
+Found 'package.json' at 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json'.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/lib/package.json' does not exist according to earlier cached lookups.
+File 'C:/Users/LENOVO/nemesis_madina/node_modules/typescript/package.json' exists according to earlier cached lookups.
+packages/contracts-core/src/ContractMetadata.ts(1,15): error TS2305: Module '"@nemesis/contracts-common"' has no exported member 'VersionMatrix'.

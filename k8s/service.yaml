@@ -1,72 +1,12 @@
-# NEMESIS Kubernetes Services
 apiVersion: v1
 kind: Service
 metadata:
   name: nemesis-api
   namespace: nemesis
-  labels:
-    app: nemesis
-    component: api
 spec:
   selector:
     app: nemesis
-    component: api
   ports:
-  - port: 80
+  - port: 8000
     targetPort: 8000
-    name: http
   type: ClusterIP
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: nemesis-websocket
-  namespace: nemesis
-  labels:
-    app: nemesis
-    component: websocket
-spec:
-  selector:
-    app: nemesis
-    component: websocket
-  ports:
-  - port: 80
-    targetPort: 8001
-    name: ws
-  type: ClusterIP
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: nemesis-api-external
-  namespace: nemesis
-  labels:
-    app: nemesis
-    component: api
-spec:
-  selector:
-    app: nemesis
-    component: api
-  ports:
-  - port: 80
-    targetPort: 8000
-    name: http
-  type: LoadBalancer
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: nemesis-websocket-external
-  namespace: nemesis
-  labels:
-    app: nemesis
-    component: websocket
-spec:
-  selector:
-    app: nemesis
-    component: websocket
-  ports:
-  - port: 80
-    targetPort: 8001
-    name: ws
-  type: LoadBalancer

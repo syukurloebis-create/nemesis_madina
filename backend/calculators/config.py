@@ -6,6 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
 from threading import Lock
+import os  
 
 
 # ============================================================================
@@ -238,6 +239,29 @@ class CalculatorConfig:
             confidence_weight=0.30,
             verification_weight=0.25,
         ).validate())
-        # Government belum ada graph
+
+        config.register_graph(GraphWeights().validate())
         config.freeze()
         return config
+
+    @classmethod
+    def from_environment(cls) -> "CalculatorConfig":
+        """
+        Build calculator configuration from environment.
+
+        Supported profiles:
+            - default
+            - government
+
+        Environment:
+            CALCULATOR_PROFILE=default|government
+        """
+        profile = os.getenv(
+            "CALCULATOR_PROFILE",
+            "default",
+        ).strip().lower()
+
+        if profile == "government":
+            return cls.government()
+
+        return cls.default()

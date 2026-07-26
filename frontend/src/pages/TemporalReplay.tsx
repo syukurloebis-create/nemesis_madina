@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../services/api';
+import { api, casesApi } from '../services/api';
 import { useAuthStore } from '../stores/authStore';
 import { EventTimelineSlider } from '../components/temporal/EventTimelineSlider';
 
@@ -14,7 +14,7 @@ export default function TemporalReplay() {
     const fetchCases = async () => {
       if (!token) return;
       try {
-        const response = await api.getCases();
+        const response = await casesApi.getCases();
         const casesData = response.data || response || [];
         setCases(casesData);
         if (casesData.length > 0) {

@@ -61,10 +61,8 @@ async def append_event(
     version: Optional[int] = None,
     tenant_id: Optional[UUID] = None
 ) -> Event:
-    """
-    Append a new event to the immutable chain.
-    """
-
+    """Append a new event to the immutable chain."""
+    
     if version is None:
         last_event = await get_last_event(session, case_id)
         version = (
@@ -72,20 +70,24 @@ async def append_event(
             if last_event
             else 1
         )
-
-    event_id = str(uuid.uuid4())
-
+    
+    # ============================================================
+    # FIX: Satu UUID untuk hash dan database
+    # ============================================================
+    event_uuid = uuid.uuid4()
+    event_id = str(event_uuid)
+    
     event_hash = compute_event_hash(
         case_id=str(case_id),
-        event_id=event_id,
+        event_id=event_id,  # ← UUID yang sama!
         event_type=event_type,
         version=version,
         data=data,
         previous_hash=previous_hash
     )
-
+    
     event = Event(
-        id=uuid.uuid4(),
+        id=event_uuid,  # ← UUID yang sama!
         aggregate_id=case_id,
         aggregate_type="CASE",
         event_type=event_type,
@@ -96,10 +98,9 @@ async def append_event(
         created_by=created_by,
         tenant_id=tenant_id or uuid.uuid4()
     )
-
+    
     session.add(event)
     await session.flush()
-
     return event
 
 
@@ -145,10 +146,12 @@ async def get_case_events(
 async def validate_chain(events: List[Event]) -> Tuple[bool, Optional[int]]:
     """Validate the integrity of the hash chain."""
     for i, event in enumerate(events):
-        # Recompute hash
+        # ============================================================
+        # FIX: Gunakan event.id, bukan event.event_id
+        # ============================================================
         computed = compute_event_hash(
             case_id=event.aggregate_id,
-            event_id=event.event_id,
+            event_id=str(event.id),  # ← Gunakan event.id!
             event_type=event.event_type,
             version=event.event_version,
             data=event.payload,
@@ -385,11 +388,11 @@ class TemporalQueryEngine:
         events = await get_case_events(self.session, case_id, from_version, to_version)
         return [
             {
-                "version": e.version,
+                "version": e.event_version,  # ← e.version → e.event_version
                 "event_type": e.event_type,
-                "timestamp": e.timestamp.isoformat() if e.timestamp else None,
-                "user_id": e.user_id,
-                "data": e.data,
+                "timestamp": e.created_at.isoformat() if e.created_at else None,  # ← e.timestamp → e.created_at
+                "user_id": e.created_by,  # ← e.user_id → e.created_by
+                "data": e.payload,  # ← e.data → e.payload
                 "event_hash": e.event_hash,
                 "previous_hash": e.previous_hash
             }
@@ -462,7 +465,7 @@ class EventStore:
     async def append(self, case_id: str, event_type: str, data: Dict, created_by: str = None) -> Event:
         last = await get_last_event(self.session, case_id)
         previous_hash = last.event_hash if last else None
-        version = (last.version + 1) if last else 1
+        version = (last.event_version + 1) if last else 1
         return await append_event(
             self.session, case_id, event_type, data, previous_hash, created_by, version
         )

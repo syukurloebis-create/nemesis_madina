@@ -4,7 +4,7 @@ Collusion Detector - Detect collusion patterns in graph
 
 from typing import List, Set, Tuple, Dict, Any
 from collections import defaultdict
-from backend.graph.models import Graph
+from backend.graph.builder import Graph
 
 
 class CollusionDetector:
@@ -125,11 +125,14 @@ class CollusionDetector:
         
         return visited
     
-    def _count_edges_in_component(self, component: Set[str]) -> int:
+    def _count_edges_in_component(self, component: set) -> int:
         """Count edges within a component"""
         count = 0
         for edge in self.graph.edges:
-            if edge.source in component and edge.target in component:
+            if (
+                edge.get("source") in component
+                and edge.get("target") in component
+            ):
                 count += 1
         return count
     

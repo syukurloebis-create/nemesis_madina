@@ -4,9 +4,17 @@ NEMESIS Madina - Projection Checkpoint
 ✅ Idempotent across restarts
 """
 
-from sqlalchemy import Column, String, DateTime, Integer, UniqueConstraint
+from sqlalchemy import (
+    Column,
+    String,
+    DateTime,
+    Integer,
+    UniqueConstraint,
+    select,
+)
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone
 import uuid
 
@@ -28,9 +36,26 @@ class ProcessedEvent(Base):
     processed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
-class ProjectionCheckpoint:
-    """Projection checkpoint manager."""
-    
+class ProjectionCheckpointModel(Base):
+    """
+    Persistent projection checkpoint ORM model.
+
+    Stores last processed event sequence for projection rebuild resume.
+    Used by ProjectionRebuilder for atomic checkpoint updates.
+    """
+    __tablename__ = "projection_checkpoints"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    projection_name = Column(String(100), nullable=False, unique=True, index=True)
+    last_sequence = Column(Integer, nullable=False, default=0)
+    total_processed = Column(Integer, nullable=False, default=0)
+    total_failed = Column(Integer, nullable=False, default=0)
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc)
+    ) 
+   
     def __init__(self, session: AsyncSession, projection_name: str):
         self._session = session
         self._projection_name = projection_name

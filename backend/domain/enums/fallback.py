@@ -12,6 +12,7 @@ class FallbackReason(str, Enum):
     TIMEOUT = "TIMEOUT"
     NO_DATA = "NO_DATA"
     PARTIAL = "PARTIAL"
+    QUERY_ERROR = "QUERY_ERROR" 
     UNKNOWN = "UNKNOWN"
     
     @classmethod

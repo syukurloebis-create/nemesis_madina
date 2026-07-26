@@ -1,0 +1,1 @@
+{"version":3,"file":"ErrorCategory.d.ts","sourceRoot":"","sources":["ErrorCategory.ts"],"names":[],"mappings":"AAAA;;;GAGG;AACH,oBAAY,aAAa;IACvB,UAAU,eAAe;IACzB,SAAS,cAAc;IACvB,OAAO,YAAY;IACnB,YAAY,iBAAiB;IAC7B,QAAQ,aAAa;IACrB,aAAa,kBAAkB;IAC/B,UAAU,eAAe;IACzB,QAAQ,aAAa;IACrB,QAAQ,aAAa;IACrB,aAAa,kBAAkB;IAC/B,cAAc,mBAAmB;IACjC,OAAO,YAAY;IACnB,EAAE,OAAO;IACT,QAAQ,aAAa;CACtB"}

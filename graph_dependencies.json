@@ -1,0 +1,1216 @@
+{
+  "backend.graph.domain.factory.GraphNodeFactory": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 55,
+      "alias": null
+    },
+    {
+      "file": "graph\\application\\assembler.py",
+      "line": 14,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\__init__.py",
+      "line": 9,
+      "alias": null
+    }
+  ],
+  "backend.graph.domain.factory.GraphEdgeFactory": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 55,
+      "alias": null
+    },
+    {
+      "file": "graph\\application\\assembler.py",
+      "line": 14,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\__init__.py",
+      "line": 9,
+      "alias": null
+    }
+  ],
+  "backend.graph.domain.aggregate.GraphAggregateFactory": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 56,
+      "alias": null
+    }
+  ],
+  "backend.graph.domain.builder.GraphDomainBuilder": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 57,
+      "alias": null
+    },
+    {
+      "file": "graph\\application\\assembler.py",
+      "line": 13,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\__init__.py",
+      "line": 10,
+      "alias": null
+    }
+  ],
+  "backend.graph.domain.checksum.GraphChecksumService": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 58,
+      "alias": null
+    },
+    {
+      "file": "graph\\application\\service.py",
+      "line": 14,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\__init__.py",
+      "line": 11,
+      "alias": null
+    }
+  ],
+  "backend.graph.domain.statistics.GraphStatisticsService": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 59,
+      "alias": null
+    }
+  ],
+  "backend.graph.domain.validators.SyntaxValidator": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 60,
+      "alias": null
+    },
+    {
+      "file": "graph\\application\\service.py",
+      "line": 15,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\__init__.py",
+      "line": 12,
+      "alias": null
+    }
+  ],
+  "backend.graph.domain.validators.SemanticValidator": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 60,
+      "alias": null
+    },
+    {
+      "file": "graph\\application\\service.py",
+      "line": 15,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\__init__.py",
+      "line": 12,
+      "alias": null
+    }
+  ],
+  "backend.graph.domain.validators.BusinessValidator": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 60,
+      "alias": null
+    },
+    {
+      "file": "graph\\application\\service.py",
+      "line": 15,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\__init__.py",
+      "line": 12,
+      "alias": null
+    }
+  ],
+  "backend.graph.domain.policy.PolicyRegistry": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 61,
+      "alias": null
+    },
+    {
+      "file": "graph\\application\\service.py",
+      "line": 16,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\__init__.py",
+      "line": 13,
+      "alias": null
+    }
+  ],
+  "backend.graph.domain.policy.NoVendorSelfReferencePolicy": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 61,
+      "alias": null
+    }
+  ],
+  "backend.graph.domain.policy.NoDuplicateVendorPolicy": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 61,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.mappers.to_orm.GraphToOrmMapper": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 62,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\postgres.py",
+      "line": 21,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\write.py",
+      "line": 14,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.mappers.to_domain.OrmToGraphMapper": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 63,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\postgres.py",
+      "line": 22,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\read.py",
+      "line": 16,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.repositories.metadata.GraphMetadataRepository": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 64,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\postgres.py",
+      "line": 23,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.repositories.postgres.PostgresGraphRepository": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 65,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.factories.metadata.MetadataFactory": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 66,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\postgres.py",
+      "line": 25,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.services.checksum.CanonicalChecksumService": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 67,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\postgres.py",
+      "line": 24,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.interfaces.identity.UUIDIdentityGenerator": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 68,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\interfaces\\__init__.py",
+      "line": 7,
+      "alias": null
+    }
+  ],
+  "backend.graph.application.assembler.GraphAssembler": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 69,
+      "alias": null
+    },
+    {
+      "file": "graph\\application\\service.py",
+      "line": 18,
+      "alias": null
+    }
+  ],
+  "backend.graph.application.projection_mapper.GraphProjectionMapper": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 70,
+      "alias": null
+    },
+    {
+      "file": "graph\\application\\service.py",
+      "line": 20,
+      "alias": null
+    }
+  ],
+  "backend.graph.application.service.GraphRegenerationService": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 71,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.interfaces.clock.SystemClock": [
+    {
+      "file": "bootstrap\\container_builder.py",
+      "line": 72,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\interfaces\\__init__.py",
+      "line": 6,
+      "alias": null
+    }
+  ],
+  "backend.graph.models.GraphEntity": [
+    {
+      "file": "graph\\builder.py",
+      "line": 4,
+      "alias": null
+    },
+    {
+      "file": "graph\\service.py",
+      "line": 3,
+      "alias": null
+    },
+    {
+      "file": "graph\\__init__.py",
+      "line": 4,
+      "alias": null
+    },
+    {
+      "file": "graph\\services\\business_key_resolver.py",
+      "line": 11,
+      "alias": null
+    },
+    {
+      "file": "graph\\validators\\graph_invariant_validator.py",
+      "line": 10,
+      "alias": null
+    },
+    {
+      "file": "repositories\\interfaces\\graph_command_repository.py",
+      "line": 13,
+      "alias": null
+    },
+    {
+      "file": "repositories\\sqlalchemy\\graph_command_repository_impl.py",
+      "line": 15,
+      "alias": null
+    },
+    {
+      "file": "repositories\\sqlalchemy\\graph_maintenance_repository_impl.py",
+      "line": 13,
+      "alias": null
+    },
+    {
+      "file": "repositories\\sqlalchemy\\graph_write_repository_impl.py",
+      "line": 19,
+      "alias": null
+    }
+  ],
+  "backend.graph.models.GraphRelationship": [
+    {
+      "file": "graph\\builder.py",
+      "line": 4,
+      "alias": null
+    },
+    {
+      "file": "graph\\service.py",
+      "line": 3,
+      "alias": null
+    },
+    {
+      "file": "graph\\__init__.py",
+      "line": 4,
+      "alias": null
+    },
+    {
+      "file": "graph\\validators\\graph_invariant_validator.py",
+      "line": 10,
+      "alias": null
+    },
+    {
+      "file": "repositories\\interfaces\\graph_command_repository.py",
+      "line": 13,
+      "alias": null
+    },
+    {
+      "file": "repositories\\sqlalchemy\\graph_command_repository_impl.py",
+      "line": 15,
+      "alias": null
+    },
+    {
+      "file": "repositories\\sqlalchemy\\graph_maintenance_repository_impl.py",
+      "line": 13,
+      "alias": null
+    },
+    {
+      "file": "repositories\\sqlalchemy\\graph_write_repository_impl.py",
+      "line": 19,
+      "alias": null
+    }
+  ],
+  "backend.graph.metrics.GraphMetrics": [
+    {
+      "file": "graph\\builder.py",
+      "line": 5,
+      "alias": null
+    },
+    {
+      "file": "graph\\extractors.py",
+      "line": 7,
+      "alias": null
+    },
+    {
+      "file": "graph\\routes.py",
+      "line": 8,
+      "alias": null
+    },
+    {
+      "file": "graph\\__init__.py",
+      "line": 12,
+      "alias": null
+    }
+  ],
+  "backend.graph.models.Graph": [
+    {
+      "file": "graph\\collusion_detector.py",
+      "line": 7,
+      "alias": null
+    },
+    {
+      "file": "graph\\extractors.py",
+      "line": 5,
+      "alias": null
+    },
+    {
+      "file": "graph\\detectors\\collusion.py",
+      "line": 7,
+      "alias": null
+    }
+  ],
+  "backend.graph.models.GraphNode": [
+    {
+      "file": "graph\\extractors.py",
+      "line": 5,
+      "alias": null
+    },
+    {
+      "file": "graph\\registry.py",
+      "line": 6,
+      "alias": null
+    }
+  ],
+  "backend.graph.models.GraphEdge": [
+    {
+      "file": "graph\\extractors.py",
+      "line": 5,
+      "alias": null
+    },
+    {
+      "file": "graph\\registry.py",
+      "line": 6,
+      "alias": null
+    }
+  ],
+  "backend.graph.models.NodeType": [
+    {
+      "file": "graph\\extractors.py",
+      "line": 5,
+      "alias": null
+    },
+    {
+      "file": "graph\\routes.py",
+      "line": 7,
+      "alias": null
+    }
+  ],
+  "backend.graph.models.EdgeType": [
+    {
+      "file": "graph\\extractors.py",
+      "line": 5,
+      "alias": null
+    },
+    {
+      "file": "graph\\routes.py",
+      "line": 7,
+      "alias": null
+    }
+  ],
+  "backend.graph.builder.GraphBuilder": [
+    {
+      "file": "graph\\extractors.py",
+      "line": 6,
+      "alias": null
+    },
+    {
+      "file": "graph\\routes.py",
+      "line": 6,
+      "alias": null
+    },
+    {
+      "file": "graph\\__init__.py",
+      "line": 9,
+      "alias": null
+    }
+  ],
+  "backend.graph.builder.build_graph_from_event": [
+    {
+      "file": "graph\\extractors.py",
+      "line": 6,
+      "alias": null
+    }
+  ],
+  "backend.graph.registry.extractor_registry": [
+    {
+      "file": "graph\\extractors.py",
+      "line": 8,
+      "alias": null
+    }
+  ],
+  "backend.graph.registry.register_extractor": [
+    {
+      "file": "graph\\extractors.py",
+      "line": 8,
+      "alias": null
+    }
+  ],
+  "backend.graph.collusion_detector.CollusionDetector": [
+    {
+      "file": "graph\\extractors.py",
+      "line": 9,
+      "alias": null
+    }
+  ],
+  "backend.graph.relationship_graph.RelationshipGraph": [
+    {
+      "file": "graph\\query_builder.py",
+      "line": 6,
+      "alias": null
+    },
+    {
+      "file": "graph\\__init__.py",
+      "line": 11,
+      "alias": null
+    }
+  ],
+  "backend.graph.models.CollusionDetection": [
+    {
+      "file": "graph\\service.py",
+      "line": 3,
+      "alias": null
+    },
+    {
+      "file": "graph\\__init__.py",
+      "line": 4,
+      "alias": null
+    }
+  ],
+  "backend.graph.builder.Graph": [
+    {
+      "file": "graph\\__init__.py",
+      "line": 9,
+      "alias": null
+    }
+  ],
+  "backend.graph.service.GraphIntelligenceService": [
+    {
+      "file": "graph\\__init__.py",
+      "line": 10,
+      "alias": null
+    }
+  ],
+  "backend.graph.routes.router": [
+    {
+      "file": "graph\\__init__.py",
+      "line": 13,
+      "alias": null
+    }
+  ],
+  "backend.graph.intelligence.temporal_graph.TemporalGraph": [
+    {
+      "file": "graph\\__init__.py",
+      "line": 16,
+      "alias": null
+    }
+  ],
+  "backend.graph.intelligence.temporal_graph.temporal_graph": [
+    {
+      "file": "graph\\__init__.py",
+      "line": 16,
+      "alias": null
+    }
+  ],
+  "backend.graph.intelligence.collusion_detector.CollusionDetector": [
+    {
+      "file": "graph\\__init__.py",
+      "line": 17,
+      "alias": null
+    }
+  ],
+  "backend.graph.intelligence.collusion_detector.collusion_detector": [
+    {
+      "file": "graph\\__init__.py",
+      "line": 17,
+      "alias": null
+    }
+  ],
+  "backend.graph.intelligence.centrality.CentralityAnalyzer": [
+    {
+      "file": "graph\\__init__.py",
+      "line": 18,
+      "alias": null
+    }
+  ],
+  "backend.graph.intelligence.centrality.centrality_analyzer": [
+    {
+      "file": "graph\\__init__.py",
+      "line": 18,
+      "alias": null
+    }
+  ],
+  "backend.graph.intelligence.pattern_mining.PatternMiner": [
+    {
+      "file": "graph\\__init__.py",
+      "line": 19,
+      "alias": null
+    }
+  ],
+  "backend.graph.intelligence.pattern_mining.pattern_miner": [
+    {
+      "file": "graph\\__init__.py",
+      "line": 19,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.interfaces.unit_of_work.IUnitOfWork": [
+    {
+      "file": "infrastructure\\unit_of_work.py",
+      "line": 18,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\interfaces\\__init__.py",
+      "line": 5,
+      "alias": null
+    }
+  ],
+  "backend.graph.intelligence.fraud_detector.FraudDetector": [
+    {
+      "file": "routers\\fraud_detail_router.py",
+      "line": 10,
+      "alias": null
+    }
+  ],
+  "backend.graph.services.relationship_builder.RelationshipBuilder": [
+    {
+      "file": "scripts\\build_relationships.py",
+      "line": 24,
+      "alias": null
+    }
+  ],
+  "backend.graph.domain.aggregate.GraphAggregate": [
+    {
+      "file": "services\\graph_event_publisher.py",
+      "line": 10,
+      "alias": null
+    },
+    {
+      "file": "services\\graph_persistence_service.py",
+      "line": 12,
+      "alias": null
+    },
+    {
+      "file": "services\\graph_projection_service.py",
+      "line": 10,
+      "alias": null
+    },
+    {
+      "file": "services\\graph_regeneration_service.py",
+      "line": 14,
+      "alias": null
+    },
+    {
+      "file": "graph\\application\\assembler.py",
+      "line": 12,
+      "alias": null
+    },
+    {
+      "file": "graph\\application\\service.py",
+      "line": 13,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\checksum.py",
+      "line": 11,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\policy.py",
+      "line": 10,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\validators.py",
+      "line": 11,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\__init__.py",
+      "line": 7,
+      "alias": null
+    },
+    {
+      "file": "graph\\services\\graph_builder.py",
+      "line": 11,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\mappers\\to_domain.py",
+      "line": 11,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\mappers\\to_orm.py",
+      "line": 11,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\postgres.py",
+      "line": 14,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\read.py",
+      "line": 14,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\write.py",
+      "line": 12,
+      "alias": null
+    },
+    {
+      "file": "repositories\\interfaces\\graph_write_repository.py",
+      "line": 12,
+      "alias": null
+    },
+    {
+      "file": "repositories\\sqlalchemy\\graph_write_repository_impl.py",
+      "line": 16,
+      "alias": null
+    }
+  ],
+  "backend.graph.dto.persistence_result.GraphPersistenceResult": [
+    {
+      "file": "services\\graph_persistence_service.py",
+      "line": 14,
+      "alias": null
+    },
+    {
+      "file": "repositories\\interfaces\\graph_write_repository.py",
+      "line": 13,
+      "alias": null
+    },
+    {
+      "file": "repositories\\sqlalchemy\\graph_write_repository_impl.py",
+      "line": 21,
+      "alias": null
+    }
+  ],
+  "backend.graph.services.graph_builder.GraphBuilder": [
+    {
+      "file": "services\\graph_regeneration_service.py",
+      "line": 15,
+      "alias": null
+    },
+    {
+      "file": "graph\\services\\graph_regeneration_service.py",
+      "line": 14,
+      "alias": null
+    },
+    {
+      "file": "graph\\services\\__init__.py",
+      "line": 3,
+      "alias": null
+    }
+  ],
+  "backend.graph.dto.graph_regeneration_result.GraphRegenerationResult": [
+    {
+      "file": "services\\graph_regeneration_service.py",
+      "line": 19,
+      "alias": null
+    },
+    {
+      "file": "graph\\adapters\\vendor_graph_builder_adapter.py",
+      "line": 13,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\interfaces\\unit_of_work.py",
+      "line": 13,
+      "alias": null
+    }
+  ],
+  "backend.graph.domain.node.GraphNode": [
+    {
+      "file": "graph\\application\\assembler.py",
+      "line": 10,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\aggregate.py",
+      "line": 13,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\validators.py",
+      "line": 9,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\__init__.py",
+      "line": 5,
+      "alias": null
+    },
+    {
+      "file": "graph\\services\\graph_builder.py",
+      "line": 12,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\mappers\\to_domain.py",
+      "line": 12,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\mappers\\to_orm.py",
+      "line": 12,
+      "alias": null
+    },
+    {
+      "file": "repositories\\sqlalchemy\\graph_write_repository_impl.py",
+      "line": 17,
+      "alias": null
+    }
+  ],
+  "backend.graph.domain.edge.GraphEdge": [
+    {
+      "file": "graph\\application\\assembler.py",
+      "line": 11,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\aggregate.py",
+      "line": 14,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\validators.py",
+      "line": 10,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\__init__.py",
+      "line": 6,
+      "alias": null
+    },
+    {
+      "file": "graph\\services\\graph_builder.py",
+      "line": 13,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\mappers\\to_domain.py",
+      "line": 13,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\mappers\\to_orm.py",
+      "line": 13,
+      "alias": null
+    },
+    {
+      "file": "repositories\\sqlalchemy\\graph_write_repository_impl.py",
+      "line": 18,
+      "alias": null
+    }
+  ],
+  "backend.graph.application.dto.GraphBuildRequest": [
+    {
+      "file": "graph\\application\\assembler.py",
+      "line": 15,
+      "alias": null
+    },
+    {
+      "file": "graph\\application\\service.py",
+      "line": 17,
+      "alias": null
+    }
+  ],
+  "backend.graph.application.statistics.BuilderStatistics": [
+    {
+      "file": "graph\\application\\assembler.py",
+      "line": 16,
+      "alias": null
+    },
+    {
+      "file": "graph\\application\\service.py",
+      "line": 19,
+      "alias": null
+    }
+  ],
+  "backend.graph.application.projection_data.GraphProjectionData": [
+    {
+      "file": "graph\\application\\service.py",
+      "line": 21,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.interfaces.repositories.GraphWriteRepository": [
+    {
+      "file": "graph\\application\\service.py",
+      "line": 22,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\interfaces\\__init__.py",
+      "line": 8,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\write.py",
+      "line": 13,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.interfaces.repositories.GraphMaintenanceRepository": [
+    {
+      "file": "graph\\application\\service.py",
+      "line": 22,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\interfaces\\__init__.py",
+      "line": 8,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\maintenance.py",
+      "line": 13,
+      "alias": null
+    }
+  ],
+  "backend.graph.detectors.collusion_detector.collusion_detector": [
+    {
+      "file": "graph\\detectors\\__init__.py",
+      "line": 1,
+      "alias": null
+    }
+  ],
+  "backend.graph.domain.statistics.GraphStatistics": [
+    {
+      "file": "graph\\domain\\aggregate.py",
+      "line": 15,
+      "alias": null
+    },
+    {
+      "file": "graph\\domain\\__init__.py",
+      "line": 8,
+      "alias": null
+    }
+  ],
+  "backend.graph.domain.aggregate.BusinessInvariantViolation": [
+    {
+      "file": "graph\\domain\\__init__.py",
+      "line": 7,
+      "alias": null
+    }
+  ],
+  "backend.graph.domain.policy.GraphPolicy": [
+    {
+      "file": "graph\\domain\\__init__.py",
+      "line": 13,
+      "alias": null
+    }
+  ],
+  "backend.graph.validators.graph_invariant_validator.GraphInvariantValidator": [
+    {
+      "file": "graph\\services\\graph_regeneration_service.py",
+      "line": 15,
+      "alias": null
+    },
+    {
+      "file": "graph\\validators\\__init__.py",
+      "line": 3,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.interfaces.unit_of_work.IUnitOfWorkFactory": [
+    {
+      "file": "graph\\infrastructure\\interfaces\\__init__.py",
+      "line": 5,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.interfaces.clock.Clock": [
+    {
+      "file": "graph\\infrastructure\\interfaces\\__init__.py",
+      "line": 6,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.interfaces.clock.FixedClock": [
+    {
+      "file": "graph\\infrastructure\\interfaces\\__init__.py",
+      "line": 6,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.interfaces.identity.IdentityGenerator": [
+    {
+      "file": "graph\\infrastructure\\interfaces\\__init__.py",
+      "line": 7,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\mappers\\to_domain.py",
+      "line": 15,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\mappers\\to_orm.py",
+      "line": 15,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.interfaces.repositories.GraphReadRepository": [
+    {
+      "file": "graph\\infrastructure\\interfaces\\__init__.py",
+      "line": 8,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\read.py",
+      "line": 15,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.models.GraphEntity": [
+    {
+      "file": "graph\\infrastructure\\mappers\\to_domain.py",
+      "line": 14,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\mappers\\to_orm.py",
+      "line": 14,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\maintenance.py",
+      "line": 14,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\postgres.py",
+      "line": 26,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\read.py",
+      "line": 17,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\write.py",
+      "line": 15,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.models.GraphRelationship": [
+    {
+      "file": "graph\\infrastructure\\mappers\\to_domain.py",
+      "line": 14,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\mappers\\to_orm.py",
+      "line": 14,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\maintenance.py",
+      "line": 14,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\postgres.py",
+      "line": 26,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\read.py",
+      "line": 17,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\write.py",
+      "line": 15,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.models.GraphMetadata": [
+    {
+      "file": "graph\\infrastructure\\repositories\\metadata.py",
+      "line": 8,
+      "alias": null
+    },
+    {
+      "file": "graph\\infrastructure\\repositories\\postgres.py",
+      "line": 26,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.interfaces.repository.GraphRepository": [
+    {
+      "file": "graph\\infrastructure\\repositories\\postgres.py",
+      "line": 15,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.interfaces.repository.SaveStrategy": [
+    {
+      "file": "graph\\infrastructure\\repositories\\postgres.py",
+      "line": 15,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.interfaces.repository.DeleteStrategy": [
+    {
+      "file": "graph\\infrastructure\\repositories\\postgres.py",
+      "line": 15,
+      "alias": null
+    }
+  ],
+  "backend.graph.infrastructure.interfaces.repository.OptimisticLockError": [
+    {
+      "file": "graph\\infrastructure\\repositories\\postgres.py",
+      "line": 15,
+      "alias": null
+    }
+  ],
+  "backend.graph.intelligence.repositories.entity_edge_repo.EntityEdgeRepository": [
+    {
+      "file": "graph\\intelligence\\api\\graph_intel_api.py",
+      "line": 7,
+      "alias": null
+    }
+  ],
+  "backend.graph.intelligence.models.EntityNode": [
+    {
+      "file": "graph\\intelligence\\api\\graph_intel_api.py",
+      "line": 8,
+      "alias": null
+    },
+    {
+      "file": "graph\\intelligence\\repositories\\entity_edge_repo.py",
+      "line": 9,
+      "alias": null
+    }
+  ],
+  "backend.graph.intelligence.models.EntityEdge": [
+    {
+      "file": "graph\\intelligence\\api\\graph_intel_api.py",
+      "line": 8,
+      "alias": null
+    },
+    {
+      "file": "graph\\intelligence\\repositories\\entity_edge_repo.py",
+      "line": 9,
+      "alias": null
+    }
+  ],
+  "backend.graph.intelligence.models.CollusionDetectionResult": [
+    {
+      "file": "graph\\intelligence\\api\\graph_intel_api.py",
+      "line": 8,
+      "alias": null
+    },
+    {
+      "file": "graph\\intelligence\\services\\collusion_detector.py",
+      "line": 5,
+      "alias": null
+    }
+  ],
+  "backend.graph.intelligence.models.EntityType": [
+    {
+      "file": "graph\\intelligence\\api\\graph_intel_api.py",
+      "line": 8,
+      "alias": null
+    },
+    {
+      "file": "graph\\intelligence\\repositories\\entity_edge_repo.py",
+      "line": 9,
+      "alias": null
+    }
+  ],
+  "backend.graph.intelligence.models.RelationshipType": [
+    {
+      "file": "graph\\intelligence\\api\\graph_intel_api.py",
+      "line": 8,
+      "alias": null
+    },
+    {
+      "file": "graph\\intelligence\\repositories\\entity_edge_repo.py",
+      "line": 9,
+      "alias": null
+    },
+    {
+      "file": "graph\\intelligence\\services\\collusion_detector.py",
+      "line": 5,
+      "alias": null
+    }
+  ],
+  "backend.graph.intelligence.models.NetworkMetrics": [
+    {
+      "file": "graph\\intelligence\\repositories\\entity_edge_repo.py",
+      "line": 9,
+      "alias": null
+    }
+  ]
+}

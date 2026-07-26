@@ -1,82 +1,94 @@
-"""
-Pytest Configuration and Fixtures
-"""
+# test/confest.py
 
 import pytest
-import asyncio
-import sys
-from pathlib import Path
-from typing import Dict, Any
+import pytest_asyncio
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.pool import NullPool
 
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+from backend.config import settings
+from backend.infrastructure.unit_of_work import UnitOfWorkFactory
+from backend.evidence import EvidenceRegistry  
+from backend.lineage.tracker import LineageTracker
 
 
-@pytest.fixture
-def event_loop():
-    """Create event loop for async tests"""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    yield loop
-    loop.close()
+# ============================================================
+# TEMPORARY: Gunakan database development untuk test
+# TODO: Tambahkan test_url ke settings dan gunakan di sini
+# ============================================================
+
+TEST_DATABASE_URL = settings.database.url
+
+
+@pytest_asyncio.fixture(scope="function")
+async def db_engine():
+    """Session-scoped engine for all tests."""
+    engine = create_async_engine(
+        TEST_DATABASE_URL,
+        echo=False,
+        poolclass=NullPool,
+    )
+    yield engine
+    await engine.dispose()
+
+
+@pytest_asyncio.fixture(scope="function")
+async def db_connection(db_engine):
+    """Function-scoped connection with transaction."""
+    async with db_engine.connect() as conn:
+        async with conn.begin():
+            yield conn
+
+
+@pytest_asyncio.fixture(scope="function")
+async def db_session(db_engine):
+    """
+    Function-scoped session with transaction isolation.
+    Uses SQLAlchemy's begin_nested() for test isolation.
+    """
+    async with db_engine.connect() as conn:
+        async with conn.begin():
+            async with conn.begin_nested():
+                session = AsyncSession(bind=conn, expire_on_commit=False)
+                try:
+                    yield session
+                finally:
+                    await session.close()
 
 
 @pytest.fixture
 def evidence_registry():
-    """Create evidence registry for testing"""
-    from backend.evidence import EvidenceRegistry
+    """
+    Fresh EvidenceRegistry instance per test.
+
+    Used by evidence unit/integration/performance tests.
+    """
+    return EvidenceRegistry()
+
+
+@pytest.fixture(autouse=True)
+def reset_evidence_registry():
+    """
+    Guarantee EvidenceRegistry isolation between tests.
+
+    ✅ Reset sebelum test (state bersih)
+    ✅ Reset sesudah test (mencegah state leakage ke test berikutnya)
+    """
     registry = EvidenceRegistry()
-    # Clear before test
-    registry.clear()
-    yield registry
-    registry.clear()
+    registry.reset()
+
+    yield
+
+    registry.reset()
 
 
-@pytest.fixture
-def event_bus():
-    """Create event bus for testing"""
-    from backend.core.events import EventBus
-    bus = EventBus()
-    bus.clear_history()
-    yield bus
-    bus.clear_history()
+@pytest.fixture(autouse=True)
+def reset_lineage_tracker():
+    """
+    Clear LineageTracker state before each test.
 
-
-@pytest.fixture
-def lineage_tracker():
-    """Create lineage tracker for testing"""
-    from backend.lineage import LineageTracker
+    Ensures test isolation for lineage module.
+    """
     tracker = LineageTracker()
     tracker.clear()
-    yield tracker
+    yield
     tracker.clear()
-
-
-@pytest.fixture
-def graph_builder():
-    """Create graph builder for testing"""
-    from backend.graph import GraphBuilder
-    builder = GraphBuilder()
-    yield builder
-    builder.clear()
-
-
-@pytest.fixture
-def sample_evidence_data() -> Dict[str, Any]:
-    """Sample evidence data for testing"""
-    return {
-        "id": "test_evidence_001",
-        "payload": {
-            "event_type": "test",
-            "data": {"key": "value"},
-            "timestamp": "2024-01-01T00:00:00"
-        },
-        "source": "unit_test",
-        "metadata": {"test": True}
-    }
-
-
-@pytest.fixture
-def anyio_backend():
-    """Set anyio backend for async tests"""
-    return "asyncio"

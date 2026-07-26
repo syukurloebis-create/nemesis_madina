@@ -50,6 +50,14 @@ class AggregateRoot(ABC):
         self._pending_events.clear()
         return events
 
+    def peek_domain_events(self) -> Tuple[DomainEvent[Any], ...]:
+        """
+        Peek at pending events without consuming them.
+        ✅ Non-destructive event inspection
+        ✅ Useful for testing and debugging
+        """
+        return tuple(self._pending_events)
+
     def has_pending_events(self) -> bool:
         """Check if there are pending events."""
         return len(self._pending_events) > 0
@@ -60,6 +68,7 @@ class AggregateRoot(ABC):
         ✅ Useful for manual cleanup or peeking
         """
         self._pending_events.clear()
+    
 
     @property
     def version(self) -> int:

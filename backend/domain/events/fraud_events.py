@@ -12,27 +12,40 @@ from backend.domain.events.base import DomainEvent
 from backend.domain.value_objects.fraud_payload import FraudPayload
 from backend.domain.value_objects.fraud_pattern import FraudPattern, FraudPatternType, FraudPatternSeverity
 from backend.domain.value_objects.legacy_fraud_pattern import LegacyFraudPattern
+from backend.domain.value_objects.case_id import CaseId
+from backend.domain.value_objects.fraud_analysis import FraudAnalysis
 
+
+@dataclass(frozen=True)
+class FraudAnalysisCompleted(DomainEvent[FraudPayload]):
+    """New-style event — DomainEvent[FraudPayload]."""
+    EVENT_NAME = "FraudAnalysisCompleted"
+    EVENT_VERSION = "1"
 
 # ============================================================================
 # NEW-STYLE EVENT (Target Architecture)
 # ============================================================================
 
-@dataclass(frozen=True)
-class FraudAnalysisRecorded(DomainEvent[FraudPayload]):
+class FraudAnalysisRecorded(FraudAnalysisCompleted):
     """
-    Pure domain event - fraud analysis completed.
-    ✅ Uses payload pattern
-    ✅ Carries Value Object (FraudAnalysis)
-    ✅ No dict/payload serialization in event
+    Compatibility adapter for old aggregate calls.
+
+    Old: FraudAnalysisRecorded(case_id=..., analysis=...)
+    New: FraudAnalysisCompleted(payload=FraudPayload(...))
+
+    ✅ Plain class (not dataclass) - no field ordering issues
+    ✅ Inherits from new event
+    ✅ Constructor matches old contract
+    ✅ Produces valid DomainEvent
+    ✅ Temporary - will be removed after migration
     """
 
-    EVENT_NAME: ClassVar[str] = "FraudAnalysisRecorded"
-    EVENT_VERSION: ClassVar[str] = "1"
-
-    def __post_init__(self):
-        if self.occurred_at is None:
-            object.__setattr__(self, "occurred_at", datetime.now(timezone.utc))
+    def __init__(self, case_id: CaseId, analysis: FraudAnalysis):
+        payload = FraudPayload(
+            case_id=case_id,
+            analysis=analysis,
+        )
+        super().__init__(payload=payload)
 
     @property
     def event_name(self) -> str:
@@ -81,22 +94,6 @@ class FraudDetectionStarted(DomainEvent):
     EVENT_NAME = "FraudDetectionStarted"
     EVENT_VERSION = "1"
 
-    def __init__(self, metadata=None, payload=None):
-        # Stub implementation for test compatibility
-        pass
-
-    @property
-    def event_name(self) -> str:
-        return "FraudDetectionStarted"
-
-class FraudDetectionStarted:
-    """
-    Stub for test compatibility.
-    ✅ Only used in tests
-    ✅ Not for production
-    """
-    EVENT_NAME = "FraudDetectionStarted"
-    
     def __init__(self, metadata=None, payload=None):
         self.metadata = metadata
         self.payload = payload

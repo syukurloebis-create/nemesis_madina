@@ -91,3 +91,16 @@ class PipelinePlanner:
                 required=required
             ))
         return tasks
+
+# ============================================
+# COMPATIBILITY ALIAS (Sprint 3.4D Recovery)
+# ============================================
+# Legacy tests and older modules still import PipelineExecutionPlan.
+# Remove after Sprint 4.x once all callers migrate to ExecutionPlan.
+PipelineExecutionPlan = ExecutionPlan
+
+__all__ = [
+    "ExecutionPlan",
+    "PipelineExecutionPlan",
+    "PipelinePlanner",
+]

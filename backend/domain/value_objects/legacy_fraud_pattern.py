@@ -37,8 +37,8 @@ class LegacyFraudPattern:
             pattern_type=self._get_pattern_type(),
             severity=self._get_severity(),
             description=f"Legacy pattern: {self.type}",
-            indicators=[],
-            confidence_score=self.confidence / 100.0,
+            indicators=["legacy"],  # ← CHANGE: [] → ["legacy"]
+            confidence_score=self.confidence,  # ← CHANGE: self.confidence / 100.0 → self.confidence
             detected_at=datetime.now(),
             metadata={
                 "validated": self.validated,

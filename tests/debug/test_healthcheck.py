@@ -55,9 +55,8 @@ def test_db_connection():
     print("\n🔍 TEST 3: Database Connection Inside Container")
     print("=" * 50)
     
-    containers = ['api1', 'api2', 'api3']
-    for container in containers:
-        cmd = f"docker exec nemesis_madina-{container}-1 python -c \"
+    # Fix: Define script as a multi-line string properly
+    script = """
 import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import text
@@ -70,7 +69,12 @@ async def test():
     await engine.dispose()
 
 print(asyncio.run(test()))
-\" 2>/dev/null"
+"""
+    
+    containers = ['api1', 'api2', 'api3']
+    for container in containers:
+        # Fix: Use proper escaping for the script
+        cmd = f"docker exec nemesis_madina-{container}-1 python -c {repr(script)} 2>/dev/null"
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
         
         if result.stdout.strip() == '1':

@@ -2,8 +2,8 @@
 Risk Snapshot Projection — Persistence DTO for cases.latest_risk.
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, Any, Optional
+from dataclasses import dataclass
+from typing import Dict, Any
 
 
 @dataclass(frozen=True)

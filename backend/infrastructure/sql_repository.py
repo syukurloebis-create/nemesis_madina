@@ -13,49 +13,66 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from backend.infrastructure.sql_keys import SQLKey
-from backend.infrastructure.exceptions import SQLExecutionError
+from backend.infrastructure.exceptions import SQLNotFoundError, SQLExecutionError
 from backend.infrastructure.unit_of_work import IUnitOfWork
 
 logger = logging.getLogger(__name__)
 
 
 class SQLRepository:
-    """
-    SQL Repository — Helper untuk eksekusi query.
-    
-    Repository tidak perlu menangani SQLAlchemyError lagi.
-    """
-    
+    """SQL Repository — Helper untuk eksekusi query."""
+
     def __init__(self):
         self._cache: Dict[str, str] = {}
         self._initialized: bool = False
-    
+
     def initialize(self) -> "SQLRepository":
         """Initialize — load SQL files."""
         if self._initialized:
             return self
-        
+
         from pathlib import Path
         import os
-        
+
         sql_root = Path(os.getenv("SQL_ROOT", "backend/sql/dashboard"))
-        
+
         for sql_file in sql_root.glob("**/*.sql"):
             relative_path = sql_file.relative_to(sql_root)
             key = str(relative_path).replace("\\", "/").replace(".sql", "")
             with open(sql_file, "r") as f:
                 self._cache[key] = f.read()
-        
+
         self._initialized = True
         logger.info("SQLRepository initialized with %d queries", len(self._cache))
         return self
-    
+
     def _load(self, key: SQLKey) -> str:
-        """Load SQL by key."""
+        """
+        Internal loader.
+
+        Mengubah SQLKey menjadi cache key dan mengambil SQL
+        dari cache yang sudah di-load saat initialize().
+        """
         cache_key = f"{key.category}/{key.query}"
-        if cache_key not in self._cache:
-            raise SQLExecutionError(f"SQL query not found: {cache_key}")
-        return self._cache[cache_key]
+        sql = self._cache.get(cache_key)
+        if sql is None:
+            raise SQLNotFoundError(cache_key)
+        return sql
+
+    def load(self, key: SQLKey) -> str:
+        """
+        Public compatibility API untuk load SQL query.
+
+        Args:
+            key: SQLKey enum
+
+        Returns:
+            SQL query string
+
+        Raises:
+            SQLNotFoundError: Jika query tidak ditemukan
+        """
+        return self._load(key)
 
     async def fetch_one(
         self,
@@ -65,31 +82,14 @@ class SQLRepository:
     ) -> Optional[Dict[str, Any]]:
         try:
             sql = self._load(key)
-        
-            # 🔍 DEBUG: Log query yang akan dieksekusi
-            logger.info("=" * 80)
-            logger.info("SQL KEY: %s/%s", key.category, key.query)
-            logger.info("PARAMS: %s", params)
-            logger.info("SQL:\n%s", sql)
-        
             result = await uow.session.execute(text(sql), params)
-            row = result.mappings().first()
-        
-            logger.info("RESULT: %s", row)
-        
-            return row
+            return result.mappings().first()
         except SQLAlchemyError as e:
-            # 🔍 DEBUG: Log exception lengkap dengan traceback
-            logger.exception(
-                "SQL EXECUTION FAILED [%s/%s]",
-                key.category,
-                key.query
-            )
-
             raise SQLExecutionError(
                 f"Failed to execute {key.category}/{key.query}: {e}",
                 original_error=e
             )
+
 
     async def fetch_all(
         self,

@@ -18,7 +18,7 @@ const EventTimeline: React.FC<EventTimelineProps> = ({ caseId, targetDate }) => 
         setLoading(true);
         try {
             const response = await api.getEvents(caseId, 100);
-            setEvents(response.events || []);
+            setEvents((response.data?.events ?? response.events ?? []) || []);
         } catch (error) {
             console.error('Failed to load events:', error);
         } finally {

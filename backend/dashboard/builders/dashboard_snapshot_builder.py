@@ -101,7 +101,11 @@ class DashboardSnapshotBuilder:
 
         # Calculate using policy
         total_risk_score = self._scoring_policy.calculate_total_risk(
-            risk, fraud, evidence, graph
+            risk_score=risk.score,  
+            fraud_score=fraud.score, 
+            evidence_score=evidence.score,  
+            graph_score=float(graph.entities),
+            procurement_score=0.0,
         )
 
         overall_status = self._scoring_policy.determine_overall_status([

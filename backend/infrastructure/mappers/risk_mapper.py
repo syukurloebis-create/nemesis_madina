@@ -18,8 +18,19 @@ class RiskAssessmentMapper:
         """Convert domain object to JSONB data."""
         if assessment is None:
             return None
+
+        return {
+            "case_id": assessment.case_id,
+            "score": assessment.score,
+            "level": assessment.level.value,  # ← Convert to string for JSON
+            "confidence": assessment.confidence,
+            "anomaly_score": assessment.anomaly_score,
+            "collusion_score": assessment.collusion_score,
+            "financial_score": assessment.financial_score,
+            "status": assessment.status,
+            "factors": assessment.factors,
+        }
         
-        return assessment.to_dict()
 
     @staticmethod
     def from_dict(data: Optional[Dict[str, Any]]) -> Optional[RiskAssessment]:

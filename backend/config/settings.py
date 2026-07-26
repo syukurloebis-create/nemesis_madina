@@ -1,56 +1,38 @@
-# backend/config/settings.py
+"""
+Configuration Settings - Single Source of Truth
+"""
 
-from backend.config.base import BaseConfig, Environment
+from backend.config.base import BaseConfig
 from backend.config.database import DatabaseSettings
+from backend.config.auth import AuthSettings
 from backend.config.cache import CacheSettings
-from backend.config.telemetry import TelemetrySettings
 from backend.config.security import SecuritySettings
 
 
 class ApplicationSettings:
-    """Application settings container."""
-
+    """Application settings - Single source of truth."""
+    
     def __init__(self):
         self.base = BaseConfig()
         self.database = DatabaseSettings()
-        self.cache = CacheSettings()
-        self.telemetry = TelemetrySettings()
-        self.security = SecuritySettings()
-
+        self.auth = AuthSettings()
+    
+    # Legacy compatibility - Will be removed in Sprint 3.5
     @property
-    def is_production(self) -> bool:
-        return self.base.is_production()
-
+    def DATABASE_URL(self):
+        return self.database.url
+    
     @property
-    def is_development(self) -> bool:
-        return self.base.is_development()
+    def DATABASE_SYNC_URL(self):
+        return self.database.sync_url
+    
+    @property
+    def DEBUG(self):
+        return self.base.debug
+    
+    @property
+    def VERSION(self):
+        return self.base.version
 
-
-# ==========================================================
-# SINGLETON INSTANCE
-# ==========================================================
 
 settings = ApplicationSettings()
-
-
-# ==========================================================
-# COMPATIBILITY LAYER - FOR LEGACY MODULES
-# ==========================================================
-
-# Legacy modules still use settings.DATABASE_URL, settings.DEBUG, etc.
-# This maintains backward compatibility while supporting new architecture.
-
-settings.DATABASE_URL = settings.database.url
-settings.DEBUG = settings.base.debug
-settings.VERSION = settings.base.version
-settings.ENV = settings.base.environment.value
-settings.APP_NAME = settings.base.app_name
-
-# For SQLAlchemy echo
-settings.SQL_ECHO = settings.base.debug
-
-# Export for direct import
-__all__ = [
-    "settings",
-    "ApplicationSettings",
-]

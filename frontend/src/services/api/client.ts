@@ -1,74 +1,55 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios from 'axios';
+import authService from '../auth';
+import retryInterceptor from './retryInterceptor';
 
-class ApiClient {
-  private client: AxiosInstance;
-  private static instance: ApiClient;
+const apiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-  private constructor() {
-    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    
-    this.client = axios.create({
-      baseURL,
-      timeout: 30000,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+retryInterceptor.setup(apiClient);
 
-    // Request interceptor
-    this.client.interceptors.request.use(
-      (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
-
-    // Response interceptor
-    this.client.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        console.error('[API Error]', error.message);
-        if (error.response?.status === 401) {
-          // Handle unauthorized
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-        }
-        return Promise.reject(error);
-      }
-    );
-  }
-
-  public static getInstance(): ApiClient {
-    if (!ApiClient.instance) {
-      ApiClient.instance = new ApiClient();
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = authService.getAccessToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    return ApiClient.instance;
-  }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-  public get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    return this.client.get<T>(url, config).then(res => res.data);
+// SIMPLE RESPONSE INTERCEPTOR - NO DATA TRANSFORM
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      try {
+        const refreshToken = authService.getRefreshToken();
+        if (refreshToken) {
+          const response = await axios.post(
+            `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/auth/refresh`,
+            { refresh_token: refreshToken }
+          );
+          authService.setTokens(response.data.access_token, refreshToken);
+          originalRequest.headers.Authorization = `Bearer ${response.data.access_token}`;
+          return apiClient(originalRequest);
+        }
+      } catch {
+        authService.clearTokens();
+        authService.clearUser();
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
   }
+);
 
-  public post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    return this.client.post<T>(url, data, config).then(res => res.data);
-  }
-
-  public put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    return this.client.put<T>(url, data, config).then(res => res.data);
-  }
-
-  public patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    return this.client.patch<T>(url, data, config).then(res => res.data);
-  }
-
-  public delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    return this.client.delete<T>(url, config).then(res => res.data);
-  }
-}
-
-export const apiClient = ApiClient.getInstance();
 export default apiClient;
+export { apiClient };

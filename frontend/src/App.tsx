@@ -104,6 +104,14 @@ element={<IntelligenceReports/>}
 
 
 <Route
+ path="/recovery/:caseId"
+ element={
+   <RecoveryIntelligence/>
+ }
+/>
+
+
+<Route
 path="*"
 element={<Dashboard/>}
 />

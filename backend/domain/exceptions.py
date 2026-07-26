@@ -52,6 +52,11 @@ class AggregateAlreadyExists(DomainException):
     pass
 
 
+class OptimisticLockException(DomainException):
+    """Raised when optimistic locking detects a version conflict."""
+    pass
+
+
 class EventPublishingFailed(DomainException):
     """Raised when event publishing fails."""
     pass

@@ -1,48 +1,43 @@
-// Use relative imports
-import { casesApi, evidenceApi, graphApi, fraudApi, riskApi, recommendationApi, procurementApi } from '../api';
-import { transformDashboardData } from './transformers';
+/**
+ * Dashboard Service - Fixed
+ */
+import apiClient from '../api/client';
 
-export const dashboardService = {
-  // Get complete dashboard data
-  getDashboardData: async (caseId: string) => {
-    const [
-      cases,
-      evidence,
-      graph,
-      fraud,
-      risk,
-      recommendations,
-      procurement
-    ] = await Promise.all([
-      casesApi.getStats().catch(() => ({ data: null })),
-      evidenceApi.getStats().catch(() => ({ data: null })),
-      graphApi.getMetrics().catch(() => ({ data: null })),
-      fraudApi.getStats().catch(() => ({ data: null })),
-      // Use getCaseRiskExplanations instead of getTrend
-      riskApi.getCaseRiskExplanations(caseId).catch(() => ({ data: null })),
-      recommendationApi.getSummary().catch(() => ({ data: null })),
-      procurementApi.getRUPStats().catch(() => ({ data: null })),
-    ]);
-
-    return transformDashboardData({
-      cases: cases.data,
-      evidence: evidence.data,
-      graph: graph.data,
-      fraud: fraud.data,
-      risk: risk.data,
-      recommendations: recommendations.data,
-      procurement: procurement.data,
-    });
-  },
-
-  // Get executive overview
-  getExecutiveOverview: (caseId?: string) =>
-    casesApi.getStats(),
-
-  // Get strategic dashboard
-  getStrategicDashboard: () =>
-    casesApi.getStats(),
+export const getDashboardStats = async () => {
+  try {
+    const response: any = await apiClient.get('/api/v1/dashboard/stats');
+    const data = response?.data || response || {};
+    
+    return {
+      alerts: data.active_alerts ?? 0,
+      entities: data.total_entities ?? 0,
+      relationships: data.total_relationships ?? 0,
+    };
+  } catch {
+    return {
+      alerts: 0,
+      entities: 0,
+      relationships: 0,
+    };
+  }
 };
 
-export * from './transformers';
+export const dashboardService = {
+  getDashboardData: async (caseId?: string) => {
+    const params = caseId ? { case_id: caseId } : {};
+    const [cases, fraud, graph, risk] = await Promise.all([
+      apiClient.get('/api/v1/cases/stats', { params }),
+      apiClient.get('/api/v1/fraud/stats', { params }),
+      apiClient.get('/api/v1/graph/metrics', { params }),
+      apiClient.get('/api/v1/risk/stats', { params }),
+    ]);
+    return {
+      cases: cases?.data || cases || {},
+      fraud: fraud?.data || fraud || {},
+      graph: graph?.data || graph || {},
+      risk: risk?.data || risk || {},
+    };
+  },
+};
+
 export default dashboardService;

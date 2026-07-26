@@ -4,18 +4,21 @@ NEMESIS Madina - Health Checks
 ✅ Liveness, Readiness, Startup endpoints
 """
 
+import os
+import logging
+import asyncio
+
 from fastapi import APIRouter, Response, Depends
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone, timedelta
-import logging
-import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.infrastructure.database import get_session
 from backend.infrastructure.redis.client import RedisClient
 from backend.infrastructure.kafka.client import KafkaClient
-from backend.infrastructure.outbox.outbox import OutboxRepository
-from backend.infrastructure.outbox.publisher import OutboxPublisher
+
+from sqlalchemy import text
+await session.execute(text("SELECT 1"))
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/health", tags=["health"])
@@ -37,12 +40,10 @@ class HealthCheck:
         session_factory=None,
         redis_client: Optional[RedisClient] = None,
         kafka_client: Optional[KafkaClient] = None,
-        outbox_publisher: Optional[OutboxPublisher] = None,
     ):
         self._session_factory = session_factory
         self._redis_client = redis_client
         self._kafka_client = kafka_client
-        self._outbox_publisher = outbox_publisher
         self._startup_time = datetime.now(timezone.utc)
         self._ready = False
         self._dependencies = {}
@@ -72,15 +73,13 @@ class HealthCheck:
             self._check_database(),
             self._check_redis(),
             self._check_kafka(),
-            self._check_outbox(),
-            return_exceptions=True
+            return_exceptions=True,
         )
         
         results = {
             "database": checks[0],
             "redis": checks[1],
             "kafka": checks[2],
-            "outbox": checks[3],
         }
         
         # Determine overall status
@@ -104,8 +103,7 @@ class HealthCheck:
         return {
             "status": HealthStatus.HEALTHY,
             "startup_time": self._startup_time.isoformat(),
-            "components": {
-                "outbox_publisher": "running" if self._outbox_publisher and self._outbox_publisher.is_running else "stopped",
+            "components": {                
                 "event_dispatcher": "ready",
                 "projection_engine": "initialized",
                 "feature_flags": "loaded",
@@ -150,27 +148,7 @@ class HealthCheck:
             logger.error(f"Kafka health check failed: {e}")
             return False
     
-    async def _check_outbox(self) -> bool:
-        """Check outbox status."""
-        if not self._outbox_publisher:
-            return True  # Outbox is optional
-        
-        try:
-            # Check publisher is running
-            if not self._outbox_publisher.is_running:
-                return False
-            
-            # Check pending count
-            count = await self._outbox_publisher.get_pending_count()
-            if count > 10000:  # Threshold for degradation
-                logger.warning(f"High outbox pending count: {count}")
-                return False
-            
-            return True
-        except Exception as e:
-            logger.error(f"Outbox health check failed: {e}")
-            return False
-    
+
     def _get_memory_usage(self) -> float:
         """Get current memory usage in MB."""
         import psutil

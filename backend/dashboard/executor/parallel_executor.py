@@ -60,9 +60,12 @@ class ParallelExecutor:
     
     async def execute(
         self,
-        tasks: List[TaskDefinition[T]]
+        tasks: List[TaskDefinition[T]],
+        *,
+        raise_on_required_error: bool = False,
     ) -> Dict[str, ExecutionResult[T]]:
         """Execute tasks in parallel. Pure execution only."""
+        del raise_on_required_error
         results: Dict[str, ExecutionResult[T]] = {}
         
         async def run_task(task: TaskDefinition[T]) -> ExecutionResult[T]:

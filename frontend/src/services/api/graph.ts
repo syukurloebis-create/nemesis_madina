@@ -1,41 +1,33 @@
-import { apiClient } from './client';
+import apiClient from './client';
 
 export const graphApi = {
-  // Get key actors
-  getKeyActors: (params?: any) => 
+  getMetrics: (caseId?: string) =>
+    apiClient.get('/api/v1/graph/metrics', {
+      params: caseId ? { case_id: caseId } : undefined
+    }),
+  
+  getKeyActors: (params?: any) =>
     apiClient.get('/api/v1/graph/key-actors', { params }),
   
-  // Get communities
-  getCommunities: (caseId: string) => 
-    apiClient.get('/api/v1/graph/communities', { params: { case_id: caseId } }),
+  getEntities: (caseId?: string) =>
+    apiClient.get('/api/v1/graph/entities', {
+      params: caseId ? { case_id: caseId } : undefined
+    }),
   
-  // Get clusters
-  getClusters: (caseId: string) => 
-    apiClient.get(`/api/v1/graph/clusters/${caseId}`),
+  getCommunities: (caseId: string) =>
+    apiClient.get(`/api/v1/graph/communities/${caseId}`),
   
-  // Get collusion
-  getCollusion: (caseId?: string) => 
-    apiClient.get('/api/v1/graph/collusion', { params: { case_id: caseId } }),
+  getStats: () =>
+    apiClient.get('/api/v1/graph/stats'),
   
-  // Get graph data
-  getGraph: (caseId: string) => 
-    apiClient.get('/api/v1/graph/graph/', { params: { case_id: caseId } }),
+  getRelationships: (caseId: string) =>
+    apiClient.get(`/api/v1/graph/relationships/${caseId}`),
   
-  // Get graph metrics
-  getMetrics: () => 
-    apiClient.get('/api/v1/graph/metrics'),
+  getEntityGraph: (caseId: string) =>
+    apiClient.get(`/api/v1/graph/entities/${caseId}`),
   
-  // Get entities
-  getEntities: () => 
-    apiClient.get('/api/v1/graph/entities'),
-  
-  // Get relationships
-  getRelationships: () => 
-    apiClient.get('/api/v1/graph/relationships'),
-  
-  // Get vendor network
-  getVendorNetwork: (vendorName: string) => 
-    apiClient.get(`/api/v1/graph/vendor/${vendorName}/network`),
+  getCollusionCycles: (caseId: string) =>
+    apiClient.get(`/api/v1/graph/collusion-cycles/${caseId}`),
 };
 
 export default graphApi;

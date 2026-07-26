@@ -77,16 +77,12 @@ class GraphCollector(ICollector[GraphCollectorDTO]):
             )
             return dto
             
-        except RepositoryError as e:
-            # 🔍 DEBUG: Log exception dan propagate
+        except RepositoryError:
             logger.exception(
                 "GraphCollector repository failure",
                 extra={
                     "case_id": str(case_id),
                     "collector": "graph",
-                    "error": str(e),
-                    "error_type": type(e).__name__
-                }
+                },
             )
-            # ✅ Propagate error, jangan return fallback
-            raise
+            raise 

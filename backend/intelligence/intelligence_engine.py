@@ -1,14 +1,12 @@
+from backend.intelligence.core.registry import EventRegistry
 from backend.intelligence.core.feature_engine import FeatureEngine
-from intelligence.core.risk_model import RiskModel
-from intelligence.core.trust_model import TrustModel
-from intelligence.core.confidence_model import ConfidenceModel
-from intelligence.core.calibration import Calibration
-from intelligence.core.explainability_engine import ExplainabilityEngine
-
-from backend.core.chain_of_custody import ChainOfCustody
-from backend.core.registry import EventRegistry
-from backend.core.entity_memory import EntityMemory
-
+from backend.intelligence.core.risk_model import RiskModel
+from backend.intelligence.core.trust_model import TrustModel
+from backend.intelligence.core.confidence_model import ConfidenceModel
+from backend.intelligence.core.calibration import Calibration
+from backend.intelligence.core.explainability_engine import ExplainabilityEngine
+from backend.intelligence.core.chain_of_custody import ChainOfCustody
+from backend.intelligence.core.entity_memory import EntityMemory
 
 class IntelligenceEngine:
     """
@@ -61,14 +59,14 @@ class IntelligenceEngine:
         explanation = self.explainability.explain(
             features=features,
             risk=risk,
-            trust=trust
+            confidence=confidence,
         )
 
         # 7. Store lineage (optional audit)
         self.chain.record(entity_id, features, risk, trust)
 
         # 8. Persist memory
-        self.memory.update(entity_id, risk, trust)
+        self.memory.add_score(entity_id, risk, trust)
 
         return {
             "entity_id": entity_id,

@@ -1,0 +1,125 @@
+{
+  "timestamp": "2026-07-03T12:31:11.272988",
+  "root": "C:\\Users\\LENOVO\\nemesis_madina",
+  "backend": {
+    "exists": true,
+    "status": "\u2705",
+    "routers": {
+      "dashboard_intelligence.py": "\u2705",
+      "dashboard.py": "\u2705",
+      "graph.py": "\u2705",
+      "fraud.py": "\u2705",
+      "risk.py": "\u2705",
+      "procurement.py": "\u2705",
+      "recovery.py": "\u274c",
+      "auth.py": "\u2705",
+      "cases.py": "\u2705",
+      "health.py": "\u2705"
+    },
+    "services": {
+      "dashboard_intelligence_service.py": "\u2705",
+      "dashboard_snapshot_cache_manager.py": "\u2705",
+      "dashboard_snapshot_builder.py": "\u2705",
+      "dashboard_snapshot.py": "\u2705",
+      "fraud_service.py": "\u274c",
+      "graph_service.py": "\u274c",
+      "risk_service.py": "\u274c",
+      "procurement_service.py": "\u274c",
+      "recovery_service.py": "\u274c",
+      "ai_recommendation_service.py": "\u274c"
+    },
+    "collectors": {
+      "__init__.py": "\u274c (folder tidak ada)",
+      "base_collector.py": "\u274c (folder tidak ada)",
+      "fraud_collector.py": "\u274c (folder tidak ada)",
+      "graph_collector.py": "\u274c (folder tidak ada)",
+      "risk_collector.py": "\u274c (folder tidak ada)",
+      "procurement_collector.py": "\u274c (folder tidak ada)",
+      "recovery_collector.py": "\u274c (folder tidak ada)",
+      "recommendation_collector.py": "\u274c (folder tidak ada)"
+    },
+    "websocket": {
+      "recovery.py": "\u2705",
+      "alert_engine.py": "\u274c"
+    },
+    "core": {
+      "config.py": "\u274c",
+      "database.py": "\u274c",
+      "logging.py": "\u274c"
+    },
+    "models": {
+      "case.py": "\u274c",
+      "fraud.py": "\u274c",
+      "graph.py": "\u274c",
+      "risk.py": "\u274c",
+      "procurement.py": "\u274c",
+      "vendor.py": "\u274c"
+    }
+  },
+  "frontend": {
+    "exists": true,
+    "status": "\u2705",
+    "hooks": {
+      "useIntelligenceDashboard.ts": "\u2705",
+      "useDashboardData.tsx": "\u2705",
+      "useRecoveryWebSocket.ts": "\u274c",
+      "useFraudDetection.ts": "\u274c",
+      "useGraphAnalysis.ts": "\u274c",
+      "useRiskAssessment.ts": "\u274c"
+    },
+    "services": {
+      "dashboardIntelligenceApi.ts": "\u2705",
+      "api.ts": "\u274c",
+      "authApi.ts": "\u274c",
+      "caseApi.ts": "\u274c",
+      "fraudApi.ts": "\u2705",
+      "graphApi.ts": "\u274c",
+      "riskApi.ts": "\u274c"
+    },
+    "components": {
+      "DashboardIntelligence.tsx": "\u274c",
+      "RecoveryIntelligence.tsx": "\u274c",
+      "FraudAnalysis.tsx": "\u274c",
+      "GraphVisualization.tsx": "\u274c",
+      "RiskAssessment.tsx": "\u274c"
+    }
+  },
+  "summary": {
+    "total_expected": 46,
+    "total_found": 16,
+    "missing": [
+      "backend/routers/recovery.py",
+      "backend/services/fraud_service.py",
+      "backend/services/graph_service.py",
+      "backend/services/risk_service.py",
+      "backend/services/procurement_service.py",
+      "backend/services/recovery_service.py",
+      "backend/services/ai_recommendation_service.py",
+      "backend/collectors/__init__.py",
+      "backend/collectors/base_collector.py",
+      "backend/collectors/fraud_collector.py",
+      "backend/collectors/graph_collector.py",
+      "backend/collectors/risk_collector.py",
+      "backend/collectors/procurement_collector.py",
+      "backend/collectors/recovery_collector.py",
+      "backend/collectors/recommendation_collector.py",
+      "backend/websocket/alert_engine.py",
+      "frontend/src/hooks/useRecoveryWebSocket.ts",
+      "frontend/src/hooks/useFraudDetection.ts",
+      "frontend/src/hooks/useGraphAnalysis.ts",
+      "frontend/src/hooks/useRiskAssessment.ts",
+      "frontend/src/services/api.ts",
+      "frontend/src/services/authApi.ts",
+      "frontend/src/services/caseApi.ts",
+      "frontend/src/services/graphApi.ts",
+      "frontend/src/services/riskApi.ts",
+      "frontend/src/components/DashboardIntelligence.tsx",
+      "frontend/src/components/RecoveryIntelligence.tsx",
+      "frontend/src/components/FraudAnalysis.tsx",
+      "frontend/src/components/GraphVisualization.tsx",
+      "frontend/src/components/RiskAssessment.tsx"
+    ],
+    "extra": [],
+    "completion_percentage": 34.78260869565217
+  }
+}

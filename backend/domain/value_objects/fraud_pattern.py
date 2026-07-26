@@ -45,7 +45,7 @@ class FraudPattern:
     
     def is_high_confidence(self) -> bool:
         """Check if pattern has high confidence"""
-        return self.confidence_score >= 0.8
+        return self.confidence_score >= 80
     
     def is_critical(self) -> bool:
         """Check if pattern is critical severity"""

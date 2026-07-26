@@ -20,14 +20,21 @@ from backend.core.container import (
     HealthContainer,
 )
 from backend.core.version import VersionInfo
+from backend.core.container import CommandContainer
+from backend.core.container import CalculatorRegistry
 from backend.infrastructure.sql_repository import SQLRepository
 from backend.infrastructure.parallel_executor import ParallelExecutor
 from backend.infrastructure.event_bus import InMemoryEventBus
 from backend.infrastructure.unit_of_work import UnitOfWorkFactory
+from backend.infrastructure.outbox.factory import OutboxRepositoryFactory
+from backend.infrastructure.mappers.case_mapper import CaseMapper
+from backend.infrastructure.domain_repository_factory import DomainRepositoryFactory
+from backend.infrastructure.domain_command_uow_factory import DomainCommandUoWFactory
 from backend.calculators.config import CalculatorConfig
 from backend.calculators.fraud_score_calculator import FraudScoreCalculator
 from backend.calculators.risk_score_calculator import RiskScoreCalculator
 from backend.calculators.evidence_score_calculator import EvidenceScoreCalculator
+from backend.calculators.graph_score_calculator import GraphScoreCalculator
 from backend.mappers.fraud_mapper import FraudMapper
 from backend.mappers.graph_mapper import GraphMapper
 from backend.mappers.risk_mapper import RiskMapper
@@ -43,11 +50,16 @@ from backend.services.dashboard_intelligence_service import (
     DashboardIntelligenceService,
     DashboardServiceDependencies,
 )
+from backend.calculators.procurement_score_calculator import (
+    ProcurementScoreCalculator,
+)
 from backend.services.risk_application_service import RiskApplicationService
 from backend.services.risk_projection_service import RiskProjectionService
 from backend.repositories.sqlalchemy.graph_repository_impl import GraphRepositoryImpl
 from backend.repositories.sqlalchemy.evidence_repository_impl import EvidenceRepositoryImpl
 from backend.repositories.sqlalchemy.risk_command_repository_impl import RiskCommandRepositoryImpl
+from backend.application.commands.analysis_mapper import AnalyzeCaseCommandHandler
+
 
 # ============================================================
 # PHASE 3: GRAPH COMPONENTS
@@ -75,6 +87,7 @@ from backend.graph.application.assembler import GraphAssembler
 from backend.graph.application.projection_mapper import GraphProjectionMapper
 from backend.graph.application.service import GraphRegenerationService
 
+
 logger = logging.getLogger(__name__)
 
 def build_application_container(infra: InfrastructureContainer) -> ApplicationContainer:
@@ -89,9 +102,10 @@ def build_application_container(infra: InfrastructureContainer) -> ApplicationCo
     fraud_calculator = FraudScoreCalculator()
     risk_calculator = RiskScoreCalculator()
     evidence_calculator = EvidenceScoreCalculator()
+    graph_calculator = GraphScoreCalculator()       
+    procurement_calculator = ProcurementScoreCalculator()
 
-    calculators = CalculatorContainer(
-        config=infra.calculator_config,
+    calculators = CalculatorRegistry(
         fraud=fraud_calculator,
         risk=risk_calculator,
         evidence=evidence_calculator,
@@ -114,6 +128,59 @@ def build_application_container(infra: InfrastructureContainer) -> ApplicationCo
         evidence=evidence_mapper,
         procurement=procurement_mapper,
     )
+
+    # ============================================================
+    # 2.5 Domain Command Infrastructure
+    # ============================================================
+
+    logger.info("Initializing Domain Command Infrastructure...")
+
+    from backend.infrastructure.mappers.fraud_mapper import FraudAnalysisMapper
+    from backend.infrastructure.mappers.risk_mapper import RiskAssessmentMapper
+    from backend.infrastructure.mappers.evidence_mapper import EvidenceVerificationMapper
+    from backend.infrastructure.mappers.graph_mapper import GraphAnalysisMapper
+    from backend.infrastructure.mappers.procurement_mapper import ProcurementAnalysisMapper
+
+    fraud_analysis_mapper = FraudAnalysisMapper()
+    risk_assessment_mapper = RiskAssessmentMapper()
+    evidence_verification_mapper = EvidenceVerificationMapper()
+    graph_analysis_mapper = GraphAnalysisMapper()
+    procurement_analysis_mapper = ProcurementAnalysisMapper()
+    
+    case_mapper = CaseMapper(
+        fraud_mapper=fraud_analysis_mapper,
+        risk_mapper=risk_assessment_mapper,
+        evidence_mapper=evidence_verification_mapper,
+        graph_mapper=graph_analysis_mapper,
+        procurement_mapper=procurement_analysis_mapper,
+    )
+
+    domain_repo_factory = DomainRepositoryFactory(case_mapper)
+
+    outbox_repo_factory = OutboxRepositoryFactory()
+
+    domain_uow_factory = DomainCommandUoWFactory(
+        session_factory=infra.session_factory,
+        outbox_factory=outbox_repo_factory.create,
+        case_repo_factory=domain_repo_factory.case,
+    )
+
+    analyze_case_handler = AnalyzeCaseCommandHandler(
+        uow_factory=domain_uow_factory,
+        fraud_calculator=fraud_calculator,
+        risk_calculator=risk_calculator,
+        evidence_calculator=evidence_calculator,
+        graph_calculator=graph_calculator,     
+        procurement_calculator=procurement_calculator,  
+    )
+
+    logger.info("Domain Command Infrastructure initialized")
+
+    commands = CommandContainer(
+        analyze_case=analyze_case_handler,
+    )
+
+    logger.info("Command Handlers initialized")
 
     # ============================================================
     # 3. Domain Services
@@ -286,7 +353,7 @@ def build_application_container(infra: InfrastructureContainer) -> ApplicationCo
     )
 
     # ============================================================
-    # 9. Health Container
+    # 10. Health Container
     # ============================================================
 
     enable_health = os.getenv("ENABLE_HEALTH", "true").lower() == "true"
@@ -302,7 +369,7 @@ def build_application_container(infra: InfrastructureContainer) -> ApplicationCo
         health = HealthContainer(checker=None)
 
     # ============================================================
-    # 10. Application Container — SINGLE RETURN
+    # 11. Application Container — SINGLE RETURN
     # ============================================================
 
     return ApplicationContainer(
@@ -312,5 +379,6 @@ def build_application_container(infra: InfrastructureContainer) -> ApplicationCo
         domain_services=domain_services,
         collectors=collectors,
         services=services,
+        commands=commands,
         health=health,
     )

@@ -1,0 +1,23 @@
+  async createDecision(data: Partial<Decision>): Promise<Decision> {
+    try {
+      // Pastikan payload sesuai dengan API yang diharapkan
+      const payload = {
+        case_id: data.caseId,
+        title: data.title,
+        description: data.description,
+        priority: data.priority || 'MEDIUM',
+        confidence: data.confidence || 50,
+        evidence: data.evidence || [],
+        type: data.type || 'RECOMMENDATION',
+      };
+      
+      const response = await apiClient.post('/api/v1/recommendations', payload);
+      
+      // CRITICAL: Return response.data langsung (bukan response.data.data)
+      // TransformDecision akan handle transformasi
+      return this.transformDecision(response.data || {});
+    } catch (error) {
+      console.error('[DecisionService] Failed to create decision:', error);
+      throw error;
+    }
+  }

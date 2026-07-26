@@ -80,3 +80,9 @@ pytest-asyncio>=0.21.0
 pytest-cov>=4.1.0
 black>=23.11.0
 ruff>=0.1.0
+
+python-louvain==0.16
+networkx==3.3
+
+python-louvain==0.16
+networkx==3.3

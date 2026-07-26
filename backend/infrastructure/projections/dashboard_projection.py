@@ -1,13 +1,19 @@
+# backend/infrastructure/projections/dashboard_projection.py
+
 """
 NEMESIS Madina - Dashboard Projection
-✅ Event-driven projection updates
-✅ Idempotent processing
+✅ Pure read model updater
+✅ No checkpoint management (handled by Rebuilder)
+✅ No ordering/sequence (handled by Rebuilder)
+✅ No duplicate detection (handled by Rebuilder)
 """
 
+import logging
 from typing import Optional
+
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, insert
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from backend.domain.events.base import DomainEvent
 from backend.domain.events.fraud_events import FraudAnalysisRecorded
@@ -15,96 +21,102 @@ from backend.domain.events.risk_events import RiskAssessmentRecorded
 from backend.domain.events.evidence_events import EvidenceVerified
 from backend.infrastructure.models.read_models import DashboardView
 
+logger = logging.getLogger(__name__)
+
 
 class DashboardProjection:
     """
-    Dashboard projection builder.
-    ✅ Updates materialized view on events
-    ✅ Idempotent using event_id
+    Pure projection for DashboardView read model.
+    ✅ ONLY updates read model from events
     """
-    
+
     def __init__(self, session: AsyncSession):
         self._session = session
-        self._processed_events = set()
-    
+
     async def apply(self, event: DomainEvent) -> None:
-        """Apply event with ordering and checkpoint."""
-        event_id = str(event.event_id)
-        event_sequence = getattr(event, 'sequence', 0)
-        aggregate_id = str(event.aggregate_id)
-    
-        # ✅ Check persistent processed events
-        if await self._checkpoint.is_processed(event_id):
+        """Apply event to read model."""
+        if isinstance(event, FraudAnalysisRecorded):
+            await self._handle_fraud_analysis(event)
             return
-    
-        # ✅ Check ordering - skip stale events
-        last_sequence = await self._get_last_sequence(aggregate_id)
-        if event_sequence <= last_sequence:
-            logger.warning(f"Skipping stale event {event_id} (seq {event_sequence} <= {last_sequence})")
+
+        if isinstance(event, RiskAssessmentRecorded):
+            await self._handle_risk_assessment(event)
             return
-    
-        # Apply event
-        handler = self._handlers.get(type(event))
-        if handler:
-            await handler(event)
-        
-            # ✅ Mark as processed with checkpoint
-            await self._checkpoint.mark_processed(event_id, aggregate_id, event_sequence)
-    
+
+        if isinstance(event, EvidenceVerified):
+            await self._handle_evidence_verified(event)
+            return
+
+        logger.debug(f"No handler for event type: {type(event).__name__}")
 
     async def _handle_fraud_analysis(self, event: FraudAnalysisRecorded) -> None:
-        """Update dashboard with UPSERT."""
-        # ✅ UPSERT with ON CONFLICT
-        stmt = insert(DashboardView).values(
-            case_id=str(event.case_id),
-            fraud_score=event.fraud_score,
-            confidence=event.confidence,
+        """Update dashboard with fraud analysis data."""
+        case_id = str(event.case_id)
+        analysis = event.analysis
+
+        confidence = analysis.highest_confidence
+        if confidence is None:
+            confidence = analysis.average_confidence
+        if confidence is None:
+            confidence = 0.0
+
+        stmt = pg_insert(DashboardView).values(
+            case_id=case_id,
+            fraud_score=analysis.score,
+            confidence=confidence,
             analysis_count=1,
             last_updated=event.occurred_at,
             version=1,
         ).on_conflict_do_update(
             index_elements=['case_id'],
             set_={
-                'fraud_score': event.fraud_score,
-                'confidence': event.confidence,
+                'fraud_score': analysis.score,
+                'confidence': confidence,
                 'analysis_count': DashboardView.analysis_count + 1,
                 'last_updated': event.occurred_at,
                 'version': DashboardView.version + 1,
             }
         )
         await self._session.execute(stmt)
-        
-        # If no row exists, insert
-        if result.rowcount == 0:
-            await self._session.execute(
-                insert(DashboardView).values(
-                    case_id=str(event.case_id),
-                    fraud_score=event.fraud_score,
-                    confidence=event.confidence,
-                    analysis_count=1,
-                    last_updated=event.occurred_at,
-                )
-            )
-    
+
     async def _handle_risk_assessment(self, event: RiskAssessmentRecorded) -> None:
-        """Update dashboard on risk assessment."""
-        await self._session.execute(
-            update(DashboardView)
-            .where(DashboardView.case_id == str(event.case_id))
-            .values(
-                risk_level=event.risk_level,
-                risk_score=event.risk_score,
-                last_updated=event.occurred_at,
-            )
+        """
+        Update dashboard with risk assessment data.
+        ✅ Migrated to new contract
+        """
+        case_id = str(event.case_id)
+        assessment = event.assessment
+
+        stmt = pg_insert(DashboardView).values(
+            case_id=case_id,
+            risk_score=assessment.score,
+            risk_level=assessment.level.value if hasattr(assessment.level, 'value') else str(assessment.level),
+            last_updated=event.occurred_at,
+            version=1,
+        ).on_conflict_do_update(
+            index_elements=['case_id'],
+            set_={
+                'risk_score': assessment.score,
+                'risk_level': assessment.level.value if hasattr(assessment.level, 'value') else str(assessment.level),
+                'last_updated': event.occurred_at,
+                'version': DashboardView.version + 1,
+            }
         )
-    
+        await self._session.execute(stmt)
+
     async def _handle_evidence_verified(self, event: EvidenceVerified) -> None:
-        """Update dashboard on evidence verification."""
-        await self._session.execute(
-            update(DashboardView)
-            .where(DashboardView.case_id == str(event.case_id))
-            .values(
-                evidence_count=DashboardView.evidence_count + 1,
-                last_updated=event.occurred_at,
-            )
+        """
+        Evidence handler - not yet migrated.
+        Log warning and skip (graceful degradation).
+        """
+        logger.warning(
+            "EvidenceVerified not yet migrated to new contract. "
+            "Event ignored for now."
         )
+
+    async def get_by_case_id(self, case_id: str) -> Optional[DashboardView]:
+        """Get dashboard view by case_id (read-side API)."""
+        result = await self._session.execute(
+            select(DashboardView).where(DashboardView.case_id == case_id)
+        )
+        return result.scalar_one_or_none()

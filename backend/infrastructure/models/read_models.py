@@ -7,7 +7,7 @@ NEMESIS Madina - Read Models for CQRS
 
 from sqlalchemy import Column, String, Float, Integer, DateTime, JSON, Boolean
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from datetime import datetime
 
 Base = declarative_base()
@@ -44,6 +44,6 @@ class DashboardView(Base):
     latest_procurement = Column(JSON, nullable=True)
     
     # Metadata
-    last_updated = Column(DateTime, nullable=False)
+    last_updated = Column(DateTime(timezone=True), nullable=False) 
     version = Column(Integer, default=1)
     is_active = Column(Boolean, default=True)

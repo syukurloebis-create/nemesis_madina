@@ -2,24 +2,38 @@
 
 import hashlib
 import json
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, List
 
 
 class EvidenceHasher:
     """Hash computation for evidence"""
-    
+
     @staticmethod
     def compute_hash(data: Dict[str, Any]) -> str:
         """Compute deterministic hash from dictionary"""
         sorted_data = EvidenceHasher._sort_dict(data)
         json_string = json.dumps(sorted_data, sort_keys=True, separators=(',', ':'))
         return hashlib.sha256(json_string.encode()).hexdigest()
-    
+
     @staticmethod
     def compute_file_hash(content: bytes) -> str:
         """Compute hash from file content"""
         return hashlib.sha256(content).hexdigest()
-    
+
+    @staticmethod
+    def compute_chain_hash(hashes: List[str]) -> str:
+        """
+        Compute deterministic chain hash.
+
+        Args:
+            hashes: Ordered list of hash strings.
+
+        Returns:
+            SHA-256 hexadecimal digest.
+        """
+        combined = "".join(hashes)
+        return hashlib.sha256(combined.encode("utf-8")).hexdigest()
+
     @staticmethod
     def _sort_dict(obj: Any) -> Any:
         """Recursively sort dictionary keys"""

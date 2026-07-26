@@ -7,19 +7,27 @@ NEMESIS Madina - Risk Assessment Value Object
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import List, Dict, Any, Optional
 from backend.domain.enums.risk_level import RiskLevel
 
 
 @dataclass(frozen=True)
 class RiskAssessment:
     """Risk assessment result - Pure Value Object."""
-    
-    # Core fields (required)
-    score: float
-    level: str
+
+    case_id: str = ""
+    score: float = 0.0
+    level: RiskLevel = RiskLevel.UNKNOWN  # ← CHANGED: RiskLevel, not str
     confidence: float = 0.0
+    anomaly_score: float = 0.0
+    collusion_score: float = 0.0
+    financial_score: float = 0.0
+    status: str = "SUCCESS"
     factors: List[str] = field(default_factory=list)
+
+    @property
+    def is_high_risk(self) -> bool:
+        return self.level in (RiskLevel.HIGH, RiskLevel.CRITICAL)
 
     def __post_init__(self):
         # ✅ FIX: 0-100, bukan 0-1
@@ -28,24 +36,6 @@ class RiskAssessment:
         if not (0 <= self.confidence <= 100):
             raise ValueError(f"Confidence must be between 0 and 100, got {self.confidence}")
 
-    def is_high_risk(self) -> bool:
-        """Check if risk is high or critical"""
-        return self.level in (RiskLevel.HIGH, RiskLevel.CRITICAL)
-
     def is_low_risk(self) -> bool:
         """Check if risk is low or medium"""
         return self.level in (RiskLevel.LOW, RiskLevel.MEDIUM)
-
-    def to_dict(self) -> dict:
-        """Convert to dictionary"""
-        return {
-            'case_id': self.case_id,
-            'score': self.score,
-            'level': self.level.value,
-            'confidence': self.confidence,
-            'anomaly_score': self.anomaly_score,
-            'collusion_score': self.collusion_score,
-            'financial_score': self.financial_score,
-            'status': self.status,
-            'factors': self.factors,
-        }

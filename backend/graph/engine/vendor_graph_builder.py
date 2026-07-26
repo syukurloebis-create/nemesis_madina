@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Vendor Graph Builder - Builds relationships between vendors based on shared packages
 FIXED: Removed ALL ::jsonb casts from SQL (use Python json.dumps + no cast)
@@ -244,8 +243,6 @@ if __name__ == "__main__":
             if case_id:
                 self.logger.info(f"Building graph for case: {case_id}")
             
-            # ... existing code ...
-            
             # Insert entities with case_id
             for vendor in vendors:
                 entity_id = str(uuid.uuid4())
@@ -276,8 +273,6 @@ if __name__ == "__main__":
                         "extra_data": json.dumps(vendor.get('extra_data', {}))
                     }
                 )
-            
-            # ... existing code ...
             
             return {
                 "entities_created": len(vendors),

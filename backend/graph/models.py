@@ -68,7 +68,7 @@ class GraphMetadata(Base):
     __tablename__ = "graph_metadata"
     
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    case_id = Column(String, nullable=False, index=True)
+    case_id = Column(String, nullable=False)
     version = Column(Integer, nullable=False)
     checksum = Column(String, nullable=False)
     reason = Column(String, nullable=True)
@@ -82,36 +82,114 @@ class GraphMetadata(Base):
 
 
 # ============================================================
-# ENUMS FOR GRAPH
+# LEGACY COMPATIBILITY WRAPPER
 # ============================================================
 
-from enum import Enum
+from backend.graph.domain.node import GraphNode as DomainGraphNode
+from backend.graph.domain.edge import GraphEdge as DomainGraphEdge
+from backend.graph.domain.types import NodeType, EdgeType
 
 
-class NodeType(Enum):
-    """Types of nodes in the graph"""
-    ENTITY = "entity"
-    VENDOR = "vendor"
-    OFFICIAL = "official"
-    COMPANY = "company"
-    PERSON = "person"
-    ADDRESS = "address"
-    BANK_ACCOUNT = "bank_account"
-    PROCUREMENT = "procurement"
+class GraphNode:
+    """Legacy compatibility wrapper for GraphNode."""
+    
+    def __init__(
+        self,
+        id: str = None,
+        type=None,
+        label: str = "",
+        properties: dict = None,
+        **kwargs
+    ):
+        self._domain = DomainGraphNode(
+            business_key=id or str(uuid.uuid4()),
+            entity_type=type.value if hasattr(type, 'value') else str(type),
+            name=label or "",
+            extra_data=properties or {},
+        )
+
+    @property
+    def id(self) -> str:
+        return self._domain.business_key
+
+    @property
+    def type(self):
+        value = self._domain.entity_type
+        try:
+            return NodeType(value)
+        except ValueError:
+            return value
+
+    @property
+    def label(self) -> str:
+        return self._domain.name
+
+    @property
+    def properties(self) -> dict:
+        return self._domain.extra_data
+
+    def to_domain(self) -> DomainGraphNode:
+        return self._domain
 
 
-class EdgeType(Enum):
-    """Types of edges in the graph"""
-    INTERACTS = "interacts"
-    OWNER = "owner"
-    DIRECTOR = "director"
-    SHAREHOLDER = "shareholder"
-    FAMILY = "family"
-    SAME_ADDRESS = "same_address"
-    SAME_PHONE = "same_phone"
-    SAME_BANK_ACCOUNT = "same_bank_account"
-    PROCUREMENT_PARTICIPANT = "procurement_participant"
-    CONTRACT_SIGNATORY = "contract_signatory"
-    COLLUSION = "collusion"
-    FINANCIAL = "financial"
-    SHARED_OWNERSHIP = "shared_ownership"
+class GraphEdge:
+    """Legacy compatibility wrapper for GraphEdge."""
+    
+    def __init__(
+        self,
+        source: str = None,
+        target: str = None,
+        type=None,
+        weight: float = 1.0,
+        properties: dict = None,
+        **kwargs
+    ):
+        self._domain = DomainGraphEdge(
+            source_key=source or "",
+            target_key=target or "",
+            relationship_type=type.value if hasattr(type, 'value') else str(type),
+            weight=weight,
+            amount=properties.get("amount") if properties else None,
+            extra_data=properties or {},
+        )
+
+    @property
+    def source(self) -> str:
+        return self._domain.source_key
+
+    @property
+    def target(self) -> str:
+        return self._domain.target_key
+
+    @property
+    def type(self):
+        value = self._domain.relationship_type
+        try:
+            return EdgeType(value)
+        except ValueError:
+            return value
+
+    @property
+    def weight(self) -> float:
+        return self._domain.weight
+
+    @property
+    def properties(self) -> dict:
+        return self._domain.extra_data
+
+    def to_domain(self) -> DomainGraphEdge:
+        return self._domain
+
+
+__all__ = [
+    # ORM Models
+    "GraphEntity",
+    "GraphRelationship",
+    "CollusionDetection",
+    "GraphMetadata",
+    # Legacy Compatibility
+    "GraphNode",
+    "GraphEdge",
+    "NodeType",
+    "EdgeType",
+]

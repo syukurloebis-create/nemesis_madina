@@ -10,9 +10,8 @@ Architecture Decision:
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic
 
-from backend.infrastructure.unit_of_work import UnitOfWork
+from backend.graph.infrastructure.interfaces.unit_of_work import IUnitOfWork
 from backend.core.context import ExecutionContext
-
 
 T = TypeVar('T')
 
@@ -28,7 +27,7 @@ class ICollector(Generic[T], ABC):
     @abstractmethod
     async def collect(
         self,
-        uow: UnitOfWork,
+        uow: IUnitOfWork,
         context: ExecutionContext
     ) -> T:
         """

@@ -25,8 +25,6 @@ class MetadataFactory:
         checksum: str,
         reason: Optional[str] = None,
         regenerated_by: Optional[str] = None,
-        graph_type: str = "default",
-        algorithm_version: str = "1.0.0",
     ) -> GraphMetadata:
         """Create metadata entry."""
         return GraphMetadata(
@@ -36,8 +34,6 @@ class MetadataFactory:
             checksum=checksum,
             reason=reason,
             regenerated_by=regenerated_by or "system",
-            graph_type=graph_type,
-            algorithm_version=algorithm_version,
             created_at=datetime.now(timezone.utc),
         )
 

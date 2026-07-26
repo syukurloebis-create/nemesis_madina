@@ -1,153 +1,94 @@
-export interface IUnifiedIntelligence {
-  caseId: string;
+/**
+ * NEMESIS V8+ - Intelligence Types
+ * Untuk Risk Reasoning Panel & AIStatusBar
+ */
+
+export interface IntelligenceData {
+  // Overall intelligence
+  score: number;
+  confidence: number;
   timestamp: Date;
-  version: string;
-  graph: any;
-  risk: any;
-  fraud: any;
-  reasoning: any;
-  metrics: any;
+  
+  // Risk Analysis
+  risk: {
+    score: number;
+    level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    factors: RiskFactor[];
+    explanations: string[];
+  };
+  
+  // Graph Intelligence
+  graph: {
+    entities: number;
+    relationships: number;
+    communities: number;
+    keyActors: KeyActor[];
+    collusionRisk: number;
+  };
+  
+  // Evidence Intelligence
+  evidence: {
+    total: number;
+    verified: number;
+    pending: number;
+    confidence: number;
+  };
+  
+  // Fraud Detection
+  fraud: {
+    patterns: number;
+    signals: number;
+    alerts: number;
+    confidence: number;
+  };
+  
+  // Reasoning Chain
+  reasoning: ReasoningStep[];
+  
+  // Recommendations
+  recommendations: IntelligenceRecommendation[];
 }
 
-export interface IKeyActor {
+export interface RiskFactor {
+  id: string;
+  category: string;
+  description: string;
+  score: number;
+  weight: number;
+  confidence: number;
+  evidence: string[];
+  impact: string;
+}
+
+export interface KeyActor {
   id: string;
   name: string;
   type: string;
   influence: number;
-  centrality: number;
-  connections: number;
   riskScore: number;
-  collusionRisk: number;
   role: string;
-  attributes: Record<string, any>;
+  connections: number;
 }
 
-export interface ICommunity {
+export interface ReasoningStep {
   id: string;
-  name?: string;
-  members: string[];
-  size: number;
-  density: number;
-  riskScore: number;
-  riskLevel: string;
-  suspiciousness: number;
-}
-
-export interface ICluster {
-  id: string;
-  name?: string;
-  members: string[];
-  size: number;
-}
-
-export interface IGraphMetrics {
-  nodes: number;
-  edges: number;
-  density: number;
-  modularity: number;
-  avgDegree: number;
-  diameter: number;
-}
-
-export interface IRiskFactor {
-  id: string;
-  category: string;
-  description: string;
-  weight: number;
-  score: number;
-  evidence: string[];
-  confidence: number;
-}
-
-export interface IHistoricalRisk {
-  date: Date;
-  score: number;
-  level: string;
-  event: string;
-}
-
-export interface IFraudPattern {
-  id: string;
-  type: string;
-  description: string;
-  confidence: number;
-  severity: string;
-  entities: string[];
-  evidence: string[];
-  timestamp: Date;
-}
-
-export interface IFraudIndicator {
-  id: string;
-  type: string;
-  description: string;
-  weight: number;
-  score: number;
-  threshold: number;
-  triggered: boolean;
-}
-
-export interface IFraudSignal {
-  id: string;
-  type: string;
-  source: string;
-  timestamp: Date;
-  details: Record<string, any>;
-  confidence: number;
-}
-
-export interface IRedFlag {
-  id: string;
-  type: string;
-  description: string;
-  severity: string;
-  triggered: boolean;
-  timestamp: Date;
-  actionRequired: string;
-}
-
-export interface IReasoningRule {
-  id: string;
-  name: string;
-  description: string;
-  condition: string;
-  priority: number;
-  weight: number;
-  triggered: boolean;
-  confidence: number;
-}
-
-export interface IReasoningTrace {
-  step: number;
-  rule: string;
-  input: any;
-  output: any;
-  confidence: number;
-  timestamp: Date;
-}
-
-export interface IRecommendation {
-  id: string;
-  type: string;
+  type: 'OBSERVATION' | 'ANALYSIS' | 'CONCLUSION' | 'RECOMMENDATION';
   title: string;
   description: string;
-  priority: string;
+  confidence: number;
+  evidence: string[];
+  timestamp: Date;
+  relatedEntities: string[];
+}
+
+export interface IntelligenceRecommendation {
+  id: string;
+  title: string;
+  description: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   confidence: number;
   impact: number;
   effort: number;
-  roi: number;
   actions: string[];
-  timeline: string;
-  responsible: string;
-  status: string;
-}
-
-export interface IIntelligenceMetrics {
-  overallScore: number;
-  riskExposure: number;
-  fraudProbability: number;
-  investigationPriority: string;
-  confidence: number;
-  lastUpdate: Date;
-  nextUpdate: Date;
+  category: 'PREVENTIVE' | 'DETECTIVE' | 'CORRECTIVE';
 }

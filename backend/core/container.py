@@ -3,15 +3,18 @@ Core Container — Application Container Dataclasses.
 """
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Any
 
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from backend.core.version import VersionInfo
+from backend.application.commands.analysis_mapper import AnalyzeCaseCommandHandler
 from backend.infrastructure.sql_repository import SQLRepository
 from backend.infrastructure.parallel_executor import ParallelExecutor
 from backend.infrastructure.event_bus import IEventBus
 from backend.infrastructure.unit_of_work import UnitOfWorkFactory
+from backend.infrastructure.domain_repository_factory import DomainRepositoryFactory
+from backend.infrastructure.domain_command_uow_factory import DomainCommandUoWFactory
 from backend.calculators.config import CalculatorConfig
 from backend.calculators.fraud_score_calculator import FraudScoreCalculator
 from backend.calculators.risk_score_calculator import RiskScoreCalculator
@@ -28,7 +31,7 @@ from backend.collectors.registry import CollectorRegistry
 from backend.services.dashboard_intelligence_service import DashboardIntelligenceService
 from backend.services.risk_application_service import RiskApplicationService
 from backend.services.graph_regeneration_service import GraphRegenerationService
-from backend.health.health_check import HealthChecker  
+from backend.health.health_check import HealthChecker 
 
 
 @dataclass(frozen=True)
@@ -51,6 +54,14 @@ class CalculatorContainer:
 
 
 @dataclass(frozen=True)
+class CalculatorRegistry:
+    """Type-safe calculator registry."""
+    fraud: FraudScoreCalculator
+    risk: RiskScoreCalculator
+    evidence: EvidenceScoreCalculator
+
+
+@dataclass(frozen=True)
 class MapperContainer:
     fraud: FraudMapper
     graph: GraphMapper
@@ -58,18 +69,15 @@ class MapperContainer:
     evidence: EvidenceMapper
     procurement: ProcurementMapper
 
-
 @dataclass(frozen=True)
 class DomainServiceContainer:
     confidence: ConfidenceCalculator
     status: StatusCalculator
     factory: CaseIntelligenceFactory
 
-
 @dataclass(frozen=True)
 class CollectorContainer:
     registry: CollectorRegistry
-
 
 @dataclass(frozen=True)
 class ServiceContainer:
@@ -77,13 +85,16 @@ class ServiceContainer:
     
     dashboard: DashboardIntelligenceService
     risk_application: RiskApplicationService
-    graph_regeneration: GraphRegenerationService  # ← NEW
+    graph_regeneration: GraphRegenerationService 
 
+@dataclass(frozen=True)
+class CommandContainer:
+    """CQRS Command Handlers Container."""
+    analyze_case: AnalyzeCaseCommandHandler  
 
 @dataclass(frozen=True)
 class HealthContainer:
     checker: Optional[HealthChecker] = None
-
 
 @dataclass(frozen=True)
 class ApplicationContainer:
@@ -93,4 +104,5 @@ class ApplicationContainer:
     domain_services: DomainServiceContainer
     collectors: CollectorContainer
     services: ServiceContainer
+    commands: CommandContainer
     health: HealthContainer

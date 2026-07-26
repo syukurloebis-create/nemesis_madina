@@ -1,46 +1,40 @@
+# backend/graph/domain/checksum.py
+
 """
 Graph Domain - Checksum Service
 
-Single source of truth for checksum computation.
-Used by Domain, Infrastructure, Audit, Export, Replication.
+Pure domain logic for checksum computation.
+No ORM dependencies.
 """
 
 import hashlib
 import json
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 
 from backend.graph.domain.aggregate import GraphAggregate
-from backend.graph.models import GraphEntity, GraphRelationship
 
 
 class GraphChecksumService:
     """
     Single source of truth for checksum computation.
-
-    Used by:
-    - Domain (for aggregate validation)
-    - Infrastructure (for persistence checksum)
-    - Audit (for integrity verification)
-    - Export/Replication (for consistency checks)
-
-    DEPRECATED: This is a skeleton. Use CanonicalChecksumService in infrastructure.
     """
-    
+
     SCHEMA_VERSION = 1
 
-    def compute_from_aggregate(self, aggregate: GraphAggregate) -> str:
-        """Compute checksum from aggregate (Domain use)."""
-        canonical = self._to_canonical(aggregate)
-        canonical["_schema_version"] = self.SCHEMA_VERSION
-        return self._compute_hash(canonical)
+    def compute(self, aggregate: GraphAggregate) -> str:
+        """
+        Backward-compatible API.
 
-    def compute_from_orm(
+        Legacy callers and unit tests still invoke `compute()`.
+        The canonical implementation is `compute_from_aggregate()`.
+        """
+        return self.compute_from_aggregate(aggregate)
+
+    def compute_from_aggregate(
         self,
-        entities: List[GraphEntity],
-        relationships: List[GraphRelationship],
-    ) -> str:
-        """Compute checksum from ORM models (Infrastructure use)."""
-        canonical = self._to_canonical_from_orm(entities, relationships)
+        aggregate: GraphAggregate,
+    ) -> str:        
+        canonical = self._to_canonical(aggregate)
         canonical["_schema_version"] = self.SCHEMA_VERSION
         return self._compute_hash(canonical)
 
@@ -72,39 +66,6 @@ class GraphChecksumService:
                     "amount": e.amount,
                 }
                 for e in sorted_edges
-            ],
-        }
-
-    def _to_canonical_from_orm(
-        self,
-        entities: List[GraphEntity],
-        relationships: List[GraphRelationship],
-    ) -> Dict[str, Any]:
-        """Convert ORM models to canonical dict."""
-        sorted_entities = sorted(entities, key=lambda e: e.extra_data.get("business_key", ""))
-        sorted_relationships = sorted(
-            relationships,
-            key=lambda r: (r.source_id, r.target_id)
-        )
-
-        return {
-            "entities": [
-                {
-                    "business_key": e.extra_data.get("business_key"),
-                    "entity_type": e.entity_type,
-                    "name": e.name,
-                }
-                for e in sorted_entities
-            ],
-            "relationships": [
-                {
-                    "source_id": r.source_id,
-                    "target_id": r.target_id,
-                    "relationship_type": r.relationship_type,
-                    "weight": r.weight,
-                    "amount": r.amount,
-                }
-                for r in sorted_relationships
             ],
         }
 

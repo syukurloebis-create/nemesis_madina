@@ -5,18 +5,21 @@ NEMESIS Madina - Dashboard Read Repository
 """
 
 from typing import Optional, List
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, and_
 
-from backend.application.queries.dashboard_query import DashboardProjection
+from backend.application.queries.dashboard_query import (
+    DashboardProjection,
+    IDashboardReadRepository, 
+)
 from backend.domain.value_objects.case_id import CaseId
 from backend.infrastructure.models.read_models import DashboardView
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class DashboardReadRepository(IDashboardReadRepository):
     """Read repository for dashboard using materialized view."""
     
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession, projection_name: str):
         self._session = session
     
     async def get_by_case_id(self, case_id: CaseId) -> Optional[DashboardProjection]:

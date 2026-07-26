@@ -1,179 +1,117 @@
 import React, { useState, useEffect } from 'react';
-import { WorkspaceLayout } from '../WorkspaceLayout';
-import { procurementApi } from '../services/procurementApi';
-import type { ProcurementSummary, CollusionPattern } from '../services/procurementApi';
-import { ShoppingBag, Building, DollarSign, AlertTriangle, Shield, TrendingUp } from 'lucide-react';
+import { api } from '../services/api';
+
+interface CollusionPattern {
+  vendor: string;
+  score: number;
+  reason: string;
+  id?: string;
+}
 
 export default function ProcurementIntelligence() {
-  const [summary, setSummary] = useState<ProcurementSummary | null>(null);
-  const [collusionPatterns, setCollusionPatterns] = useState<CollusionPattern[]>([]);
+  const [summary, setSummary] = useState({ 
+    total_projects: 0, 
+    total_value: 0, 
+    risk_score: 0 
+  });
+  const [patterns, setPatterns] = useState<CollusionPattern[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTab, setSelectedTab] = useState<'overview' | 'collusion'>('overview');
 
   useEffect(() => {
-    const fetchData = async () => {
+    const loadData = async () => {
+      setLoading(true);
       try {
-        const [summaryData, patternsData] = await Promise.all([
-          procurementApi.getSummary(),
-          procurementApi.getCollusionPatterns()
+        const [summaryRes, patternsRes] = await Promise.all([
+          api.get('/api/v1/procurement/summary'),
+          api.get('/api/v1/procurement/collusions'),
         ]);
-        setSummary(summaryData);
-        setCollusionPatterns(patternsData);
-      } catch (err) {
-        console.error('Failed to fetch procurement data:', err);
+        setSummary(summaryRes?.data || { total_projects: 0, total_value: 0, risk_score: 0 });
+        
+        const rawPatterns = patternsRes?.data || [];
+        // Filter duplicate vendor
+        const uniquePatterns = rawPatterns.filter(
+          (p: any, index: number, self: any[]) =>
+            index === self.findIndex((x: any) => x.vendor === p.vendor)
+        );
+        setPatterns(uniquePatterns);
+      } catch (error) {
+        console.error('Failed to load procurement intelligence:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+    loadData();
   }, []);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'critical': return 'bg-red-900 text-red-300';
-      case 'high': return 'bg-orange-900 text-orange-300';
-      case 'medium': return 'bg-yellow-900 text-yellow-300';
-      default: return 'bg-gray-700 text-gray-300';
-    }
-  };
-
   if (loading) {
-    return (
-      <WorkspaceLayout>
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
-        </div>
-      </WorkspaceLayout>
-    );
+    return <div className="p-6 text-white">Loading procurement intelligence...</div>;
   }
 
   return (
-    <WorkspaceLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Intelijen Pengadaan</h1>
-          <p className="text-gray-400 mt-1">Deteksi anomali, kolusi, dan risiko dalam proses pengadaan</p>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-white">Procurement Intelligence</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+        <StatCard label="Total Projects" value={summary.total_projects} />
+        <StatCard label="Total Value" value={`Rp ${(summary.total_value / 1000000000).toFixed(1)}B`} />
+        <StatCard label="Risk Score" value={`${summary.risk_score}%`} />
+      </div>
+
+      <div className="mt-6 bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+        <div className="px-4 py-3 border-b border-gray-700">
+          <h2 className="text-white font-semibold">Collusion Patterns</h2>
         </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <div className="flex items-center justify-between">
-              <ShoppingBag className="w-5 h-5 text-cyan-400" />
-              <span className="text-2xl font-bold text-white">{summary?.totalCases || 0}</span>
-            </div>
-            <div className="text-xs text-gray-500 mt-1">Total Kasus</div>
+        
+        {patterns.length === 0 ? (
+          <div className="p-8 text-center text-gray-400">
+            No collusion patterns detected
           </div>
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <div className="flex items-center justify-between">
-              <Building className="w-5 h-5 text-yellow-400" />
-              <span className="text-2xl font-bold text-white">{summary?.totalVendors || 0}</span>
-            </div>
-            <div className="text-xs text-gray-500 mt-1">Total Vendor</div>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <div className="flex items-center justify-between">
-              <DollarSign className="w-5 h-5 text-green-400" />
-              <span className="text-sm font-bold text-white">{formatCurrency(summary?.totalValue || 0)}</span>
-            </div>
-            <div className="text-xs text-gray-500 mt-1">Nilai Pengadaan</div>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <div className="flex items-center justify-between">
-              <AlertTriangle className="w-5 h-5 text-red-400" />
-              <span className="text-2xl font-bold text-white">{summary?.highRiskVendors || 0}</span>
-            </div>
-            <div className="text-xs text-gray-500 mt-1">Vendor Risiko Tinggi</div>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <div className="flex items-center justify-between">
-              <Shield className="w-5 h-5 text-green-400" />
-              <span className="text-2xl font-bold text-white">{summary?.integrityScore || 0}%</span>
-            </div>
-            <div className="text-xs text-gray-500 mt-1">Skor Integritas</div>
-          </div>
-        </div>
-
-        <div className="flex space-x-2 border-b border-gray-700">
-          <button
-            onClick={() => setSelectedTab('overview')}
-            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition ${
-              selectedTab === 'overview'
-                ? 'bg-cyan-500/20 text-cyan-400 border-b-2 border-cyan-500'
-                : 'text-gray-400 hover:text-gray-300'
-            }`}
-          >
-            📊 Ikhtisar
-          </button>
-          <button
-            onClick={() => setSelectedTab('collusion')}
-            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition ${
-              selectedTab === 'collusion'
-                ? 'bg-cyan-500/20 text-cyan-400 border-b-2 border-cyan-500'
-                : 'text-gray-400 hover:text-gray-300'
-            }`}
-          >
-            🔗 Pola Kolusi ({collusionPatterns.length})
-          </button>
-        </div>
-
-        {selectedTab === 'overview' && (
-          <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
-            <h3 className="text-sm font-medium text-gray-300 mb-4">Tren Nilai Pengadaan</h3>
-            <div className="h-32 flex items-end space-x-2">
-              {(summary?.monthlyTrend || []).map((item, idx) => (
-                <div key={idx} className="flex-1 flex flex-col items-center">
-                  <div 
-                    className="w-full bg-cyan-500 rounded-t"
-                    style={{ height: `${(item.value / 3000000000) * 100}%`, minHeight: '4px' }}
-                  />
-                  <span className="text-xs text-gray-500 mt-2">{item.month}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {selectedTab === 'collusion' && (
-          <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-            <div className="divide-y divide-gray-700">
-              {collusionPatterns.map((pattern) => (
-                <div key={pattern.id} className="p-4 hover:bg-gray-700/30 transition">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center space-x-2">
-                      <span className={`text-xs px-2 py-0.5 rounded ${getSeverityColor(pattern.severity)}`}>
-                        {pattern.severity.toUpperCase()}
-                      </span>
-                      <h4 className="font-medium text-white">{pattern.type}</h4>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs text-gray-500">Keyakinan:</span>
-                      <div className="w-24 bg-gray-700 rounded-full h-1.5">
-                        <div className="bg-cyan-500 h-1.5 rounded-full" style={{ width: `${pattern.confidence}%` }} />
-                      </div>
-                      <span className="text-xs text-cyan-400">{pattern.confidence}%</span>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-400 mt-2">{pattern.description}</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {pattern.entities.map((entity, idx) => (
-                      <span key={idx} className="text-xs bg-gray-700 px-2 py-1 rounded">🏢 {entity}</span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-700/50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-gray-300 text-sm">#</th>
+                  <th className="px-4 py-2 text-left text-gray-300 text-sm">Vendor</th>
+                  <th className="px-4 py-2 text-left text-gray-300 text-sm">Score</th>
+                  <th className="px-4 py-2 text-left text-gray-300 text-sm">Reason</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-700">
+                {patterns.map((p, index) => {
+                  // UNIQUE KEY: guaranteed unique
+                  const uniqueKey = `pattern-${index}-${p.vendor.replace(/\s/g, '')}-${Date.now()}`;
+                  return (
+                    <tr key={uniqueKey} className="hover:bg-gray-700/30 transition-colors">
+                      <td className="px-4 py-2 text-gray-500 text-sm">{index + 1}</td>
+                      <td className="px-4 py-2 text-white font-medium">{p.vendor}</td>
+                      <td className="px-4 py-2">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          p.score > 70 ? 'bg-red-500/20 text-red-400' :
+                          p.score > 50 ? 'bg-orange-500/20 text-orange-400' :
+                          'bg-yellow-500/20 text-yellow-400'
+                        }`}>
+                          {p.score}%
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 text-gray-300 text-sm">{p.reason}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
-    </WorkspaceLayout>
+    </div>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="bg-gray-800 rounded-xl p-4 border border-gray-700 text-center">
+      <p className="text-sm text-gray-400">{label}</p>
+      <p className="text-white text-2xl font-bold mt-1">{value}</p>
+    </div>
   );
 }

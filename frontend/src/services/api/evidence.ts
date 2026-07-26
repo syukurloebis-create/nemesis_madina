@@ -1,39 +1,31 @@
-import { apiClient } from './client';
+import apiClient from './client';
 
 export const evidenceApi = {
-  // Get evidence by case
-  getEvidenceByCase: (caseId: string) => 
-    apiClient.get(`/api/v1/evidence/case/${caseId}`),
-  
-  // Get evidence stats
   getStats: () => 
     apiClient.get('/api/v1/evidence/stats'),
   
-  // Get evidence graph
-  getGraph: (caseId: string) => 
-    apiClient.get(`/api/v1/evidence/graph/${caseId}`),
+  getEvidenceById: (id: string) => 
+    apiClient.get(`/api/v1/evidence/${id}`),
   
-  // Get evidence metrics
-  getMetrics: () => 
-    apiClient.get('/api/v1/evidence/metrics'),
+  getCustodyHistory: (id: string) => 
+    apiClient.get(`/api/v1/evidence/${id}/custody`),
   
-  // Get evidence quality
-  getQuality: () => 
-    apiClient.get('/api/v1/evidence/quality'),
+  getEvidenceStats: () => 
+    apiClient.get('/api/v1/evidence/stats'),
   
-  // Upload evidence
-  upload: (data: FormData) => 
-    apiClient.post('/api/v1/evidence/upload', data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+  listEvidence: (caseId?: string) => 
+    apiClient.get('/api/v1/evidence', { 
+      params: caseId ? { case_id: caseId } : undefined 
     }),
   
-  // Verify evidence
-  verify: (evidenceId: string) => 
-    apiClient.post(`/api/v1/evidence/${evidenceId}/verify`),
+  uploadEvidence: (data: any) => 
+    apiClient.post('/api/v1/evidence', data),
   
-  // Reject evidence
-  reject: (evidenceId: string) => 
-    apiClient.post(`/api/v1/evidence/${evidenceId}/reject`),
+  verifyEvidence: (id: string) => 
+    apiClient.post(`/api/v1/evidence/${id}/verify`),
+  
+  rejectEvidence: (id: string, reason?: string) => 
+    apiClient.post(`/api/v1/evidence/${id}/reject`, { reason }),
 };
 
 export default evidenceApi;

@@ -35,10 +35,29 @@ class ProcurementAnalysis:
     completed: bool = False
     engine_status: str = "UNKNOWN"
 
+
+    def __post_init__(self):
+        """Validate value object invariants."""
+        if not (0 <= self.risk_score <= 100):
+            raise ValueError(
+                f"Procurement risk score must be between 0 and 100, got {self.risk_score}"
+            )
+    
+        if not (0 <= self.confidence <= 100):
+            raise ValueError(
+                f"Procurement confidence must be between 0 and 100, got {self.confidence}"
+            )
+
+
     @property
     def has_flags(self) -> bool:
-        return len(self.flagged_transactions) > 0
+        return self.flagged_transactions > 0
+
 
     @property
     def is_high_risk(self) -> bool:
-        return self.risk_score > 0.7
+        """
+        Risk score scale: 0-100
+        High risk threshold: > 70
+        """
+        return self.risk_score > 70

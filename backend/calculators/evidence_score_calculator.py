@@ -1,22 +1,21 @@
 """
-Evidence Score Calculator — Pure Function.
+Evidence Score Calculator — Pure Business Logic.
 """
 
+from typing import Optional
 from dataclasses import dataclass
 
 from backend.dtos.collector_dtos import EvidenceCollectorDTO
-from backend.calculators.config import EvidenceWeights
-from backend.domain.enums import EvidenceLevel
+from backend.calculators.config import CalculatorConfig, EvidenceWeights
+from backend.domain.enums import EngineStatus
 
 
 @dataclass(frozen=True, slots=True)
 class CalculatedEvidence:
-    """Hasil perhitungan dari EvidenceScoreCalculator."""
-    score: float          
-    trust_score: float    
-    confidence_score: float
-    verification_score: float
-    level: EvidenceLevel
+    """Calculator output for Evidence."""
+    score: float
+    level: str
+    confidence_level: str
 
 
 class EvidenceScoreCalculator:
@@ -26,39 +25,56 @@ class EvidenceScoreCalculator:
     def calculate(
         cls,
         dto: EvidenceCollectorDTO,
-        weights: EvidenceWeights
+        weights: Optional[EvidenceWeights] = None,
     ) -> CalculatedEvidence:
-        """Calculate evidence score."""
-        if dto.total == 0:
+        """Calculate evidence metrics from DTO."""
+        if weights is None:
+            config = CalculatorConfig.default()
+            weights = config.get_evidence_weights()
+
+        total = dto.total
+        verified = dto.verified
+        pending = dto.pending
+        rejected = dto.rejected
+
+        if total == 0:
             return CalculatedEvidence(
-                score=0,
-                level=EvidenceLevel.NO_DATA,
-                trust_score=0,
-                confidence_score=0,
-                verification_score=0
+                score=0.0,
+                level="NO_DATA",
+                confidence_level="UNKNOWN",
             )
 
-        score = (
-            dto.avg_trust * weights.trust_weight +
-            dto.avg_confidence * weights.confidence_weight +
-            (dto.verified / dto.total * 100) * weights.verification_weight
-        )
+        # ✅ FIXED: Use correct EvidenceWeights fields
+        # Component scores (0-100 scale)
+        trust_score = (dto.avg_trust / 100.0) * 100 * weights.trust_weight
+        confidence_score = (dto.avg_confidence / 100.0) * 100 * weights.confidence_weight
+        verification_score = (verified / total) * 100 * weights.verification_weight
 
+        # Total score (0-100)
+        score = trust_score + confidence_score + verification_score
+
+        # Determine level
         if score >= 80:
-            level = EvidenceLevel.EXCELLENT
+            level = "EXCELLENT"
         elif score >= 60:
-            level = EvidenceLevel.GOOD
+            level = "GOOD"
         elif score >= 40:
-            level = EvidenceLevel.MEDIUM
+            level = "MEDIUM"
         elif score >= 20:
-            level = EvidenceLevel.POOR
+            level = "POOR"
         else:
-            level = EvidenceLevel.NO_DATA
+            level = "NO_DATA"
+
+        # Determine confidence level
+        if dto.avg_confidence >= 80:
+            confidence_level = "HIGH"
+        elif dto.avg_confidence >= 50:
+            confidence_level = "MEDIUM"
+        else:
+            confidence_level = "LOW"
 
         return CalculatedEvidence(
             score=round(score, 2),
             level=level,
-            trust_score=round(dto.avg_trust, 2),           
-            confidence_score=round(dto.avg_confidence, 2),
-            verification_score=round((dto.verified / dto.total * 100) if dto.total > 0 else 0, 2)
+            confidence_level=confidence_level,
         )

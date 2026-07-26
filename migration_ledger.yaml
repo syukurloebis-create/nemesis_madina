@@ -1,0 +1,329 @@
+components:
+  backend.graph.adapters.vendor_graph_builder_adapter.VendorGraphBuilderAdapter:
+    compatibility_tests: false
+    dependents_count: 0
+    migrated_imports: 0
+    owner: Candidate for Review
+    phase: Baseline
+    remaining_imports: 0
+    source: backend.graph.adapters.vendor_graph_builder_adapter.VendorGraphBuilderAdapter
+    wrapper_created: false
+  backend.graph.application.assembler.GraphAssembler:
+    compatibility_tests: false
+    dependents_count: 2
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 2
+    source: backend.graph.application.assembler.GraphAssembler
+    wrapper_created: false
+  backend.graph.application.dto.InstitutionDTO:
+    compatibility_tests: false
+    dependents_count: 0
+    migrated_imports: 0
+    owner: Candidate for Review
+    phase: Baseline
+    remaining_imports: 0
+    source: backend.graph.application.dto.InstitutionDTO
+    wrapper_created: false
+  backend.graph.application.dto.OfficerDTO:
+    compatibility_tests: false
+    dependents_count: 0
+    migrated_imports: 0
+    owner: Candidate for Review
+    phase: Baseline
+    remaining_imports: 0
+    source: backend.graph.application.dto.OfficerDTO
+    wrapper_created: false
+  backend.graph.application.dto.PackageDTO:
+    compatibility_tests: false
+    dependents_count: 0
+    migrated_imports: 0
+    owner: Candidate for Review
+    phase: Baseline
+    remaining_imports: 0
+    source: backend.graph.application.dto.PackageDTO
+    wrapper_created: false
+  backend.graph.application.dto.RelationshipDTO:
+    compatibility_tests: false
+    dependents_count: 0
+    migrated_imports: 0
+    owner: Candidate for Review
+    phase: Baseline
+    remaining_imports: 0
+    source: backend.graph.application.dto.RelationshipDTO
+    wrapper_created: false
+  backend.graph.application.dto.VendorDTO:
+    compatibility_tests: false
+    dependents_count: 0
+    migrated_imports: 0
+    owner: Candidate for Review
+    phase: Baseline
+    remaining_imports: 0
+    source: backend.graph.application.dto.VendorDTO
+    wrapper_created: false
+  backend.graph.application.service.GraphRegenerationService:
+    compatibility_tests: false
+    dependents_count: 1
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 1
+    source: backend.graph.application.service.GraphRegenerationService
+    wrapper_created: false
+  backend.graph.domain.aggregate.GraphAggregate:
+    compatibility_tests: false
+    dependents_count: 18
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 18
+    source: backend.graph.domain.aggregate.GraphAggregate
+    wrapper_created: false
+  backend.graph.domain.checksum.GraphChecksumService:
+    compatibility_tests: false
+    dependents_count: 3
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 3
+    source: backend.graph.domain.checksum.GraphChecksumService
+    wrapper_created: false
+  backend.graph.domain.policy.GraphPolicy:
+    compatibility_tests: false
+    dependents_count: 1
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 1
+    source: backend.graph.domain.policy.GraphPolicy
+    wrapper_created: false
+  backend.graph.domain.policy.NoDuplicateVendorPolicy:
+    compatibility_tests: false
+    dependents_count: 1
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 1
+    source: backend.graph.domain.policy.NoDuplicateVendorPolicy
+    wrapper_created: false
+  backend.graph.domain.policy.NoVendorSelfReferencePolicy:
+    compatibility_tests: false
+    dependents_count: 1
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 1
+    source: backend.graph.domain.policy.NoVendorSelfReferencePolicy
+    wrapper_created: false
+  backend.graph.domain.services.checksum.GraphChecksumService:
+    compatibility_tests: false
+    dependents_count: 0
+    migrated_imports: 0
+    owner: Candidate for Review
+    phase: Baseline
+    remaining_imports: 0
+    source: backend.graph.domain.services.checksum.GraphChecksumService
+    wrapper_created: false
+  backend.graph.domain.statistics.GraphStatisticsService:
+    compatibility_tests: false
+    dependents_count: 1
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 1
+    source: backend.graph.domain.statistics.GraphStatisticsService
+    wrapper_created: false
+  backend.graph.domain.validators.BusinessValidator:
+    compatibility_tests: false
+    dependents_count: 3
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 3
+    source: backend.graph.domain.validators.BusinessValidator
+    wrapper_created: false
+  backend.graph.domain.validators.SemanticValidator:
+    compatibility_tests: false
+    dependents_count: 3
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 3
+    source: backend.graph.domain.validators.SemanticValidator
+    wrapper_created: false
+  backend.graph.domain.validators.SyntaxValidator:
+    compatibility_tests: false
+    dependents_count: 3
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 3
+    source: backend.graph.domain.validators.SyntaxValidator
+    wrapper_created: false
+  backend.graph.infrastructure.factories.metadata.GraphPersistenceRepository:
+    compatibility_tests: false
+    dependents_count: 0
+    migrated_imports: 0
+    owner: Candidate for Review
+    phase: Baseline
+    remaining_imports: 0
+    source: backend.graph.infrastructure.factories.metadata.GraphPersistenceRepository
+    wrapper_created: false
+  backend.graph.infrastructure.factories.metadata.MetadataFactory:
+    compatibility_tests: false
+    dependents_count: 2
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 2
+    source: backend.graph.infrastructure.factories.metadata.MetadataFactory
+    wrapper_created: false
+  backend.graph.infrastructure.interfaces.unit_of_work.VendorGraphBuilderAdapter:
+    compatibility_tests: false
+    dependents_count: 0
+    migrated_imports: 0
+    owner: Candidate for Review
+    phase: Baseline
+    remaining_imports: 0
+    source: backend.graph.infrastructure.interfaces.unit_of_work.VendorGraphBuilderAdapter
+    wrapper_created: false
+  backend.graph.infrastructure.mappers.to_domain.OrmToGraphMapper:
+    compatibility_tests: false
+    dependents_count: 3
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 3
+    source: backend.graph.infrastructure.mappers.to_domain.OrmToGraphMapper
+    wrapper_created: false
+  backend.graph.infrastructure.mappers.to_orm.GraphToOrmMapper:
+    compatibility_tests: false
+    dependents_count: 3
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 3
+    source: backend.graph.infrastructure.mappers.to_orm.GraphToOrmMapper
+    wrapper_created: false
+  backend.graph.infrastructure.repositories.metadata.GraphMetadataRepository:
+    compatibility_tests: false
+    dependents_count: 2
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 2
+    source: backend.graph.infrastructure.repositories.metadata.GraphMetadataRepository
+    wrapper_created: false
+  backend.graph.infrastructure.repositories.persistence.GraphPersistenceRepository:
+    compatibility_tests: false
+    dependents_count: 0
+    migrated_imports: 0
+    owner: Candidate for Review
+    phase: Baseline
+    remaining_imports: 0
+    source: backend.graph.infrastructure.repositories.persistence.GraphPersistenceRepository
+    wrapper_created: false
+  backend.graph.infrastructure.repositories.persistence.GraphRegenerationService:
+    compatibility_tests: false
+    dependents_count: 0
+    migrated_imports: 0
+    owner: Candidate for Review
+    phase: Baseline
+    remaining_imports: 0
+    source: backend.graph.infrastructure.repositories.persistence.GraphRegenerationService
+    wrapper_created: false
+  backend.graph.infrastructure.repositories.postgres.PostgresGraphRepository:
+    compatibility_tests: false
+    dependents_count: 1
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 1
+    source: backend.graph.infrastructure.repositories.postgres.PostgresGraphRepository
+    wrapper_created: false
+  backend.graph.infrastructure.repositories.strategies.GraphPersistenceRepository:
+    compatibility_tests: false
+    dependents_count: 0
+    migrated_imports: 0
+    owner: Candidate for Review
+    phase: Baseline
+    remaining_imports: 0
+    source: backend.graph.infrastructure.repositories.strategies.GraphPersistenceRepository
+    wrapper_created: false
+  backend.graph.infrastructure.services.checksum.CanonicalChecksumService:
+    compatibility_tests: false
+    dependents_count: 2
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 2
+    source: backend.graph.infrastructure.services.checksum.CanonicalChecksumService
+    wrapper_created: false
+  backend.graph.infrastructure.services.checksum.GraphPersistenceRepository:
+    compatibility_tests: false
+    dependents_count: 0
+    migrated_imports: 0
+    owner: Candidate for Review
+    phase: Baseline
+    remaining_imports: 0
+    source: backend.graph.infrastructure.services.checksum.GraphPersistenceRepository
+    wrapper_created: false
+  backend.graph.intelligence.repositories.entity_edge_repo.EntityEdgeRepository:
+    compatibility_tests: false
+    dependents_count: 1
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 1
+    source: backend.graph.intelligence.repositories.entity_edge_repo.EntityEdgeRepository
+    wrapper_created: false
+  backend.graph.service.GraphIntelligenceService:
+    compatibility_tests: false
+    dependents_count: 1
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 1
+    source: backend.graph.service.GraphIntelligenceService
+    wrapper_created: false
+  backend.graph.services.collusion_service.CollusionService:
+    compatibility_tests: false
+    dependents_count: 0
+    migrated_imports: 0
+    owner: Candidate for Review
+    phase: Baseline
+    remaining_imports: 0
+    source: backend.graph.services.collusion_service.CollusionService
+    wrapper_created: false
+  backend.graph.services.graph_regeneration_service.GraphRegenerationService:
+    compatibility_tests: false
+    dependents_count: 0
+    migrated_imports: 0
+    owner: Candidate for Review
+    phase: Baseline
+    remaining_imports: 0
+    source: backend.graph.services.graph_regeneration_service.GraphRegenerationService
+    wrapper_created: false
+  backend.graph.storage.collusion_repository.CollusionRepository:
+    compatibility_tests: false
+    dependents_count: 0
+    migrated_imports: 0
+    owner: Candidate for Review
+    phase: Baseline
+    remaining_imports: 0
+    source: backend.graph.storage.collusion_repository.CollusionRepository
+    wrapper_created: false
+  backend.graph.validators.graph_invariant_validator.GraphInvariantValidator:
+    compatibility_tests: false
+    dependents_count: 2
+    migrated_imports: 0
+    owner: Graph Context
+    phase: Baseline
+    remaining_imports: 2
+    source: backend.graph.validators.graph_invariant_validator.GraphInvariantValidator
+    wrapper_created: false
+summary:
+  active_components: 20
+  total_components: 36
+  total_dependents: 54

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NEMESIS Frontend Test</title>
+</head>
+<body>
+    <h1>Testing NEMESIS API</h1>
+    <div id="result">Loading...</div>
+    <script>
+        fetch('http://localhost:8000/api/v1/alerts/?limit=3')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('result').innerHTML = 
+                    `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            })
+            .catch(err => {
+                document.getElementById('result').innerHTML = 
+                    `Error: ${err.message}`;
+            });
+    </script>
+</body>
+</html>

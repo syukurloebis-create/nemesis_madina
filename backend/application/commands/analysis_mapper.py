@@ -1,3 +1,5 @@
+# backend/application/commands/analysis_mapper.py
+
 """
 NEMESIS Madina - Analyze Case Command
 ✅ Command for domain operations
@@ -6,14 +8,24 @@ NEMESIS Madina - Analyze Case Command
 
 from dataclasses import dataclass
 from uuid import UUID
+from typing import Any, Optional
 
 from backend.application.mappers.analysis_mapper import map_to_analysis_bundle
 from backend.domain.aggregates.case_intelligence import CaseIntelligenceAggregate
 from backend.domain.services.intelligence_service import IntelligenceDomainService
-from backend.domain.repositories.case_repository import ICaseRepository
 from backend.domain.value_objects.case_id import CaseId
-from backend.infrastructure.unit_of_work import DomainUnitOfWork
-from backend.infrastructure.outbox.publisher import OutboxPublisher
+from backend.infrastructure.domain_command_uow_factory import DomainCommandUoWFactory
+from backend.calculators.fraud_score_calculator import FraudScoreCalculator
+from backend.calculators.risk_score_calculator import RiskScoreCalculator
+from backend.calculators.evidence_score_calculator import EvidenceScoreCalculator
+from backend.calculators.graph_score_calculator import (
+    GraphScoreCalculator,
+    CalculatedGraph,
+)
+from backend.calculators.procurement_score_calculator import (
+    ProcurementScoreCalculator,
+    CalculatedProcurement,
+)
 
 
 @dataclass(frozen=True)
@@ -24,45 +36,52 @@ class AnalyzeCaseCommand:
 
 
 class AnalyzeCaseCommandHandler:
-    """Handles AnalyzeCaseCommand."""
-    
     def __init__(
         self,
-        uow_factory: callable,
-        outbox_publisher: OutboxPublisher,
-        repository: ICaseRepository = None,  # Will be created from UoW
+        uow_factory: DomainCommandUoWFactory,
+        fraud_calculator: FraudScoreCalculator,
+        risk_calculator: RiskScoreCalculator,
+        evidence_calculator: EvidenceScoreCalculator,
+        graph_calculator: GraphScoreCalculator,       # ✅ Add
+        procurement_calculator: ProcurementScoreCalculator,  # ✅ Add
     ):
         self._uow_factory = uow_factory
-        self._outbox_publisher = outbox_publisher
-        self._repository = repository
-    
+        self._fraud_calculator = fraud_calculator
+        self._risk_calculator = risk_calculator
+        self._evidence_calculator = evidence_calculator
+        self._graph_calculator = graph_calculator
+        self._procurement_calculator = procurement_calculator
+
     async def execute(self, command: AnalyzeCaseCommand) -> None:
-        """Execute the command."""
-        # 1. Map to domain objects
-        bundle = map_to_analysis_bundle(command.collector_results)
-        
-        # 2. Use Domain UnitOfWork
-        async with self._uow_factory() as uow:
+        async with self._uow_factory.create() as uow:
             case_id_vo = CaseId(command.case_id)
-            
-            # 3. Get or create aggregate
+
             existing = await uow.cases.get(case_id_vo)
+
             if existing:
                 aggregate = existing
+                expected_version = existing.version
             else:
                 aggregate = CaseIntelligenceAggregate(case_id=case_id_vo)
-            
-            # 4. Apply bundle via Domain Service
+                expected_version = 0
+
+            results = command.collector_results
+
+            fraud_result = self._fraud_calculator.calculate(results.fraud) if results.fraud else None
+            risk_result = self._risk_calculator.calculate(results.risk) if results.risk else None
+            evidence_result = self._evidence_calculator.calculate(results.evidence) if results.evidence else None
+            graph_result = self._graph_calculator.calculate(results.graph) if results.graph else None
+            procurement_result = self._procurement_calculator.calculate(results.procurement) if results.procurement else None
+
+            bundle = map_to_analysis_bundle(
+                case_id=case_id_vo,
+                collector_results=results,
+                fraud_result=fraud_result,
+                risk_result=risk_result,
+                evidence_result=evidence_result,
+                graph_result=graph_result,
+                procurement_result=procurement_result,
+            )
+
             IntelligenceDomainService.record_bundle(aggregate, bundle)
-            
-            # 5. Register and commit
-            uow.register_aggregate(aggregate)
-            await uow.commit()
-            
-            # 6. Publish events
-            if aggregate.has_pending_events():
-                events = aggregate.pull_domain_events()
-                if events:
-                    self._outbox_publisher.add_events(list(events))
-            
-            await self._outbox_publisher.publish_pending()
+            uow.register_aggregate(aggregate, expected_version)

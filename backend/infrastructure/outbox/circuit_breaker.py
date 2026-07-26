@@ -4,6 +4,7 @@ NEMESIS Madina - Circuit Breaker
 ✅ State management with timeout
 """
 
+import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
 from enum import Enum

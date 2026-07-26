@@ -103,6 +103,19 @@ class FraudSummary(BaseModel):
             )
         return self
 
+    @property
+    def has_data(self) -> bool:
+        return (
+            self.score > 0
+            or self.total_patterns > 0
+            or self.active_alerts > 0
+            or self.high_confidence > 0
+        )
+
+    @classmethod
+    def empty(cls) -> "FraudSummary":
+        return cls()
+
 
 # ============================================================================
 # 3. RISK SUMMARY
@@ -133,6 +146,19 @@ class RiskSummary(BaseModel):
             raise ValueError(f"engine_status must be one of {list(EngineStatus)}")
         return v
 
+    @property
+    def has_data(self) -> bool:
+        return (
+            self.score > 0
+            or self.anomaly_score > 0
+            or self.collusion_score > 0
+            or self.financial_score > 0
+        )
+
+    @classmethod
+    def empty(cls) -> "RiskSummary":
+        return cls()
+
 
 # ============================================================================
 # 4. GRAPH SUMMARY
@@ -157,6 +183,13 @@ class GraphSummary(BaseModel):
             raise ValueError(f"engine_status must be one of {list(EngineStatus)}")
         return v
 
+    @property
+    def has_data(self) -> bool:
+        return self.entities > 0 or self.relationships > 0
+
+    @classmethod
+    def empty(cls) -> "GraphSummary":
+        return cls()
 
 # ============================================================================
 # 5. EVIDENCE SUMMARY
@@ -187,6 +220,14 @@ class EvidenceSummary(BaseModel):
             raise ValueError(f"engine_status must be one of {list(EngineStatus)}")
         return v
 
+    @property
+    def has_data(self) -> bool:
+        return self.total > 0 or self.verified > 0
+
+    @classmethod
+    def empty(cls) -> "EvidenceSummary":
+        return cls()
+
 
 # ============================================================================
 # 6. PROCUREMENT SUMMARY
@@ -214,6 +255,14 @@ class ProcurementSummary(BaseModel):
         if not isinstance(v, EngineStatus):
             raise ValueError(f"engine_status must be one of {list(EngineStatus)}")
         return v
+
+    @property
+    def has_data(self) -> bool:
+        return self.packages > 0 or self.vendors > 0 or self.total_value > 0
+
+    @classmethod
+    def empty(cls) -> "ProcurementSummary":
+        return cls()
 
 
 # ============================================================================
@@ -246,27 +295,49 @@ class RecoverySummary(BaseModel):
             raise ValueError(f"engine_status must be one of {list(EngineStatus)}")
         return v
 
+    @property
+    def has_data(self) -> bool:
+        return len(self.actions) > 0
+
+    @classmethod
+    def empty(cls) -> "RecoverySummary":
+        return cls(actions=())
+
 
 # ============================================================================
 # 8. DASHBOARD SUMMARY
 # ============================================================================
 
 class DashboardSummary(BaseModel):
-    """Dashboard Summary — Aggregate Root Read Model."""
-    
-    model_config = ConfigDict(frozen=True)
-    
     case_id: str
+    risk: RiskSummary
     fraud: FraudSummary
     graph: GraphSummary
-    risk: RiskSummary
     evidence: EvidenceSummary
     procurement: ProcurementSummary
     recovery: RecoverySummary
-    confidence: float = Field(ge=0, le=100, default=0)
-    generated_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
-    
-    # ===== TIDAK ADA status di sini =====
-    # Status dihitung oleh DashboardStatusCalculator
+    confidence: float = 0.0
+
+    @property
+    def has_data(self) -> bool:
+        return any([
+            self.risk.has_data,
+            self.fraud.has_data,
+            self.graph.has_data,
+            self.evidence.has_data,
+            self.procurement.has_data,
+            self.recovery.has_data,
+        ])
+
+    @classmethod
+    def empty(cls) -> "DashboardSummary":
+        return cls(
+            case_id="",
+            risk=RiskSummary.empty(),
+            fraud=FraudSummary.empty(),
+            graph=GraphSummary.empty(),
+            evidence=EvidenceSummary.empty(),
+            procurement=ProcurementSummary.empty(),
+            recovery=RecoverySummary.empty(),
+            confidence=0.0,
+        )

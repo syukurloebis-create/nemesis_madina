@@ -117,19 +117,32 @@ class EvidenceRegistry:
         return computed_hash == evidence.hash
     
     def add_custody_event(self, evidence_id: str, action: str, actor: str, reason: str = None) -> Optional[Evidence]:
-        """Add custody chain event"""
+        """Add custody chain event."""
         evidence = self.get(evidence_id)
         if not evidence:
             return None
-        
+
         event = CustodyEvent(
             action=action,
             actor=actor,
             timestamp=datetime.now(),
             reason=reason
         )
-        evidence.custody_chain.append(event)
-        return evidence
+
+        updated_evidence = Evidence(
+            id=evidence.id,
+            hash=evidence.hash,
+            created_at=evidence.created_at,
+            source=evidence.source,
+            payload=evidence.payload,
+            status=evidence.status,
+            custody_chain=evidence.custody_chain + [event],
+            version=evidence.version + 1,
+            previous_hash=evidence.hash,
+        )
+
+        self._evidences[evidence_id] = updated_evidence
+        return updated_evidence
     
     def list_all(self) -> List[Evidence]:
         """List all evidence"""
@@ -141,3 +154,12 @@ class EvidenceRegistry:
         if not evidence:
             return []
         return [e.to_dict() for e in evidence.custody_chain]
+
+    def reset(self):
+        """
+        Reset registry state for test isolation.
+
+        Does not recreate singleton instance.
+        Only clears evidence storage.
+        """
+        self._evidences.clear()
