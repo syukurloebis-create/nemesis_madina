@@ -236,27 +236,170 @@ class TestVisitorClass:
         assert class_scope.scope_id == class_symbol.scope_id
         assert class_scope.scope_id == class_decl.scope_id
 
-    def test_visit_module_traverses_class_only(self):
-        """CP2.2B: Module visitor should traverse only ClassDef nodes"""
+
+class TestVisitorFunction:
+    def test_visit_function_creates_scope(self):
+        """FunctionDef AST → Function Scope"""
         context = IRContext(config=IRConfig())
         context.current_module_id = 1
 
         visitor = Visitor(context)
 
-        source = "class Foo: pass\ndef bar(): pass\nx = 1"
+        source = "def foo(): pass"
         tree = ast.parse(source)
         visitor.visit(tree)
 
         scopes = context.scopes.all()
-        # Module scope + Class scope (Function and Assign ignored)
+        # Module + Function
         assert len(scopes) == 2
+        assert scopes[1].kind == ScopeKind.FUNCTION
+        assert scopes[1].name == "foo"
+        assert scopes[1].depth == 1
+
+    def test_visit_function_creates_declaration(self):
+        """FunctionDef AST → Function Declaration"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "def foo(): pass"
+        tree = ast.parse(source)
+        visitor.visit(tree)
 
         decls = context.declarations.all()
-        # Only Class declaration (Function and Assign ignored)
         assert len(decls) == 1
-        assert decls[0].kind == DeclarationKind.CLASS
+        assert decls[0].kind == DeclarationKind.FUNCTION
+        assert decls[0].name == "foo"
+
+    def test_visit_function_creates_symbol(self):
+        """FunctionDef AST → Function Symbol"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "def foo(): pass"
+        tree = ast.parse(source)
+        visitor.visit(tree)
 
         symbols = context.symbols.all()
-        # Only Class symbol (Function and Assign ignored)
         assert len(symbols) == 1
-        assert symbols[0].kind == SymbolKind.CLASS
+        assert symbols[0].kind == SymbolKind.FUNCTION
+        assert symbols[0].name == "foo"
+        assert symbols[0].is_async is False
+
+    def test_visit_async_function(self):
+        """AsyncFunctionDef AST → Async Function"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "async def foo(): pass"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        symbols = context.symbols.all()
+        assert len(symbols) == 1
+        assert symbols[0].kind == SymbolKind.FUNCTION
+        assert symbols[0].name == "foo"
+        assert symbols[0].is_async is True
+
+    def test_visit_function_qualname(self):
+        """FunctionDef AST → Qualified name"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "def foo(): pass"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        scopes = context.scopes.all()
+        assert scopes[1].qualname == "foo"
+
+        symbols = context.symbols.all()
+        assert symbols[0].qualname == "foo"
+
+    def test_visit_function_updates_scope_stack(self):
+        """FunctionDef should update scope_stack"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "def foo(): pass"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        assert len(context.scope_stack) == 2  # Module + Function
+        assert context.scope_stack[-1] == context.current_scope_id
+
+    def test_visit_function_no_traversal(self):
+        """CP2.2C: Function visitor should NOT traverse body"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "def foo():\n    x = 1\n    return x"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        scopes = context.scopes.all()
+        assert len(scopes) == 2  # Only Module + Function
+
+        decls = context.declarations.all()
+        assert len(decls) == 1  # Only Function declaration
+
+        symbols = context.symbols.all()
+        assert len(symbols) == 1  # Only Function symbol
+
+    def test_visit_function_referential_integrity(self):
+        """Verify foreign keys between entities"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "def foo(): pass"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        scopes = context.scopes.all()
+        decls = context.declarations.all()
+        symbols = context.symbols.all()
+
+        function_scope = scopes[1]
+        function_decl = decls[0]
+        function_symbol = symbols[0]
+
+        assert function_decl.symbol_id == function_symbol.symbol_id
+        assert function_symbol.decl_id == function_decl.decl_id
+        assert function_scope.scope_id == function_symbol.scope_id
+        assert function_scope.scope_id == function_decl.scope_id
+
+    def test_visit_module_traverses_class_and_function(self):
+        """CP2.2C: Module should traverse ClassDef, FunctionDef, AsyncFunctionDef"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "class Foo: pass\ndef bar(): pass\nasync def baz(): pass\nx = 1"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        scopes = context.scopes.all()
+        # Module + Class + Function + AsyncFunction
+        assert len(scopes) == 4
+
+        decls = context.declarations.all()
+        # Class + Function + AsyncFunction (Assign ignored)
+        assert len(decls) == 3
+
+        symbols = context.symbols.all()
+        # Class + Function + AsyncFunction (Assign ignored)
+        assert len(symbols) == 3

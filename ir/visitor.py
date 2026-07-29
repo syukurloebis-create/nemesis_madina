@@ -1,6 +1,7 @@
 ﻿# ir/visitor.py
 
 import ast
+from typing import Optional
 
 from .context import IRContext
 from .models import Scope, ScopeKind
@@ -51,11 +52,9 @@ class Visitor:
         """
         Visit Module node.
 
-        CP2.2A Scope:
-        - Allocate module scope
-        - Insert scope repository
-        - Update current_scope_id and scope_stack
-        - Traverse only ClassDef nodes (CP2.2B)
+        CP2.2A: Allocate module scope
+        CP2.2B: Traverse ClassDef only
+        CP2.2C: Traverse FunctionDef and AsyncFunctionDef only
         """
         module_id = self._context.current_module_id
         if module_id is None:
@@ -87,11 +86,12 @@ class Visitor:
         self._context.current_scope_id = scope_id
         self._context.scope_stack.append(scope_id)
 
-        # CP2.2B: Traverse only ClassDef nodes
+        # CP2.2B: Traverse ClassDef
+        # CP2.2C: Traverse FunctionDef and AsyncFunctionDef
         for child in node.body:
-            if isinstance(child, ast.ClassDef):
+            if isinstance(child, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
                 self.visit(child)
-            # Other nodes are ignored in CP2.2B
+            # Other nodes are ignored in CP2.2C
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """
@@ -138,3 +138,55 @@ class Visitor:
         self._context.scope_stack.append(scope_id)
 
         # CP2.2B: NO traversal of node.body
+
+    def _get_qualname(self, node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef) -> str:
+        """Build qualified name for a node."""
+        return node.name
+
+    def _get_depth(self, parent_scope_id: Optional[int]) -> int:
+        """Calculate depth from parent scope."""
+        if parent_scope_id is None:
+            return 0
+        parent_scope = self._context.scopes.get(parent_scope_id)
+        if parent_scope is None:
+            return 1
+        return parent_scope.depth + 1
+
+    def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef, *, is_async: bool) -> None:
+        """
+        Common implementation for FunctionDef and AsyncFunctionDef.
+        """
+        module_id = self._context.current_module_id
+        if module_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-002",
+                message="No module_id set in context",
+                location_id=None,
+                module_id=None
+            )
+            return
+
+        parent_scope_id = self._context.current_scope_id
+        depth = self._get_depth(parent_scope_id)
+        qualname = self._get_qualname(node)
+
+        scope_id, decl_id, symbol_id = self._emitter.emit_function(
+            name=node.name,
+            qualname=qualname,
+            module_id=module_id,
+            parent_scope_id=parent_scope_id,
+            depth=depth,
+            is_async=is_async,
+            location_id=UNRESOLVED_LOCATION_ID,
+        )
+
+        self._context.current_scope_id = scope_id
+        self._context.scope_stack.append(scope_id)
+
+        # CP2.2C: NO traversal of node.body
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        self._visit_function(node, is_async=False)
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        self._visit_function(node, is_async=True)
