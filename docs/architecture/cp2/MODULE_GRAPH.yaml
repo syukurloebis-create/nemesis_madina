@@ -1,0 +1,27 @@
+graph:
+  parser:
+    depends_on: [ast, diagnostics]
+    forbidden: [visitor, emitter, normalizer, serializer]
+
+  visitor:
+    depends_on: [emitter, context, models]
+    forbidden: [parser, normalizer, serializer]
+
+  emitter:
+    depends_on: [context, models, allocators]
+    forbidden: [parser, visitor, normalizer, serializer]
+
+  normalizer:
+    depends_on: [repositories, models]
+    forbidden: [parser, visitor, emitter, serializer]
+
+  serializer:
+    depends_on: [models]
+    forbidden: [parser, visitor, emitter, normalizer]
+
+flow:
+  - parser
+  - visitor
+  - emitter
+  - normalizer
+  - serializer

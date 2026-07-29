@@ -1,0 +1,43 @@
+cp: CP2
+schema_version: 1
+frozen: true
+
+modules:
+  - parser
+  - visitor
+  - emitter
+  - normalizer
+  - serializer
+
+public_api:
+  parser.parse:
+    input: str (source code)
+    output: ast.Module
+    side_effects: None
+
+  visitor.visit:
+    input: ast.Module, IRContext
+    output: None (populates repositories)
+    side_effects: Repository insert
+
+  emitter.emit:
+    input: AST node, IRContext
+    output: IR entity
+    side_effects: Repository insert
+
+  normalizer.normalize:
+    input: IRContext
+    output: Canonical IR
+    side_effects: None
+
+  serializer.serialize:
+    input: Canonical IR, Path
+    output: JSON files
+    side_effects: File write
+
+dependencies:
+  parser: [ast, diagnostics]
+  visitor: [emitter, context, models]
+  emitter: [context, models, allocators]
+  normalizer: [repositories, models]
+  serializer: [models]

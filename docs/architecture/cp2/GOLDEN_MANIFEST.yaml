@@ -1,0 +1,53 @@
+version: 1
+frozen: true
+
+golden:
+  simple:
+    source: simple.py
+    snapshot: simple.ir.json
+    sha256: ""
+
+  class:
+    source: class.py
+    snapshot: class.ir.json
+    sha256: ""
+
+  function:
+    source: function.py
+    snapshot: function.ir.json
+    sha256: ""
+
+  decorator:
+    source: decorator.py
+    snapshot: decorator.ir.json
+    sha256: ""
+
+  async:
+    source: async.py
+    snapshot: async.ir.json
+    sha256: ""
+
+  typing:
+    source: typing.py
+    snapshot: typing.ir.json
+    sha256: ""
+
+  match_case:
+    source: match_case.py
+    snapshot: match_case.ir.json
+    sha256: ""
+
+  walrus:
+    source: walrus.py
+    snapshot: walrus.ir.json
+    sha256: ""
+
+  nested:
+    source: nested.py
+    snapshot: nested.ir.json
+    sha256: ""
+
+  complex:
+    source: complex.py
+    snapshot: complex.ir.json
+    sha256: ""
