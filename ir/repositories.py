@@ -1,49 +1,82 @@
 ﻿# ir/repositories.py
 
-from typing import List, Optional, TypeVar, Generic
+from abc import ABC, abstractmethod
+from typing import Generic, TypeVar, Optional, List
 
 T = TypeVar('T')
 
-class Repository(Generic[T]):
-    def __init__(self):
-        self._items: List[T] = []
-        self._frozen: bool = False
-        self._index: dict = {}
-    
+
+class Repository(Generic[T], ABC):
+    """Base repository with CRUD operations."""
+
+    @abstractmethod
     def insert(self, item: T) -> None:
-        if self._frozen:
-            raise RuntimeError("Repository is frozen")
-        self._items.append(item)
-        self._update_index(item)
-    
-    def get(self, id: int) -> Optional[T]:
-        return self._index.get(id)
-    
+        """Insert an item into the repository."""
+        ...
+
+    @abstractmethod
+    def get(self, item_id: int) -> Optional[T]:
+        """Get an item by ID."""
+        ...
+
+    @abstractmethod
     def find(self, **kwargs) -> List[T]:
-        # Find by field values
-        pass
-    
-    def exists(self, id: int) -> bool:
-        return id in self._index
-    
+        """Find items by field values."""
+        ...
+
+    @abstractmethod
+    def exists(self, item_id: int) -> bool:
+        """Check if an item exists by ID."""
+        ...
+
+    @abstractmethod
     def all(self) -> List[T]:
-        return self._items.copy()
-    
+        """Get all items."""
+        ...
+
+    @abstractmethod
     def count(self) -> int:
-        return len(self._items)
-    
+        """Get the number of items."""
+        ...
+
+    @abstractmethod
     def freeze(self) -> None:
-        self._frozen = True
-        self._items = self._items.copy()  # Ensure immutability
-        self._sort_items()
-    
+        """Freeze the repository (make immutable)."""
+        ...
+
+    @abstractmethod
     def is_frozen(self) -> bool:
-        return self._frozen
-    
-    def _update_index(self, item: T) -> None:
-        # Override in subclasses
-        pass
-    
-    def _sort_items(self) -> None:
-        # Override in subclasses for deterministic ordering
-        pass
+        """Check if the repository is frozen."""
+        ...
+
+
+class ModuleRepository(Repository):
+    pass
+
+
+class ScopeRepository(Repository):
+    pass
+
+
+class SymbolRepository(Repository):
+    pass
+
+
+class DeclarationRepository(Repository):
+    pass
+
+
+class StatementRepository(Repository):
+    pass
+
+
+class ExpressionRepository(Repository):
+    pass
+
+
+class BlockRepository(Repository):
+    pass
+
+
+class LocationRepository(Repository):
+    pass
