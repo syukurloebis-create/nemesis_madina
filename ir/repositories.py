@@ -1,12 +1,14 @@
 ﻿# ir/repositories.py
 
-from typing import Generic, TypeVar, Optional, List, Dict
+from typing import Generic, TypeVar, Optional, List, Dict, Any
 
 T = TypeVar('T')
 
 
 class Repository(Generic[T]):
-    """Base repository with CRUD operations."""
+    """Base repository with deterministic primary-key indexing."""
+
+    id_field: Optional[str] = None
 
     def __init__(self) -> None:
         self._items: List[T] = []
@@ -14,93 +16,76 @@ class Repository(Generic[T]):
         self._index: Dict[int, T] = {}
 
     def insert(self, item: T) -> None:
-        """Insert an item into the repository."""
         if self._frozen:
             raise RuntimeError("Repository is frozen")
+
         self._items.append(item)
-        # Index by id if available
-        if hasattr(item, 'module_id'):
-            self._index[getattr(item, 'module_id')] = item
-        elif hasattr(item, 'scope_id'):
-            self._index[getattr(item, 'scope_id')] = item
-        elif hasattr(item, 'symbol_id'):
-            self._index[getattr(item, 'symbol_id')] = item
-        elif hasattr(item, 'decl_id'):
-            self._index[getattr(item, 'decl_id')] = item
-        elif hasattr(item, 'stmt_id'):
-            self._index[getattr(item, 'stmt_id')] = item
-        elif hasattr(item, 'expr_id'):
-            self._index[getattr(item, 'expr_id')] = item
-        elif hasattr(item, 'block_id'):
-            self._index[getattr(item, 'block_id')] = item
-        elif hasattr(item, 'location_id'):
-            self._index[getattr(item, 'location_id')] = item
+
+        if self.id_field is None:
+            return
+
+        item_id = getattr(item, self.id_field, None)
+        if isinstance(item_id, int):
+            self._index[item_id] = item
 
     def get(self, item_id: int) -> Optional[T]:
-        """Get an item by ID."""
         return self._index.get(item_id)
 
-    def find(self, **kwargs) -> List[T]:
-        """Find items by field values."""
-        results = []
+    def find(self, **kwargs: Any) -> List[T]:
+        results: List[T] = []
+
         for item in self._items:
-            match = True
-            for key, value in kwargs.items():
-                if not hasattr(item, key) or getattr(item, key) != value:
-                    match = False
-                    break
-            if match:
+            if all(
+                hasattr(item, key) and getattr(item, key) == value
+                for key, value in kwargs.items()
+            ):
                 results.append(item)
+
         return results
 
     def exists(self, item_id: int) -> bool:
-        """Check if an item exists by ID."""
         return item_id in self._index
 
     def all(self) -> List[T]:
-        """Get all items."""
         return self._items.copy()
 
     def count(self) -> int:
-        """Get the number of items."""
         return len(self._items)
 
     def freeze(self) -> None:
-        """Freeze the repository (make immutable)."""
         self._frozen = True
 
     def is_frozen(self) -> bool:
-        """Check if the repository is frozen."""
         return self._frozen
 
 
 class ModuleRepository(Repository):
-    pass
+    id_field = "module_id"
 
 
 class ScopeRepository(Repository):
-    pass
+    id_field = "scope_id"
 
 
 class SymbolRepository(Repository):
-    pass
+    id_field = "symbol_id"
 
 
 class DeclarationRepository(Repository):
-    pass
+    id_field = "decl_id"
 
 
 class StatementRepository(Repository):
-    pass
+    id_field = "stmt_id"
 
 
 class ExpressionRepository(Repository):
-    pass
+    id_field = "expr_id"
 
 
 class BlockRepository(Repository):
-    pass
+    id_field = "block_id"
 
 
 class LocationRepository(Repository):
-    pass
+    id_field = "location_id"

@@ -526,3 +526,99 @@ class Visitor:
         self._context.expression_ordinal += 1
         return expr_id
 
+    def visit_Attribute(self, node: ast.Attribute) -> int | None:
+        """
+        Visit Attribute node.
+
+        Returns:
+            expr_id of the emitted expression, or None on failure
+        """
+        module_id = self._context.current_module_id
+        if module_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-002",
+                message="No module_id set in context",
+                location_id=None,
+                module_id=None
+            )
+            return None
+
+        # Determine context
+        ctx = "load"
+        if isinstance(node.ctx, ast.Store):
+            ctx = "store"
+        elif isinstance(node.ctx, ast.Del):
+            ctx = "del"
+
+        parent_expr = self._context.expression_parent
+        ordinal = self._context.expression_ordinal
+
+        # Generate stable ID for the attribute expression itself
+        module_path = self._context.current_module_name or "<module>"
+        stable_id = stable_expression_id(
+            module_path=module_path,
+            kind=ExpressionKind.ATTRIBUTE,
+            identifier=node.attr,
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+        )
+
+        # Emit the attribute expression (base will be filled after visiting child)
+        expr_id = self._emitter.emit_expression(
+            kind=ExpressionKind.ATTRIBUTE,
+            module_id=module_id,
+            parent_expr=parent_expr,
+            ordinal=ordinal,
+            location_id=UNRESOLVED_LOCATION_ID,
+            stable_id=stable_id,
+            payload={
+                "base": None,  # Will be filled after visiting base
+                "attr": node.attr,
+                "ctx": ctx,
+            },
+        )
+
+        # Save parent context for restoration
+        previous_parent = self._context.expression_parent
+        previous_ordinal = self._context.expression_ordinal
+
+        try:
+            # Visit base expression as a child
+            self._context.expression_parent = expr_id
+            self._context.expression_ordinal = 0
+            base_expr_id = self.visit(node.value)
+
+            if base_expr_id is None:
+                self._diagnostics.add_error(
+                    code="VISITOR-005",
+                    message="Failed to visit base expression",
+                    location_id=None,
+                    module_id=None
+                )
+                # Return the attribute expression anyway, with base still None
+                return expr_id
+
+            # Update payload with base expr_id via Emitter
+            updated = self._emitter.update_expression_payload(
+                expr_id,
+                {
+                    "base": base_expr_id,
+                    "attr": node.attr,
+                    "ctx": ctx,
+                },
+            )
+
+            if not updated:
+                self._diagnostics.add_error(
+                    code="VISITOR-006",
+                    message=f"Expression {expr_id} not found for payload update",
+                    location_id=None,
+                    module_id=None
+                )
+
+            return expr_id
+
+        finally:
+            # Restore parent context
+            self._context.expression_parent = previous_parent
+            self._context.expression_ordinal = previous_ordinal + 1

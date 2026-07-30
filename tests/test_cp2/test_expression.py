@@ -344,3 +344,153 @@ class TestExpressionIR:
         id1 = context1.expressions.all()[0].stable_id
         id2 = context2.expressions.all()[0].stable_id
         assert id1 == id2
+
+    # ============ AttributeExpr Tests ============
+
+    def test_attribute_expr_load(self):
+        """obj.attr → AttributeExpr with load context"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("obj.attr")
+        attr_node = tree.body[0].value
+        expr_id = visitor.visit_Attribute(attr_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        attr_exprs = [e for e in exprs if e.kind == ExpressionKind.ATTRIBUTE]
+        assert len(attr_exprs) == 1
+        attr_expr = attr_exprs[0]
+        assert attr_expr.payload["attr"] == "attr"
+        assert attr_expr.payload["ctx"] == "load"
+        assert attr_expr.payload["base"] is not None
+        assert attr_expr.parent_expr is None
+        assert attr_expr.ordinal == 0
+
+    def test_attribute_expr_store(self):
+        """obj.attr = x → AttributeExpr with store context"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("obj.attr = 1")
+        attr_node = tree.body[0].targets[0]
+        expr_id = visitor.visit_Attribute(attr_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        attr_exprs = [e for e in exprs if e.kind == ExpressionKind.ATTRIBUTE]
+        assert len(attr_exprs) == 1
+        assert attr_exprs[0].payload["ctx"] == "store"
+
+    def test_attribute_expr_del(self):
+        """del obj.attr → AttributeExpr with del context"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("del obj.attr")
+        del_node = tree.body[0]
+        attr_node = del_node.targets[0]
+        expr_id = visitor.visit_Attribute(attr_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        attr_exprs = [e for e in exprs if e.kind == ExpressionKind.ATTRIBUTE]
+        assert len(attr_exprs) == 1
+        assert attr_exprs[0].payload["ctx"] == "del"
+
+    def test_attribute_expr_parent_child(self):
+        """AttributeExpr should have base as child"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("obj.attr")
+        attr_node = tree.body[0].value
+        expr_id = visitor.visit_Attribute(attr_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        attr_expr = next(e for e in exprs if e.kind == ExpressionKind.ATTRIBUTE)
+        base_expr_id = attr_expr.payload["base"]
+
+        base_expr = next(e for e in exprs if e.expr_id == base_expr_id)
+        assert base_expr.kind == ExpressionKind.NAME
+        assert base_expr.payload["id"] == "obj"
+        assert base_expr.parent_expr == attr_expr.expr_id
+        assert base_expr.ordinal == 0
+
+    def test_attribute_expr_nested(self):
+        """Nested attribute: obj.a.b"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("obj.a.b")
+        attr_node = tree.body[0].value
+
+        root_id = visitor.visit_Attribute(attr_node)
+
+        assert root_id is not None
+
+        exprs = context.expressions.all()
+
+        # Root: b
+        root = next(e for e in exprs if e.expr_id == root_id)
+        assert root.kind == ExpressionKind.ATTRIBUTE
+        assert root.payload["attr"] == "b"
+        assert root.parent_expr is None
+        assert root.ordinal == 0
+
+        # Middle: a
+        middle = next(e for e in exprs if e.expr_id == root.payload["base"])
+        assert middle.kind == ExpressionKind.ATTRIBUTE
+        assert middle.payload["attr"] == "a"
+        assert middle.parent_expr == root.expr_id
+        assert middle.ordinal == 0
+
+        # Base: obj
+        base = next(e for e in exprs if e.expr_id == middle.payload["base"])
+        assert base.kind == ExpressionKind.NAME
+        assert base.payload["id"] == "obj"
+        assert base.parent_expr == middle.expr_id
+        assert base.ordinal == 0
+
+    def test_attribute_expr_stable_id_deterministic(self):
+        """Stable ID for AttributeExpr should be deterministic"""
+        context1 = IRContext(config=IRConfig())
+        context1.current_module_id = 1
+        context1.current_module_name = "test"
+
+        context2 = IRContext(config=IRConfig())
+        context2.current_module_id = 1
+        context2.current_module_name = "test"
+
+        visitor1 = Visitor(context1)
+        visitor2 = Visitor(context2)
+
+        tree = ast.parse("obj.attr")
+        attr_node = tree.body[0].value
+
+        visitor1.visit_Attribute(attr_node)
+        visitor2.visit_Attribute(attr_node)
+
+        id1 = context1.expressions.all()[0].stable_id
+        id2 = context2.expressions.all()[0].stable_id
+        assert id1 == id2

@@ -271,3 +271,26 @@ class Emitter:
 
         self._context.expressions.insert(expression)
         return expr_id
+
+    def update_expression_payload(
+        self,
+        expr_id: int,
+        payload: dict,
+    ) -> bool:
+        """
+        Update an emitted expression payload.
+
+        Args:
+            expr_id: Expression ID to update
+            payload: Payload fields to merge
+
+        Returns:
+            True if updated successfully, False if expression not found
+        """
+        expression = self._context.expressions.get(expr_id)
+
+        if expression is None:
+            return False
+
+        expression.payload.update(payload)
+        return True
