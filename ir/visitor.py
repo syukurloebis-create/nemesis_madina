@@ -4,8 +4,12 @@ import ast
 from typing import Optional
 
 from .context import IRContext
-from .models import Scope, ScopeKind
 from .emitter import Emitter
+from .models import (
+    Scope,
+    ScopeKind,
+    StatementKind,
+)
 
 # Sentinel for unresolved location
 UNRESOLVED_LOCATION_ID = 0
@@ -55,6 +59,8 @@ class Visitor:
         CP2.2A: Allocate module scope
         CP2.2B: Traverse ClassDef only
         CP2.2C: Traverse FunctionDef and AsyncFunctionDef only
+        CP2.3A: Traverse Assign, AnnAssign, AugAssign
+        CP2.3B: Traverse Expr, Pass, Raise, Assert
         """
         module_id = self._context.current_module_id
         if module_id is None:
@@ -86,12 +92,39 @@ class Visitor:
         self._context.current_scope_id = scope_id
         self._context.scope_stack.append(scope_id)
 
-        # CP2.2B: Traverse ClassDef
-        # CP2.2C: Traverse FunctionDef and AsyncFunctionDef
+        # Reset ordinal for module scope
+        self._context.statement_ordinals[scope_id] = 0
+
+        # Dispatch to supported child nodes
+        # Each child is visited exactly ONCE
         for child in node.body:
-            if isinstance(child, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
-                self.visit(child)
-            # Other nodes are ignored in CP2.2C
+            if not isinstance(
+                child,
+                (
+                    ast.ClassDef,
+                    ast.FunctionDef,
+                    ast.AsyncFunctionDef,
+                    ast.Assign,
+                    ast.AnnAssign,
+                    ast.AugAssign,
+                    ast.Expr,
+                    ast.Pass,
+                    ast.Raise,
+                    ast.Assert,
+                ),
+            ):
+                continue
+
+            # Capture enclosing scope BEFORE visiting the child
+            parent_scope_id = self._context.current_scope_id
+            parent_stack_len = len(self._context.scope_stack)
+
+            # Exactly one dispatch per child
+            self.visit(child)
+
+            # Restore enclosing scope after processing a top-level declaration
+            self._context.current_scope_id = parent_scope_id
+            del self._context.scope_stack[parent_stack_len:]
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """
@@ -190,3 +223,80 @@ class Visitor:
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
         self._visit_function(node, is_async=True)
+
+    def visit_Assign(self, node: ast.Assign) -> None:
+        """Visit Assign node."""
+        self._visit_statement(node, StatementKind.ASSIGN)
+
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        """Visit AnnAssign node."""
+        self._visit_statement(node, StatementKind.ANNOTATED_ASSIGN)
+
+    def visit_AugAssign(self, node: ast.AugAssign) -> None:
+        """Visit AugAssign node."""
+        self._visit_statement(node, StatementKind.AUGMENTED_ASSIGN)
+
+    def visit_Expr(self, node: ast.Expr) -> None:
+        self._visit_statement(node, StatementKind.EXPR)
+
+    def visit_Pass(self, node: ast.Pass) -> None:
+        self._visit_statement(node, StatementKind.PASS)
+
+    def visit_Raise(self, node: ast.Raise) -> None:
+        self._visit_statement(node, StatementKind.RAISE)
+
+    def visit_Assert(self, node: ast.Assert) -> None:
+        self._visit_statement(node, StatementKind.ASSERT)
+
+    def visit_Return(self, node: ast.Return) -> None:
+        self._visit_statement(node, StatementKind.RETURN)
+
+    def visit_Break(self, node: ast.Break) -> None:
+        self._visit_statement(node, StatementKind.BREAK)
+
+    def visit_Continue(self, node: ast.Continue) -> None:
+        self._visit_statement(node, StatementKind.CONTINUE)
+
+    def _get_ordinal(self, scope_id: int) -> int:
+        """Get current ordinal for a scope and increment it."""
+        ordinal = self._context.statement_ordinals.get(scope_id, 0)
+        self._context.statement_ordinals[scope_id] = ordinal + 1
+        return ordinal
+
+    def _visit_statement(
+        self,
+        node: ast.AST,
+        kind: StatementKind,
+        expr_id: Optional[int] = None,
+    ) -> None:
+        """Common implementation for statement nodes."""
+        module_id = self._context.current_module_id
+        if module_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-002",
+                message="No module_id set in context",
+                location_id=None,
+                module_id=None
+            )
+            return
+
+        scope_id = self._context.current_scope_id
+        if scope_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-003",
+                message="No scope_id set in context",
+                location_id=None,
+                module_id=None
+            )
+            return
+
+        ordinal = self._get_ordinal(scope_id)
+
+        self._emitter.emit_statement(
+            kind=kind,
+            module_id=module_id,
+            scope_id=scope_id,
+            ordinal=ordinal,
+            location_id=UNRESOLVED_LOCATION_ID,
+            expr_id=None,  # Expression IR will be added in CP2.4
+        )

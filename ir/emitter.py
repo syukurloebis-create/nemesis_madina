@@ -7,8 +7,10 @@ from .models import (
     Scope, ScopeKind,
     Declaration, DeclarationKind,
     Symbol, SymbolKind, Visibility, SymbolOrigin,
+    Statement, StatementKind,
 )
 
+# Sentinel for unresolved location
 UNRESOLVED_LOCATION_ID = 0
 
 
@@ -157,3 +159,35 @@ class Emitter:
         self._context.symbols.insert(symbol)
 
         return scope_id, decl_id, symbol_id
+
+    def emit_statement(
+        self,
+        kind: StatementKind,
+        module_id: int,
+        scope_id: int,
+        ordinal: int,
+        location_id: int = UNRESOLVED_LOCATION_ID,
+        expr_id: Optional[int] = None,
+    ) -> int:
+        """
+        Emit a statement entity.
+
+        Returns:
+            stmt_id
+        """
+        stmt_id = self._context.stmt_alloc.allocate()
+
+        statement = Statement(
+            stmt_id=stmt_id,
+            stable_id="",
+            kind=kind,
+            module_id=module_id,
+            scope_id=scope_id,
+            ordinal=ordinal,
+            block_id=None,
+            location_id=location_id,
+            expr_id=expr_id,
+        )
+
+        self._context.statements.insert(statement)
+        return stmt_id

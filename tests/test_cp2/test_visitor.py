@@ -9,6 +9,7 @@ from ir.models import (
     ScopeKind,
     DeclarationKind,
     SymbolKind,
+    StatementKind,
     Visibility,
 )
 
@@ -179,7 +180,7 @@ class TestVisitorClass:
         assert symbols[0].qualname == "Foo"
 
     def test_visit_class_updates_scope_stack(self):
-        """ClassDef should update scope_stack"""
+        """ClassDef should update scope stack during traversal, then restore"""
         context = IRContext(config=IRConfig())
         context.current_module_id = 1
 
@@ -189,8 +190,12 @@ class TestVisitorClass:
         tree = ast.parse(source)
         visitor.visit(tree)
 
-        assert len(context.scope_stack) == 2  # Module + Class
-        assert context.scope_stack[-1] == context.current_scope_id
+        scopes = context.scopes.all()
+        assert len(scopes) == 2  # Module + Class
+
+        # After traversal, scope should be restored to module scope
+        assert context.scope_stack == [1]
+        assert context.current_scope_id == 1
 
     def test_visit_class_no_traversal(self):
         """CP2.2B: Class visitor should NOT traverse body"""
@@ -324,7 +329,7 @@ class TestVisitorFunction:
         assert symbols[0].qualname == "foo"
 
     def test_visit_function_updates_scope_stack(self):
-        """FunctionDef should update scope_stack"""
+        """FunctionDef should update scope stack during traversal, then restore"""
         context = IRContext(config=IRConfig())
         context.current_module_id = 1
 
@@ -334,8 +339,12 @@ class TestVisitorFunction:
         tree = ast.parse(source)
         visitor.visit(tree)
 
-        assert len(context.scope_stack) == 2  # Module + Function
-        assert context.scope_stack[-1] == context.current_scope_id
+        scopes = context.scopes.all()
+        assert len(scopes) == 2  # Module + Function
+
+        # After traversal, scope should be restored to module scope
+        assert context.scope_stack == [1]
+        assert context.current_scope_id == 1
 
     def test_visit_function_no_traversal(self):
         """CP2.2C: Function visitor should NOT traverse body"""
@@ -403,3 +412,284 @@ class TestVisitorFunction:
         symbols = context.symbols.all()
         # Class + Function + AsyncFunction (Assign ignored)
         assert len(symbols) == 3
+
+# tests/test_cp2/test_visitor.py (tambahan)
+
+class TestVisitorAssignment:
+    def test_visit_assign_creates_statement(self):
+        """Assign AST → Statement"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "x = 1"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        stmts = context.statements.all()
+        assert len(stmts) == 1
+        assert stmts[0].kind == StatementKind.ASSIGN
+        assert stmts[0].ordinal == 0
+
+    def test_visit_ann_assign_creates_statement(self):
+        """AnnAssign AST → Statement"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "x: int = 1"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        stmts = context.statements.all()
+        assert len(stmts) == 1
+        assert stmts[0].kind == StatementKind.ANNOTATED_ASSIGN
+
+    def test_visit_aug_assign_creates_statement(self):
+        """AugAssign AST → Statement"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "x += 1"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        stmts = context.statements.all()
+        assert len(stmts) == 1
+        assert stmts[0].kind == StatementKind.AUGMENTED_ASSIGN
+
+    def test_visit_assign_ordinal_per_scope(self):
+        """CP2.3A: module statements use per-scope ordinals."""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = (
+            "x = 1\n"
+            "def foo():\n"
+            "    a = 1\n"
+            "    b = 2\n"
+            "y = 2\n"
+        )
+
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        stmts = context.statements.all()
+
+        # CP2.3A does not traverse function bodies.
+        module_stmts = [s for s in stmts if s.scope_id == 1]
+
+        assert len(module_stmts) == 2
+        assert module_stmts[0].ordinal == 0
+        assert module_stmts[1].ordinal == 1
+
+    def test_visit_assign_expr_id_is_none(self):
+        """CP2.3A: expr_id should be None (Expression IR not yet built)"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "x = 1"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        stmts = context.statements.all()
+        assert len(stmts) == 1
+        assert stmts[0].expr_id is None
+
+    def test_visit_assign_no_expression_created(self):
+        """CP2.3A: No expressions should be created"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "x = 1\ny = 2"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        assert len(context.expressions.all()) == 0
+
+    def test_visit_module_ignores_assignments_inside_function_body(self):
+        """CP2.3A: Assignments inside function body should be ignored"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "def foo():\n    x = 1\n    return x"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        # Only module scope statements (none), no function body traversal
+        stmts = context.statements.all()
+        assert len(stmts) == 0
+
+
+class TestVisitorSimpleStatements:
+    def test_visit_expr_creates_statement(self):
+        """Expr AST → Statement"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "x + 1"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        stmts = context.statements.all()
+        assert len(stmts) == 1
+        assert stmts[0].kind == StatementKind.EXPR
+
+    def test_visit_pass_creates_statement(self):
+        """Pass AST → Statement"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "pass"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        stmts = context.statements.all()
+        assert len(stmts) == 1
+        assert stmts[0].kind == StatementKind.PASS
+
+    def test_visit_raise_creates_statement(self):
+        """Raise AST → Statement"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "raise ValueError('error')"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        stmts = context.statements.all()
+        assert len(stmts) == 1
+        assert stmts[0].kind == StatementKind.RAISE
+
+    def test_visit_assert_creates_statement(self):
+        """Assert AST → Statement"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "assert x == 1"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        stmts = context.statements.all()
+        assert len(stmts) == 1
+        assert stmts[0].kind == StatementKind.ASSERT
+
+    def test_visit_return_creates_statement(self):
+        """Return AST → Statement (inside function)"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        tree = ast.parse(
+            "def foo():\n"
+            "    return x\n"
+        )
+
+        function_node = tree.body[0]
+        return_node = function_node.body[0]
+
+        # Establish function scope first
+        visitor.visit(function_node)
+
+        # Now Return has an active scope
+        visitor.visit(return_node)
+
+        stmts = context.statements.all()
+        assert len(stmts) == 1
+        assert stmts[0].kind == StatementKind.RETURN
+
+    def test_visit_break_creates_statement(self):
+        """Break AST → Statement (inside loop)"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        tree = ast.parse(
+            "def foo():\n"
+            "    while True:\n"
+            "        break\n"
+        )
+
+        function_node = tree.body[0]
+        break_node = function_node.body[0].body[0]
+
+        visitor.visit(function_node)
+        visitor.visit(break_node)
+
+        stmts = context.statements.all()
+        assert len(stmts) == 1
+        assert stmts[0].kind == StatementKind.BREAK
+
+    def test_visit_continue_creates_statement(self):
+        """Continue AST → Statement (inside loop)"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        tree = ast.parse(
+            "def foo():\n"
+            "    while True:\n"
+            "        continue\n"
+        )
+
+        function_node = tree.body[0]
+        continue_node = function_node.body[0].body[0]
+
+        visitor.visit(function_node)
+        visitor.visit(continue_node)
+
+        stmts = context.statements.all()
+        assert len(stmts) == 1
+        assert stmts[0].kind == StatementKind.CONTINUE
+
+    def test_visit_simple_statements_expr_id_is_none(self):
+        """CP2.3B: expr_id should be None for all simple statements"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "x + 1\npass\nraise ValueError('error')\nassert x == 1\n"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        stmts = context.statements.all()
+        assert len(stmts) == 4
+        for stmt in stmts:
+            assert stmt.expr_id is None
+
+    def test_visit_simple_statements_no_expression_created(self):
+        """CP2.3B: No expressions should be created"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "x + 1\npass\nraise ValueError('error')\nassert x == 1\n"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        assert len(context.expressions.all()) == 0

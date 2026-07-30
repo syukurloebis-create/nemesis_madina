@@ -1,10 +1,9 @@
 ﻿# ir/context.py
 
 from dataclasses import dataclass, field
-from typing import Optional
-from .config import IRConfig
-from .diagnostics import DiagnosticCollector
+from typing import Optional, Dict, List
 
+from .config import IRConfig
 from .allocators import (
     ModuleAllocator, ScopeAllocator, SymbolAllocator,
     DeclAllocator, StmtAllocator, ExprAllocator,
@@ -15,11 +14,14 @@ from .repositories import (
     DeclarationRepository, StatementRepository,
     ExpressionRepository, BlockRepository, LocationRepository
 )
+from .diagnostics import DiagnosticCollector
 
 
 @dataclass
 class IRContext:
     config: IRConfig
+
+    # Allocators
     module_alloc: ModuleAllocator = field(default_factory=ModuleAllocator)
     scope_alloc: ScopeAllocator = field(default_factory=ScopeAllocator)
     symbol_alloc: SymbolAllocator = field(default_factory=SymbolAllocator)
@@ -28,8 +30,10 @@ class IRContext:
     expr_alloc: ExprAllocator = field(default_factory=ExprAllocator)
     block_alloc: BlockAllocator = field(default_factory=BlockAllocator)
     loc_alloc: LocationAllocator = field(default_factory=LocationAllocator)
+
+    # Diagnostics
     diagnostics: DiagnosticCollector = field(default_factory=DiagnosticCollector)
-    
+
     # Repositories
     modules: ModuleRepository = field(default_factory=ModuleRepository)
     scopes: ScopeRepository = field(default_factory=ScopeRepository)
@@ -39,11 +43,11 @@ class IRContext:
     expressions: ExpressionRepository = field(default_factory=ExpressionRepository)
     blocks: BlockRepository = field(default_factory=BlockRepository)
     locations: LocationRepository = field(default_factory=LocationRepository)
-    
-    # State for visitor
+
+    # State for visitor (single source of truth)
     current_module_id: Optional[int] = None
     current_scope_id: Optional[int] = None
     current_block_id: Optional[int] = None
-    statement_ordinal: int = 0
+    statement_ordinals: Dict[int, int] = field(default_factory=dict)  # scope_id → ordinal
     expression_parent: Optional[int] = None
-    scope_stack: list = field(default_factory=list)
+    scope_stack: List[int] = field(default_factory=list)

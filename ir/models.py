@@ -27,8 +27,11 @@ class ScopeKind(Enum):
     LAMBDA = "lambda"
     BLOCK = "block"
 
+
 class StatementKind(Enum):
     ASSIGN = "assign"
+    ANNOTATED_ASSIGN = "annotated_assign"
+    AUGMENTED_ASSIGN = "augmented_assign"
     RETURN = "return"
     IF = "if"
     FOR = "for"
