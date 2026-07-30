@@ -14,6 +14,16 @@
     def reset(self) -> None:
         self._counter = 0
 
+    def reset_to(self, target: int) -> None:
+        """Reset allocator to a previous value only."""
+        if target < 0:
+            raise ValueError(f"Invalid reset target: {target}")
+        if target > self._counter:
+            raise ValueError(
+                f"Cannot reset allocator forward: {target} > {self._counter}"
+            )
+        self._counter = target
+
 class ModuleAllocator(Allocator):
     pass
 

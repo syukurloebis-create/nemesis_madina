@@ -292,3 +292,15 @@ class Emitter:
             raise KeyError(f"Expression {expr_id} not found")
 
         expression.payload = payload
+
+    def begin_transaction(self) -> dict:
+        """Begin a transaction and return a snapshot."""
+        return self._context.snapshot()
+
+    def commit_transaction(self, snapshot: dict) -> None:
+        """Commit a transaction (no-op, snapshot is only for rollback)."""
+        pass
+
+    def rollback_transaction(self, snapshot: dict) -> None:
+        """Rollback a transaction to the snapshot."""
+        self._context.restore(snapshot)

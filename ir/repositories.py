@@ -58,6 +58,21 @@ class Repository(Generic[T]):
     def is_frozen(self) -> bool:
         return self._frozen
 
+    def rollback(self, target_count: int) -> None:
+        """Rollback to a specific item count."""
+        if self._frozen:
+            raise RuntimeError("Repository is frozen")
+        if target_count < 0 or target_count > len(self._items):
+            raise ValueError(f"Invalid rollback target: {target_count}")
+        # Remove items beyond target count
+        for item in self._items[target_count:]:
+            # Remove from index if applicable
+            if self.id_field:
+                item_id = getattr(item, self.id_field, None)
+                if item_id in self._index:
+                    del self._index[item_id]
+        del self._items[target_count:]
+
 
 class ModuleRepository(Repository):
     id_field = "module_id"
