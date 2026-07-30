@@ -1338,3 +1338,148 @@ class Visitor:
             ast.Or: "or",
         }
         return mapping.get(type(op))
+
+    def visit_IfExp(self, node: ast.IfExp) -> int | None:
+        """
+        Visit IfExp node.
+
+        Returns:
+            expr_id of the emitted expression, or None on failure
+        """
+        module_id = self._context.current_module_id
+        if module_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-002",
+                message="No module_id set in context",
+                location_id=None,
+                module_id=None
+            )
+            return None
+
+        # Validate structure
+        if node.test is None or node.body is None or node.orelse is None:
+            self._diagnostics.add_error(
+                code="VISITOR-030",
+                message="Malformed if expression: missing test, body, or orelse",
+                location_id=None,
+                module_id=None
+            )
+            return None
+
+        # Begin transaction
+        snapshot = self._emitter.begin_transaction()
+
+        parent_expr = self._context.expression_parent
+        ordinal = self._context.expression_ordinal
+
+        # Generate stable ID
+        module_path = self._context.current_module_name or "<module>"
+        stable_id = stable_expression_id(
+            module_path=module_path,
+            kind=ExpressionKind.IF,
+            identifier="ifexpr",
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+        )
+
+        # Emit parent expression (payload will be filled after children are verified)
+        expr_id = self._emitter.emit_expression(
+            kind=ExpressionKind.IF,
+            module_id=module_id,
+            parent_expr=parent_expr,
+            ordinal=ordinal,
+            location_id=UNRESOLVED_LOCATION_ID,
+            stable_id=stable_id,
+            payload={
+                "test": None,
+                "body": None,
+                "orelse": None,
+            },
+        )
+
+        previous_parent = self._context.expression_parent
+        previous_ordinal = self._context.expression_ordinal
+
+        test_expr_id: int | None = None
+        body_expr_id: int | None = None
+        orelse_expr_id: int | None = None
+        success = False
+
+        try:
+            self._context.expression_parent = expr_id
+            self._context.expression_ordinal = 0
+
+            # 1. Visit test (ordinal 0)
+            test_expr_id = self.visit(node.test)
+            if test_expr_id is None:
+                self._diagnostics.add_error(
+                    code="VISITOR-031",
+                    message="Failed to visit test of if expression",
+                    location_id=None,
+                    module_id=None,
+                )
+            else:
+                # 2. Visit body (ordinal 1)
+                self._context.expression_ordinal = 1
+                body_expr_id = self.visit(node.body)
+                if body_expr_id is None:
+                    self._diagnostics.add_error(
+                        code="VISITOR-032",
+                        message="Failed to visit body of if expression",
+                        location_id=None,
+                        module_id=None,
+                    )
+                else:
+                    # 3. Visit orelse (ordinal 2)
+                    self._context.expression_ordinal = 2
+                    orelse_expr_id = self.visit(node.orelse)
+                    if orelse_expr_id is None:
+                        self._diagnostics.add_error(
+                            code="VISITOR-033",
+                            message="Failed to visit orelse of if expression",
+                            location_id=None,
+                            module_id=None,
+                        )
+                    else:
+                        success = True
+
+            # Check if all children are valid
+            if not success:
+                self._emitter.rollback_transaction(snapshot)
+                self._diagnostics.add_error(
+                    code="VISITOR-035",
+                    message="If expression has incomplete children",
+                    location_id=None,
+                    module_id=None,
+                )
+                return None
+
+            # All children are valid
+            self._emitter.update_expression_payload(
+                expr_id,
+                {
+                    "test": test_expr_id,
+                    "body": body_expr_id,
+                    "orelse": orelse_expr_id,
+                },
+            )
+            self._emitter.commit_transaction(snapshot)
+            return expr_id
+
+        except Exception:
+            # Rollback on any exception
+            self._emitter.rollback_transaction(snapshot)
+            self._diagnostics.add_error(
+                code="VISITOR-034",
+                message="Unexpected error during if expression",
+                location_id=None,
+                module_id=None,
+            )
+            return None
+
+        finally:
+            # Restore parent context
+            self._context.expression_parent = previous_parent
+            self._context.expression_ordinal = (
+                previous_ordinal + 1 if success else previous_ordinal
+            )
