@@ -1010,3 +1010,189 @@ class Visitor:
             ast.Invert: "~",
         }
         return mapping.get(type(op))
+
+    def visit_Compare(self, node: ast.Compare) -> int | None:
+        """
+        Visit Compare node.
+
+        Returns:
+            expr_id of the emitted expression, or None on failure
+        """
+        module_id = self._context.current_module_id
+        if module_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-002",
+                message="No module_id set in context",
+                location_id=None,
+                module_id=None,
+            )
+            return None
+
+        # Validate AST structure before opening transaction.
+        if not node.comparators or len(node.ops) != len(node.comparators):
+            self._diagnostics.add_error(
+                code="VISITOR-019",
+                message="Malformed comparison expression",
+                location_id=None,
+                module_id=module_id,
+            )
+            return None
+
+        # Map operators explicitly.
+        mapped_ops: list[str] = []
+        for ast_op in node.ops:
+            op = self._compare_op_to_string(ast_op)
+            if op is None:
+                self._diagnostics.add_error(
+                    code="VISITOR-020",
+                    message=(
+                        "Unsupported comparison operator: "
+                        f"{type(ast_op).__name__}"
+                    ),
+                    location_id=None,
+                    module_id=module_id,
+                )
+                return None
+            mapped_ops.append(op)
+
+        snapshot = self._emitter.begin_transaction()
+
+        parent_expr = self._context.expression_parent
+        previous_ordinal = self._context.expression_ordinal
+
+        module_path = self._context.current_module_name or "<module>"
+        ops_str = "_".join(mapped_ops)
+
+        stable_id = stable_expression_id(
+            module_path=module_path,
+            kind=ExpressionKind.COMPARE,
+            identifier=f"compare_{ops_str}",
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+        )
+
+        expr_id = self._emitter.emit_expression(
+            kind=ExpressionKind.COMPARE,
+            module_id=module_id,
+            parent_expr=parent_expr,
+            ordinal=previous_ordinal,
+            location_id=UNRESOLVED_LOCATION_ID,
+            stable_id=stable_id,
+            payload={
+                "ops": mapped_ops,
+                "left": None,
+                "comparators": [],
+            },
+        )
+
+        success = False
+        left_expr_id: int | None = None
+        comparators: list[int] = []
+
+        try:
+            self._context.expression_parent = expr_id
+            self._context.expression_ordinal = 0
+
+            # ---------------------------------------------------------
+            # 1. Left operand
+            # ---------------------------------------------------------
+            left_expr_id = self.visit(node.left)
+
+            if left_expr_id is None:
+                self._diagnostics.add_error(
+                    code="VISITOR-021",
+                    message="Failed to visit left of comparison",
+                    location_id=None,
+                    module_id=module_id,
+                )
+            else:
+                # -----------------------------------------------------
+                # 2. Comparators
+                # -----------------------------------------------------
+                for index, comparator in enumerate(node.comparators):
+                    self._context.expression_ordinal = index + 1
+
+                    comp_expr_id = self.visit(comparator)
+
+                    if comp_expr_id is None:
+                        self._diagnostics.add_error(
+                            code="VISITOR-022",
+                            message=(
+                                "Failed to visit comparator "
+                                f"{index} of comparison"
+                            ),
+                            location_id=None,
+                            module_id=module_id,
+                        )
+                        break
+
+                    comparators.append(comp_expr_id)
+
+            # ---------------------------------------------------------
+            # 3. Validate complete subtree
+            # ---------------------------------------------------------
+            if (
+                left_expr_id is not None
+                and len(comparators) == len(node.comparators)
+            ):
+                self._emitter.update_expression_payload(
+                    expr_id,
+                    {
+                        "ops": mapped_ops,
+                        "left": left_expr_id,
+                        "comparators": comparators,
+                    },
+                )
+
+                self._emitter.commit_transaction(snapshot)
+                success = True
+                return expr_id
+
+            # ---------------------------------------------------------
+            # 4. Fail closed: rollback entire subtree
+            # ---------------------------------------------------------
+            self._emitter.rollback_transaction(snapshot)
+
+            self._diagnostics.add_error(
+                code="VISITOR-023",
+                message="Comparison has incomplete children",
+                location_id=None,
+                module_id=module_id,
+            )
+
+            return None
+
+        except Exception:
+            self._emitter.rollback_transaction(snapshot)
+
+            self._diagnostics.add_error(
+                code="VISITOR-024",
+                message="Unexpected error during comparison",
+                location_id=None,
+                module_id=module_id,
+            )
+
+            return None
+
+        finally:
+            self._context.expression_parent = parent_expr
+            self._context.expression_ordinal = (
+                previous_ordinal + 1
+                if success
+                else previous_ordinal
+            )
+
+    def _compare_op_to_string(self, op: ast.cmpop) -> str | None:
+        mapping = {
+            ast.Eq: "==",
+            ast.NotEq: "!=",
+            ast.Lt: "<",
+            ast.LtE: "<=",
+            ast.Gt: ">",
+            ast.GtE: ">=",
+            ast.Is: "is",
+            ast.IsNot: "is not",
+            ast.In: "in",
+            ast.NotIn: "not in",
+        }
+        return mapping.get(type(op))

@@ -1059,3 +1059,198 @@ class TestExpressionIR:
         unary2 = next(e for e in context2.expressions.all() if e.kind == ExpressionKind.UNARY)
 
         assert unary1.stable_id == unary2.stable_id
+
+    # ============ CompareExpr Tests ============
+
+    def test_compare_eq(self):
+        """a == b → CompareExpr"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("a == b")
+        compare_node = tree.body[0].value
+        expr_id = visitor.visit_Compare(compare_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        cmp_expr = next(e for e in exprs if e.kind == ExpressionKind.COMPARE)
+        assert cmp_expr.payload["ops"] == ["=="]
+        assert cmp_expr.payload["left"] is not None
+        assert len(cmp_expr.payload["comparators"]) == 1
+
+    def test_compare_chain(self):
+        """a < b < c → CompareExpr with two comparators"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("a < b < c")
+        compare_node = tree.body[0].value
+        expr_id = visitor.visit_Compare(compare_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        cmp_expr = next(e for e in exprs if e.kind == ExpressionKind.COMPARE)
+        assert cmp_expr.payload["ops"] == ["<", "<"]
+        assert len(cmp_expr.payload["comparators"]) == 2
+
+    def test_compare_all_ops(self):
+        """Test all comparison operators"""
+        operators = [
+            ("==", ast.Eq),
+            ("!=", ast.NotEq),
+            ("<", ast.Lt),
+            ("<=", ast.LtE),
+            (">", ast.Gt),
+            (">=", ast.GtE),
+            ("is", ast.Is),
+            ("is not", ast.IsNot),
+            ("in", ast.In),
+            ("not in", ast.NotIn),
+        ]
+
+        for op_str, op_cls in operators:
+            context = IRContext(config=IRConfig())
+            context.current_module_id = 1
+            context.current_module_name = "test"
+
+            visitor = Visitor(context)
+
+            tree = ast.parse(f"a {op_str} b")
+            compare_node = tree.body[0].value
+            expr_id = visitor.visit_Compare(compare_node)
+
+            assert expr_id is not None
+
+            exprs = context.expressions.all()
+            cmp_expr = next(e for e in exprs if e.kind == ExpressionKind.COMPARE)
+            assert cmp_expr.payload["ops"] == [op_str], f"Operator {op_str} failed"
+
+    def test_compare_parent_child(self):
+        """CompareExpr parent-child relationship"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("a < b")
+        compare_node = tree.body[0].value
+        expr_id = visitor.visit_Compare(compare_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        cmp_expr = next(e for e in exprs if e.kind == ExpressionKind.COMPARE)
+
+        # Verify left
+        left_id = cmp_expr.payload["left"]
+        left = next(e for e in exprs if e.expr_id == left_id)
+        assert left.kind == ExpressionKind.NAME
+        assert left.payload["id"] == "a"
+        assert left.parent_expr == cmp_expr.expr_id
+        assert left.ordinal == 0
+
+        # Verify comparator
+        comp_id = cmp_expr.payload["comparators"][0]
+        comp = next(e for e in exprs if e.expr_id == comp_id)
+        assert comp.kind == ExpressionKind.NAME
+        assert comp.payload["id"] == "b"
+        assert comp.parent_expr == cmp_expr.expr_id
+        assert comp.ordinal == 1
+
+    def test_compare_ordinal_on_failure(self):
+        """CompareExpr ordinal does NOT advance on failure"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        # Set initial ordinal
+        context.expression_ordinal = 5
+
+        # Tuple is not supported in VS2 yet, causing failure
+        tree = ast.parse("(1, 2) < b")
+        compare_node = tree.body[0].value
+        expr_id = visitor.visit_Compare(compare_node)
+
+        assert expr_id is None
+        assert context.expression_ordinal == 5
+
+    def test_compare_fail_closed(self):
+        """CompareExpr should be fail-closed: no malformed Expression remains."""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        # Tuple is not supported in VS2 yet, causing failure
+        tree = ast.parse("(1, 2) < b")
+        compare_node = tree.body[0].value
+        expr_id = visitor.visit_Compare(compare_node)
+
+        assert expr_id is None
+
+        exprs = context.expressions.all()
+        cmp_exprs = [e for e in exprs if e.kind == ExpressionKind.COMPARE]
+        assert len(cmp_exprs) == 0
+
+        errors = context.diagnostics.get_errors()
+        # Either VISITOR-021 (left failed) and/or VISITOR-023 (incomplete comparison)
+        assert any(e.code in ("VISITOR-021", "VISITOR-023") for e in errors)
+
+    def test_compare_stable_id_deterministic(self):
+        """Stable ID for CompareExpr should be deterministic"""
+        context1 = IRContext(config=IRConfig())
+        context1.current_module_id = 1
+        context1.current_module_name = "test"
+
+        context2 = IRContext(config=IRConfig())
+        context2.current_module_id = 1
+        context2.current_module_name = "test"
+
+        visitor1 = Visitor(context1)
+        visitor2 = Visitor(context2)
+
+        tree = ast.parse("a < b")
+        compare_node = tree.body[0].value
+
+        visitor1.visit_Compare(compare_node)
+        visitor2.visit_Compare(compare_node)
+
+        cmp1 = next(e for e in context1.expressions.all() if e.kind == ExpressionKind.COMPARE)
+        cmp2 = next(e for e in context2.expressions.all() if e.kind == ExpressionKind.COMPARE)
+
+        assert cmp1.stable_id == cmp2.stable_id
+
+    def test_compare_malformed_structure(self):
+        """Malformed Compare AST should be rejected"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        # Create malformed Compare node
+        malformed = ast.Compare(
+            left=ast.Name(id="a", ctx=ast.Load()),
+            ops=[ast.Lt()],
+            comparators=[],  # Empty comparators - malformed
+            lineno=1,
+            col_offset=0
+        )
+
+        expr_id = visitor.visit_Compare(malformed)
+
+        assert expr_id is None
+        errors = context.diagnostics.get_errors()
+        assert any(e.code == "VISITOR-019" for e in errors)
