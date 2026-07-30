@@ -185,6 +185,24 @@ class Visitor:
             self._context.current_scope_id = parent_scope_id
             del self._context.scope_stack[parent_stack_len:]
 
+    def _op_to_string(self, op: ast.operator) -> str | None:
+        mapping = {
+            ast.Add: "+",
+            ast.Sub: "-",
+            ast.Mult: "*",
+            ast.Div: "/",
+            ast.FloorDiv: "//",
+            ast.Mod: "%",
+            ast.Pow: "**",
+            ast.MatMult: "@",
+            ast.LShift: "<<",
+            ast.RShift: ">>",
+            ast.BitOr: "|",
+            ast.BitXor: "^",
+            ast.BitAnd: "&",
+        }
+        return mapping.get(type(op))
+
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """
         Visit ClassDef node.
@@ -727,3 +745,136 @@ class Visitor:
             self._context.expression_ordinal = previous_ordinal + 1
 
         return expr_id
+
+    def visit_BinOp(self, node: ast.BinOp) -> int | None:
+        """
+        Visit BinOp node with transactional fail-closed behavior.
+
+        Returns:
+            expr_id of the emitted expression, or None on failure
+        """
+        module_id = self._context.current_module_id
+        if module_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-002",
+                message="No module_id set in context",
+                location_id=None,
+                module_id=None
+            )
+            return None
+
+        # Validate operator
+        op = self._op_to_string(node.op)
+        if op is None:
+            self._diagnostics.add_error(
+                code="VISITOR-010",
+                message=f"Unsupported binary operator: {type(node.op).__name__}",
+                location_id=None,
+                module_id=None
+            )
+            return None
+
+        # Begin transaction
+        snapshot = self._emitter.begin_transaction()
+
+        parent_expr = self._context.expression_parent
+        ordinal = self._context.expression_ordinal
+
+        # Generate stable ID
+        module_path = self._context.current_module_name or "<module>"
+        stable_id = stable_expression_id(
+            module_path=module_path,
+            kind=ExpressionKind.BINARY,
+            identifier=f"binop_{op}",
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+        )
+
+        # Emit parent expression (within transaction)
+        expr_id = self._emitter.emit_expression(
+            kind=ExpressionKind.BINARY,
+            module_id=module_id,
+            parent_expr=parent_expr,
+            ordinal=ordinal,
+            location_id=UNRESOLVED_LOCATION_ID,
+            stable_id=stable_id,
+            payload={
+                "op": op,
+                "left": None,
+                "right": None,
+            },
+        )
+
+        previous_parent = self._context.expression_parent
+        previous_ordinal = self._context.expression_ordinal
+
+        left_expr_id: int | None = None
+        right_expr_id: int | None = None
+        success = True
+
+        try:
+            self._context.expression_parent = expr_id
+            self._context.expression_ordinal = 0
+
+            # 1. Visit left child (ordinal 0)
+            left_expr_id = self.visit(node.left)
+            if left_expr_id is None:
+                self._diagnostics.add_error(
+                    code="VISITOR-011",
+                    message="Failed to visit left child of binary operation",
+                    location_id=None,
+                    module_id=None,
+                )
+                success = False
+
+            # 2. Visit right child (ordinal 1)
+            if success:
+                self._context.expression_ordinal = 1
+                right_expr_id = self.visit(node.right)
+                if right_expr_id is None:
+                    self._diagnostics.add_error(
+                        code="VISITOR-012",
+                        message="Failed to visit right child of binary operation",
+                        location_id=None,
+                        module_id=None,
+                    )
+                    success = False
+
+            # 3. Only commit if both children are valid
+            if success and left_expr_id is not None and right_expr_id is not None:
+                self._emitter.update_expression_payload(
+                    expr_id,
+                    {
+                        "op": op,
+                        "left": left_expr_id,
+                        "right": right_expr_id,
+                    },
+                )
+                self._emitter.commit_transaction(snapshot)
+                return expr_id
+            else:
+                # Rollback entire transaction
+                self._emitter.rollback_transaction(snapshot)
+                self._diagnostics.add_error(
+                    code="VISITOR-013",
+                    message="Binary operation has incomplete children",
+                    location_id=None,
+                    module_id=None,
+                )
+                return None
+
+        except Exception:
+            # Rollback on any exception
+            self._emitter.rollback_transaction(snapshot)
+            self._diagnostics.add_error(
+                code="VISITOR-014",
+                message="Unexpected error during binary operation",
+                location_id=None,
+                module_id=None,
+            )
+            return None
+
+        finally:
+            # Restore parent context regardless of success
+            self._context.expression_parent = previous_parent
+            self._context.expression_ordinal = previous_ordinal + 1

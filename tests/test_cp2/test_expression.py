@@ -682,3 +682,192 @@ class TestExpressionIR:
         assert callee.parent_expr == call_expr.expr_id
         assert arg0.parent_expr == call_expr.expr_id
         assert arg1.parent_expr == call_expr.expr_id
+
+    # ============ BinaryExpr Tests ============
+
+    def test_binary_add(self):
+        """a + b → BinaryExpr"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("a + b")
+        binop_node = tree.body[0].value
+        expr_id = visitor.visit_BinOp(binop_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        bin_expr = next(e for e in exprs if e.kind == ExpressionKind.BINARY)
+        assert bin_expr.payload["op"] == "+"
+        assert bin_expr.payload["left"] is not None
+        assert bin_expr.payload["right"] is not None
+
+    def test_binary_all_operators(self):
+        """Test all binary operators"""
+        operators = [
+            ("+", ast.Add),
+            ("-", ast.Sub),
+            ("*", ast.Mult),
+            ("/", ast.Div),
+            ("//", ast.FloorDiv),
+            ("%", ast.Mod),
+            ("**", ast.Pow),
+            ("@", ast.MatMult),
+            ("<<", ast.LShift),
+            (">>", ast.RShift),
+            ("|", ast.BitOr),
+            ("^", ast.BitXor),
+            ("&", ast.BitAnd),
+        ]
+
+        for op_str, op_cls in operators:
+            context = IRContext(config=IRConfig())
+            context.current_module_id = 1
+            context.current_module_name = "test"
+
+            visitor = Visitor(context)
+
+            tree = ast.parse(f"a {op_str} b")
+            binop_node = tree.body[0].value
+            expr_id = visitor.visit_BinOp(binop_node)
+
+            assert expr_id is not None
+
+            exprs = context.expressions.all()
+            bin_expr = next(e for e in exprs if e.kind == ExpressionKind.BINARY)
+            assert bin_expr.payload["op"] == op_str, f"Operator {op_str} failed"
+
+    def test_binary_parent_child(self):
+        """BinaryExpr parent-child relationship"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("a + b")
+        binop_node = tree.body[0].value
+        expr_id = visitor.visit_BinOp(binop_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        bin_expr = next(e for e in exprs if e.kind == ExpressionKind.BINARY)
+
+        # Verify left child
+        left_id = bin_expr.payload["left"]
+        left = next(e for e in exprs if e.expr_id == left_id)
+        assert left.kind == ExpressionKind.NAME
+        assert left.payload["id"] == "a"
+        assert left.parent_expr == bin_expr.expr_id
+        assert left.ordinal == 0
+
+        # Verify right child
+        right_id = bin_expr.payload["right"]
+        right = next(e for e in exprs if e.expr_id == right_id)
+        assert right.kind == ExpressionKind.NAME
+        assert right.payload["id"] == "b"
+        assert right.parent_expr == bin_expr.expr_id
+        assert right.ordinal == 1
+
+    def test_binary_nested(self):
+        """(a + b) * c → nested binary expressions"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("(a + b) * c")
+        binop_node = tree.body[0].value
+        root_id = visitor.visit_BinOp(binop_node)
+
+        assert root_id is not None
+
+        exprs = context.expressions.all()
+
+        # Root: (a + b) * c
+        root = next(e for e in exprs if e.expr_id == root_id)
+        assert root.kind == ExpressionKind.BINARY
+        assert root.payload["op"] == "*"
+        assert root.parent_expr is None
+
+        # Left: a + b (inner binary)
+        inner_id = root.payload["left"]
+        inner = next(e for e in exprs if e.expr_id == inner_id)
+        assert inner.kind == ExpressionKind.BINARY
+        assert inner.payload["op"] == "+"
+        assert inner.parent_expr == root.expr_id
+
+        # Inner left: a
+        inner_left_id = inner.payload["left"]
+        inner_left = next(e for e in exprs if e.expr_id == inner_left_id)
+        assert inner_left.kind == ExpressionKind.NAME
+        assert inner_left.payload["id"] == "a"
+        assert inner_left.parent_expr == inner.expr_id
+
+        # Inner right: b
+        inner_right_id = inner.payload["right"]
+        inner_right = next(e for e in exprs if e.expr_id == inner_right_id)
+        assert inner_right.kind == ExpressionKind.NAME
+        assert inner_right.payload["id"] == "b"
+        assert inner_right.parent_expr == inner.expr_id
+
+        # Root right: c
+        root_right_id = root.payload["right"]
+        root_right = next(e for e in exprs if e.expr_id == root_right_id)
+        assert root_right.kind == ExpressionKind.NAME
+        assert root_right.payload["id"] == "c"
+        assert root_right.parent_expr == root.expr_id
+
+    def test_binary_stable_id_deterministic(self):
+        """Stable ID for BinaryExpr should be deterministic"""
+        context1 = IRContext(config=IRConfig())
+        context1.current_module_id = 1
+        context1.current_module_name = "test"
+
+        context2 = IRContext(config=IRConfig())
+        context2.current_module_id = 1
+        context2.current_module_name = "test"
+
+        visitor1 = Visitor(context1)
+        visitor2 = Visitor(context2)
+
+        tree = ast.parse("a + b")
+        binop_node = tree.body[0].value
+
+        visitor1.visit_BinOp(binop_node)
+        visitor2.visit_BinOp(binop_node)
+
+        bin1 = next(e for e in context1.expressions.all() if e.kind == ExpressionKind.BINARY)
+        bin2 = next(e for e in context2.expressions.all() if e.kind == ExpressionKind.BINARY)
+
+        assert bin1.stable_id == bin2.stable_id
+
+    def test_binary_fail_closed(self):
+        """BinaryExpr should be fail-closed: no malformed Expression remains."""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        # Tuple is not supported in VS2 yet, causing failure
+        tree = ast.parse("a + (1, 2)")
+        binop_node = tree.body[0].value
+        expr_id = visitor.visit_BinOp(binop_node)
+
+        # Should return None (no expression emitted)
+        assert expr_id is None
+
+        # No BinaryExpr should remain in repository
+        exprs = context.expressions.all()
+        bin_exprs = [e for e in exprs if e.kind == ExpressionKind.BINARY]
+        assert len(bin_exprs) == 0
+
+        # Should have error diagnostics
+        errors = context.diagnostics.get_errors()
+        assert any(e.code == "VISITOR-013" for e in errors)
