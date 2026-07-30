@@ -191,3 +191,40 @@ class Emitter:
 
         self._context.statements.insert(statement)
         return stmt_id
+
+    def emit_import_statement(
+        self,
+        kind: StatementKind,
+        module_id: int,
+        scope_id: int,
+        ordinal: int,
+        payload: dict,
+        location_id: int = UNRESOLVED_LOCATION_ID,
+    ) -> int:
+        """
+        Emit an import statement entity.
+
+        Args:
+            kind: IMPORT or IMPORT_FROM
+            payload: Import metadata (module, names, alias, level)
+
+        Returns:
+            stmt_id
+        """
+        stmt_id = self._context.stmt_alloc.allocate()
+
+        statement = Statement(
+            stmt_id=stmt_id,
+            stable_id="",
+            kind=kind,
+            module_id=module_id,
+            scope_id=scope_id,
+            ordinal=ordinal,
+            block_id=None,
+            location_id=location_id,
+            expr_id=None,
+            payload=payload,
+        )
+
+        self._context.statements.insert(statement)
+        return stmt_id

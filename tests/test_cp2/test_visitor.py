@@ -693,3 +693,93 @@ class TestVisitorSimpleStatements:
         visitor.visit(tree)
 
         assert len(context.expressions.all()) == 0
+
+
+class TestVisitorImport:
+    def test_visit_import_creates_statement(self):
+        """Import AST → Statement"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "import os\nimport json as js"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        stmts = context.statements.all()
+        assert len(stmts) == 2
+        assert stmts[0].kind == StatementKind.IMPORT
+        assert stmts[0].payload["names"][0]["name"] == "os"
+
+        assert stmts[1].kind == StatementKind.IMPORT
+        assert stmts[1].payload["names"][0]["name"] == "json"
+        assert stmts[1].payload["names"][0]["alias"] == "js"
+
+    def test_visit_import_from_creates_statement(self):
+        """ImportFrom AST → Statement"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "from backend.services import DashboardService as DS"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        stmts = context.statements.all()
+        assert len(stmts) == 1
+        assert stmts[0].kind == StatementKind.IMPORT_FROM
+        assert stmts[0].payload["module"] == "backend.services"
+        assert stmts[0].payload["names"][0]["name"] == "DashboardService"
+        assert stmts[0].payload["names"][0]["alias"] == "DS"
+        assert stmts[0].payload["level"] == 0
+
+    def test_visit_import_from_relative(self):
+        """Relative ImportFrom AST → Statement"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "from . import module"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        stmts = context.statements.all()
+        assert len(stmts) == 1
+        assert stmts[0].kind == StatementKind.IMPORT_FROM
+        assert stmts[0].payload["module"] == ""
+        assert stmts[0].payload["level"] == 1
+
+    def test_visit_import_payload_no_expression(self):
+        """CP2.3C: Imports should not create expressions or symbols"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "import os\nfrom backend import services"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        assert len(context.expressions.all()) == 0
+        assert len(context.symbols.all()) == 0
+
+    def test_visit_import_no_resolution(self):
+        """CP2.3C: Imports should NOT perform resolution"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+
+        visitor = Visitor(context)
+
+        source = "import nonexistent_module"
+        tree = ast.parse(source)
+        visitor.visit(tree)
+
+        # No resolution error, just stored as statement
+        stmts = context.statements.all()
+        assert len(stmts) == 1
+        assert stmts[0].kind == StatementKind.IMPORT
+        # No diagnostics about missing module
+        assert len(context.diagnostics.get_errors()) == 0

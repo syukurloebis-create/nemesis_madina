@@ -27,11 +27,12 @@ class ScopeKind(Enum):
     LAMBDA = "lambda"
     BLOCK = "block"
 
-
 class StatementKind(Enum):
     ASSIGN = "assign"
     ANNOTATED_ASSIGN = "annotated_assign"
     AUGMENTED_ASSIGN = "augmented_assign"
+    IMPORT = "import"
+    IMPORT_FROM = "import_from"
     RETURN = "return"
     IF = "if"
     FOR = "for"
@@ -171,6 +172,7 @@ class Statement:
     block_id: Optional[int]
     location_id: int
     expr_id: Optional[int]
+    payload: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass(slots=True, kw_only=True)
 class Expression:

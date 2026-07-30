@@ -111,6 +111,8 @@ class Visitor:
                     ast.Pass,
                     ast.Raise,
                     ast.Assert,
+                    ast.Import,
+                    ast.ImportFrom,
                 ),
             ):
                 continue
@@ -216,8 +218,6 @@ class Visitor:
         self._context.current_scope_id = scope_id
         self._context.scope_stack.append(scope_id)
 
-        # CP2.2C: NO traversal of node.body
-
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         self._visit_function(node, is_async=False)
 
@@ -299,4 +299,86 @@ class Visitor:
             ordinal=ordinal,
             location_id=UNRESOLVED_LOCATION_ID,
             expr_id=None,  # Expression IR will be added in CP2.4
+        )
+
+    def visit_Import(self, node: ast.Import) -> None:
+        """Visit Import node."""
+        module_id = self._context.current_module_id
+        if module_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-002",
+                message="No module_id set in context",
+                location_id=None,
+                module_id=None
+            )
+            return
+
+        scope_id = self._context.current_scope_id
+        if scope_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-003",
+                message="No scope_id set in context",
+                location_id=None,
+                module_id=None
+            )
+            return
+
+        ordinal = self._get_ordinal(scope_id)
+
+        payload = {
+            "names": [
+                {"name": alias.name, "alias": alias.asname}
+                for alias in node.names
+            ]
+        }
+
+        self._emitter.emit_import_statement(
+            kind=StatementKind.IMPORT,
+            module_id=module_id,
+            scope_id=scope_id,
+            ordinal=ordinal,
+            payload=payload,
+            location_id=UNRESOLVED_LOCATION_ID,
+        )
+
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        """Visit ImportFrom node."""
+        module_id = self._context.current_module_id
+        if module_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-002",
+                message="No module_id set in context",
+                location_id=None,
+                module_id=None
+            )
+            return
+
+        scope_id = self._context.current_scope_id
+        if scope_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-003",
+                message="No scope_id set in context",
+                location_id=None,
+                module_id=None
+            )
+            return
+
+        ordinal = self._get_ordinal(scope_id)
+
+        payload = {
+            "module": node.module or "",
+            "names": [
+                {"name": alias.name, "alias": alias.asname}
+                for alias in node.names
+            ],
+            "level": node.level or 0,
+        }
+
+        self._emitter.emit_import_statement(
+            kind=StatementKind.IMPORT_FROM,
+            module_id=module_id,
+            scope_id=scope_id,
+            ordinal=ordinal,
+            payload=payload,
+            location_id=UNRESOLVED_LOCATION_ID,
         )
