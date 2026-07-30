@@ -1254,3 +1254,153 @@ class TestExpressionIR:
         assert expr_id is None
         errors = context.diagnostics.get_errors()
         assert any(e.code == "VISITOR-019" for e in errors)
+
+    # ============ BoolExpr Tests ============
+
+    def test_bool_and(self):
+        """a and b → BoolExpr"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("a and b")
+        bool_node = tree.body[0].value
+        expr_id = visitor.visit_BoolOp(bool_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        bool_expr = next(e for e in exprs if e.kind == ExpressionKind.BOOL)
+        assert bool_expr.payload["op"] == "and"
+        assert len(bool_expr.payload["values"]) == 2
+
+    def test_bool_or(self):
+        """a or b → BoolExpr"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("a or b")
+        bool_node = tree.body[0].value
+        expr_id = visitor.visit_BoolOp(bool_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        bool_expr = next(e for e in exprs if e.kind == ExpressionKind.BOOL)
+        assert bool_expr.payload["op"] == "or"
+        assert len(bool_expr.payload["values"]) == 2
+
+    def test_bool_chain(self):
+        """a and b and c → BoolExpr with 3 values (not nested)"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("a and b and c")
+        bool_node = tree.body[0].value
+        expr_id = visitor.visit_BoolOp(bool_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        bool_expr = next(e for e in exprs if e.kind == ExpressionKind.BOOL)
+        assert bool_expr.payload["op"] == "and"
+        assert len(bool_expr.payload["values"]) == 3
+
+    def test_bool_parent_child(self):
+        """BoolExpr parent-child relationship"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("a and b")
+        bool_node = tree.body[0].value
+        expr_id = visitor.visit_BoolOp(bool_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        bool_expr = next(e for e in exprs if e.kind == ExpressionKind.BOOL)
+
+        # Verify values
+        for i, value_id in enumerate(bool_expr.payload["values"]):
+            value = next(e for e in exprs if e.expr_id == value_id)
+            assert value.kind == ExpressionKind.NAME
+            assert value.payload["id"] == ["a", "b"][i]
+            assert value.parent_expr == bool_expr.expr_id
+            assert value.ordinal == i
+
+    def test_bool_ordinal_on_failure(self):
+        """BoolExpr ordinal does NOT advance on failure"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        # Set initial ordinal
+        context.expression_ordinal = 5
+
+        # Tuple is not supported in VS2 yet, causing failure
+        tree = ast.parse("(1, 2) and b")
+        bool_node = tree.body[0].value
+        expr_id = visitor.visit_BoolOp(bool_node)
+
+        assert expr_id is None
+        assert context.expression_ordinal == 5
+
+    def test_bool_fail_closed(self):
+        """BoolExpr should be fail-closed: no malformed Expression remains."""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        # Tuple is not supported in VS2 yet, causing failure
+        tree = ast.parse("(1, 2) and b")
+        bool_node = tree.body[0].value
+        expr_id = visitor.visit_BoolOp(bool_node)
+
+        assert expr_id is None
+
+        exprs = context.expressions.all()
+        bool_exprs = [e for e in exprs if e.kind == ExpressionKind.BOOL]
+        assert len(bool_exprs) == 0
+
+        errors = context.diagnostics.get_errors()
+        # VISITOR-027: child failure, VISITOR-028: incomplete expression
+        assert any(e.code in ("VISITOR-027", "VISITOR-028") for e in errors)
+
+    def test_bool_stable_id_deterministic(self):
+        """Stable ID for BoolExpr should be deterministic"""
+        context1 = IRContext(config=IRConfig())
+        context1.current_module_id = 1
+        context1.current_module_name = "test"
+
+        context2 = IRContext(config=IRConfig())
+        context2.current_module_id = 1
+        context2.current_module_name = "test"
+
+        visitor1 = Visitor(context1)
+        visitor2 = Visitor(context2)
+
+        tree = ast.parse("a and b")
+        bool_node = tree.body[0].value
+
+        visitor1.visit_BoolOp(bool_node)
+        visitor2.visit_BoolOp(bool_node)
+
+        bool1 = next(e for e in context1.expressions.all() if e.kind == ExpressionKind.BOOL)
+        bool2 = next(e for e in context2.expressions.all() if e.kind == ExpressionKind.BOOL)
+
+        assert bool1.stable_id == bool2.stable_id

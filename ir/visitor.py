@@ -1196,3 +1196,145 @@ class Visitor:
             ast.NotIn: "not in",
         }
         return mapping.get(type(op))
+
+    def visit_BoolOp(self, node: ast.BoolOp) -> int | None:
+        """
+        Visit BoolOp node.
+
+        Returns:
+            expr_id of the emitted expression, or None on failure
+        """
+        module_id = self._context.current_module_id
+        if module_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-002",
+                message="No module_id set in context",
+                location_id=None,
+                module_id=None
+            )
+            return None
+
+        # Validate operator
+        op = self._bool_op_to_string(node.op)
+        if op is None:
+            self._diagnostics.add_error(
+                code="VISITOR-025",
+                message=f"Unsupported boolean operator: {type(node.op).__name__}",
+                location_id=None,
+                module_id=None
+            )
+            return None
+
+        # Validate values
+        if not node.values or len(node.values) < 2:
+            self._diagnostics.add_error(
+                code="VISITOR-026",
+                message="Boolean operation must have at least 2 values",
+                location_id=None,
+                module_id=None
+            )
+            return None
+
+        # Begin transaction
+        snapshot = self._emitter.begin_transaction()
+
+        parent_expr = self._context.expression_parent
+        ordinal = self._context.expression_ordinal
+
+        # Generate stable ID
+        module_path = self._context.current_module_name or "<module>"
+        stable_id = stable_expression_id(
+            module_path=module_path,
+            kind=ExpressionKind.BOOL,
+            identifier=f"boolop_{op}",
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+        )
+
+        # Emit parent expression (payload will be filled after children are verified)
+        expr_id = self._emitter.emit_expression(
+            kind=ExpressionKind.BOOL,
+            module_id=module_id,
+            parent_expr=parent_expr,
+            ordinal=ordinal,
+            location_id=UNRESOLVED_LOCATION_ID,
+            stable_id=stable_id,
+            payload={
+                "op": op,
+                "values": [],
+            },
+        )
+
+        previous_parent = self._context.expression_parent
+        previous_ordinal = self._context.expression_ordinal
+
+        values: list[int] = []
+        success = False
+
+        try:
+            self._context.expression_parent = expr_id
+            self._context.expression_ordinal = 0
+
+            # Visit all values (ordinals 0..N-1)
+            for i, value_node in enumerate(node.values):
+                self._context.expression_ordinal = i
+                value_expr_id = self.visit(value_node)
+                if value_expr_id is None:
+                    self._diagnostics.add_error(
+                        code="VISITOR-027",
+                        message=f"Failed to visit value {i} of boolean operation",
+                        location_id=None,
+                        module_id=None,
+                    )
+                    break
+                values.append(value_expr_id)
+
+            # Check if all children are valid
+            if len(values) != len(node.values):
+                self._emitter.rollback_transaction(snapshot)
+                self._diagnostics.add_error(
+                    code="VISITOR-028",
+                    message="Boolean operation has incomplete children",
+                    location_id=None,
+                    module_id=None,
+                )
+                return None
+
+            # All children are valid
+            success = True
+
+            # Update payload
+            self._emitter.update_expression_payload(
+                expr_id,
+                {
+                    "op": op,
+                    "values": values,
+                },
+            )
+            self._emitter.commit_transaction(snapshot)
+            return expr_id
+
+        except Exception:
+            # Rollback on any exception
+            self._emitter.rollback_transaction(snapshot)
+            self._diagnostics.add_error(
+                code="VISITOR-029",
+                message="Unexpected error during boolean operation",
+                location_id=None,
+                module_id=None,
+            )
+            return None
+
+        finally:
+            # Restore parent context
+            self._context.expression_parent = previous_parent
+            self._context.expression_ordinal = (
+                previous_ordinal + 1 if success else previous_ordinal
+            )
+
+    def _bool_op_to_string(self, op: ast.boolop) -> str | None:
+        mapping = {
+            ast.And: "and",
+            ast.Or: "or",
+        }
+        return mapping.get(type(op))
