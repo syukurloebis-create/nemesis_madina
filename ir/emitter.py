@@ -8,6 +8,7 @@ from .models import (
     Declaration, DeclarationKind,
     Symbol, SymbolKind, Visibility, SymbolOrigin,
     Statement, StatementKind,
+    Expression, ExpressionKind,
 )
 
 # Sentinel for unresolved location
@@ -228,3 +229,45 @@ class Emitter:
 
         self._context.statements.insert(statement)
         return stmt_id
+
+    def emit_expression(
+        self,
+        *,
+        kind: ExpressionKind,
+        module_id: int,
+        parent_expr: Optional[int],
+        ordinal: int,
+        location_id: int,
+        stable_id: str,
+        payload: dict,
+    ) -> int:
+        """
+        Emit an expression entity to the expression repository.
+
+        Args:
+            kind: ExpressionKind
+            module_id: Module ID
+            parent_expr: Parent expression ID (None for root)
+            ordinal: Child order within parent
+            location_id: Location ID
+            stable_id: Canonical stable ID
+            payload: Expression-specific payload
+
+        Returns:
+            expr_id (integer)
+        """
+        expr_id = self._context.expr_alloc.allocate()
+
+        expression = Expression(
+            expr_id=expr_id,
+            stable_id=stable_id,
+            kind=kind,
+            module_id=module_id,
+            parent_expr=parent_expr,
+            ordinal=ordinal,
+            location_id=location_id,
+            payload=payload,
+        )
+
+        self._context.expressions.insert(expression)
+        return expr_id

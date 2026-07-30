@@ -4,15 +4,14 @@ import ast
 from typing import Optional
 
 from .context import IRContext
-from .emitter import Emitter
+from .emitter import Emitter, UNRESOLVED_LOCATION_ID
+from .hashing import stable_expression_id
 from .models import (
     Scope,
     ScopeKind,
     StatementKind,
+    ExpressionKind,
 )
-
-# Sentinel for unresolved location
-UNRESOLVED_LOCATION_ID = 0
 
 
 class Visitor:
@@ -37,13 +36,13 @@ class Visitor:
         self._diagnostics = context.diagnostics
         self._emitter = Emitter(context)  # Thin layer
 
-    def visit(self, node: ast.AST) -> None:
+    def visit(self, node: ast.AST) -> int | None:
         """Visit an AST node and emit IR entities."""
         method_name = f"visit_{node.__class__.__name__}"
         method = getattr(self, method_name, self._visit_default)
-        method(node)
+        return method(node)
 
-    def _visit_default(self, node: ast.AST) -> None:
+    def _visit_default(self, node: ast.AST) -> int | None:
         """Default visitor for unsupported nodes."""
         self._diagnostics.add_warning(
             code="VISITOR-001",
@@ -51,6 +50,64 @@ class Visitor:
             location_id=None,
             module_id=None
         )
+        return None
+
+    def visit_Name(self, node: ast.Name) -> int | None:
+        """
+        Visit Name node.
+
+        Returns:
+            expr_id of the emitted expression, or None on failure
+        """
+        module_id = self._context.current_module_id
+        if module_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-002",
+                message="No module_id set in context",
+                location_id=None,
+                module_id=None
+            )
+            return None
+
+        # Determine context
+        ctx = "load"
+        if isinstance(node.ctx, ast.Store):
+            ctx = "store"
+        elif isinstance(node.ctx, ast.Del):
+            ctx = "del"
+
+        # Get parent and ordinal from context (managed by caller)
+        parent_expr = self._context.expression_parent
+        ordinal = self._context.expression_ordinal
+
+        # Generate stable ID
+        module_path = self._context.current_module_name or "<module>"
+        stable_id = stable_expression_id(
+            module_path=module_path,
+            kind=ExpressionKind.NAME,
+            identifier=node.id,
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+        )
+
+        # Emit expression
+        expr_id = self._emitter.emit_expression(
+            kind=ExpressionKind.NAME,
+            module_id=module_id,
+            parent_expr=parent_expr,
+            ordinal=ordinal,
+            location_id=UNRESOLVED_LOCATION_ID,  # Temporary
+            stable_id=stable_id,
+            payload={
+                "id": node.id,
+                "ctx": ctx,
+            },
+        )
+
+        # Increment ordinal for next sibling
+        self._context.expression_ordinal += 1
+
+        return expr_id
 
     def visit_Module(self, node: ast.Module) -> None:
         """

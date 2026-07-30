@@ -1,4 +1,5 @@
 ﻿import hashlib
+
 from pathlib import Path
 from typing import List, Tuple, Union, Optional
 from enum import Enum
@@ -77,12 +78,21 @@ def stable_statement_id(
 def stable_expression_id(
     module_path: str,
     kind: ExpressionKind,
-    qualname: str,
+    identifier: str,
     lineno: int,
     col_offset: int,
-    schema_version: Optional[str] = None,
+    schema_version: str = CURRENT_VERSION.schema,
 ) -> str:
-    return _stable_id_base(module_path, NodeCategory.EXPRESSION, kind, qualname, lineno, col_offset, schema_version)
+    """Generate stable ID for expression nodes."""
+    return _stable_id_base(
+        module_path=module_path,
+        category=NodeCategory.EXPRESSION,
+        kind=kind,
+        qualname=identifier,
+        lineno=lineno,
+        col_offset=col_offset,
+        schema_version=schema_version,
+    )
 
 
 def file_hash(file_path: Path, algorithm: str = DEFAULT_HASH_ALGORITHM) -> str:

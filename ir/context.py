@@ -1,20 +1,32 @@
 ﻿# ir/context.py
 
 from dataclasses import dataclass, field
-from typing import Optional, Dict, List
+from typing import Dict, List, Optional
 
 from .config import IRConfig
-from .allocators import (
-    ModuleAllocator, ScopeAllocator, SymbolAllocator,
-    DeclAllocator, StmtAllocator, ExprAllocator,
-    BlockAllocator, LocationAllocator
-)
-from .repositories import (
-    ModuleRepository, ScopeRepository, SymbolRepository,
-    DeclarationRepository, StatementRepository,
-    ExpressionRepository, BlockRepository, LocationRepository
-)
 from .diagnostics import DiagnosticCollector
+
+from .allocators import (
+    ModuleAllocator,
+    ScopeAllocator,
+    SymbolAllocator,
+    DeclAllocator,
+    StmtAllocator,
+    ExprAllocator,
+    BlockAllocator,
+    LocationAllocator,
+)
+
+from .repositories import (
+    ModuleRepository,
+    ScopeRepository,
+    SymbolRepository,
+    DeclarationRepository,
+    StatementRepository,
+    ExpressionRepository,
+    BlockRepository,
+    LocationRepository,
+)
 
 
 @dataclass
@@ -44,10 +56,18 @@ class IRContext:
     blocks: BlockRepository = field(default_factory=BlockRepository)
     locations: LocationRepository = field(default_factory=LocationRepository)
 
-    # State for visitor (single source of truth)
+    # State for visitor
     current_module_id: Optional[int] = None
+    current_module_name: Optional[str] = None  # NEW
     current_scope_id: Optional[int] = None
     current_block_id: Optional[int] = None
-    statement_ordinals: Dict[int, int] = field(default_factory=dict)  # scope_id → ordinal
+
+    # Statement ordinals per scope
+    statement_ordinals: Dict[int, int] = field(default_factory=dict)
+
+    # Expression state
     expression_parent: Optional[int] = None
+    expression_ordinal: int = 0
+
+    # Scope stack
     scope_stack: List[int] = field(default_factory=list)
