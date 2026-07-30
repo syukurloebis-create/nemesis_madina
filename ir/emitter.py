@@ -276,21 +276,19 @@ class Emitter:
         self,
         expr_id: int,
         payload: dict,
-    ) -> bool:
+    ) -> None:
         """
         Update an emitted expression payload.
 
         Args:
             expr_id: Expression ID to update
-            payload: Payload fields to merge
+            payload: New payload (replaces existing)
 
-        Returns:
-            True if updated successfully, False if expression not found
+        Raises:
+            KeyError: If expression not found
         """
         expression = self._context.expressions.get(expr_id)
-
         if expression is None:
-            return False
+            raise KeyError(f"Expression {expr_id} not found")
 
-        expression.payload.update(payload)
-        return True
+        expression.payload = payload

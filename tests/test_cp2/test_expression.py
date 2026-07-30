@@ -494,3 +494,191 @@ class TestExpressionIR:
         id1 = context1.expressions.all()[0].stable_id
         id2 = context2.expressions.all()[0].stable_id
         assert id1 == id2
+
+    # ============ CallExpr Tests ============
+
+    def test_call_empty(self):
+        """f() → CallExpr with empty args/keywords"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("f()")
+        call_node = tree.body[0].value
+        expr_id = visitor.visit_Call(call_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        call_expr = next(e for e in exprs if e.kind == ExpressionKind.CALL)
+        assert call_expr.payload["callee"] is not None
+        assert call_expr.payload["args"] == []
+        assert call_expr.payload["keywords"] == []
+
+    def test_call_positional(self):
+        """f(x) → CallExpr with positional arg"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("f(x)")
+        call_node = tree.body[0].value
+        expr_id = visitor.visit_Call(call_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        call_expr = next(e for e in exprs if e.kind == ExpressionKind.CALL)
+        assert len(call_expr.payload["args"]) == 1
+        assert call_expr.payload["keywords"] == []
+
+    def test_call_multiple_args(self):
+        """f(x, y) → CallExpr with ordered args"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("f(x, y)")
+        call_node = tree.body[0].value
+        expr_id = visitor.visit_Call(call_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        call_expr = next(e for e in exprs if e.kind == ExpressionKind.CALL)
+        assert len(call_expr.payload["args"]) == 2
+
+        # Verify order matches AST: x then y
+        arg0 = next(e for e in exprs if e.expr_id == call_expr.payload["args"][0])
+        arg1 = next(e for e in exprs if e.expr_id == call_expr.payload["args"][1])
+        assert arg0.payload["id"] == "x"
+        assert arg1.payload["id"] == "y"
+
+    def test_call_keyword(self):
+        """f(x, y=1) → CallExpr with keyword arg"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("f(x, y=1)")
+        call_node = tree.body[0].value
+        expr_id = visitor.visit_Call(call_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        call_expr = next(e for e in exprs if e.kind == ExpressionKind.CALL)
+        assert len(call_expr.payload["args"]) == 1
+        assert len(call_expr.payload["keywords"]) == 1
+        assert call_expr.payload["keywords"][0]["name"] == "y"
+
+    def test_call_kwargs(self):
+        """f(**kwargs) → CallExpr with keyword name:null"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("f(**kwargs)")
+        call_node = tree.body[0].value
+        expr_id = visitor.visit_Call(call_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        call_expr = next(e for e in exprs if e.kind == ExpressionKind.CALL)
+        assert len(call_expr.payload["keywords"]) == 1
+        assert call_expr.payload["keywords"][0]["name"] is None
+
+    def test_call_nested(self):
+        """f(g(x)) → CallExpr with nested CallExpr"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("f(g(x))")
+        call_node = tree.body[0].value
+        root_id = visitor.visit_Call(call_node)
+
+        assert root_id is not None
+
+        exprs = context.expressions.all()
+
+        # Root call: f(g(x))
+        root = next(e for e in exprs if e.expr_id == root_id)
+        assert root.kind == ExpressionKind.CALL
+        assert root.parent_expr is None
+
+        # Callee: f
+        callee_id = root.payload["callee"]
+        callee = next(e for e in exprs if e.expr_id == callee_id)
+        assert callee.kind == ExpressionKind.NAME
+        assert callee.payload["id"] == "f"
+        assert callee.parent_expr == root.expr_id
+
+        # Inner call: g(x)
+        inner_id = root.payload["args"][0]
+        inner = next(e for e in exprs if e.expr_id == inner_id)
+        assert inner.kind == ExpressionKind.CALL
+        assert inner.parent_expr == root.expr_id
+
+        # Inner callee: g
+        inner_callee_id = inner.payload["callee"]
+        inner_callee = next(e for e in exprs if e.expr_id == inner_callee_id)
+        assert inner_callee.kind == ExpressionKind.NAME
+        assert inner_callee.payload["id"] == "g"
+        assert inner_callee.parent_expr == inner.expr_id
+
+        # Inner arg: x
+        inner_arg_id = inner.payload["args"][0]
+        inner_arg = next(e for e in exprs if e.expr_id == inner_arg_id)
+        assert inner_arg.kind == ExpressionKind.NAME
+        assert inner_arg.payload["id"] == "x"
+        assert inner_arg.parent_expr == inner.expr_id
+
+    def test_call_child_ordinals(self):
+        """f(x, y) → CallExpr with correct child ordinals"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("f(x, y)")
+        call_node = tree.body[0].value
+        expr_id = visitor.visit_Call(call_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        call_expr = next(e for e in exprs if e.kind == ExpressionKind.CALL)
+
+        # Find children by expr_id
+        callee_id = call_expr.payload["callee"]
+        arg0_id = call_expr.payload["args"][0]
+        arg1_id = call_expr.payload["args"][1]
+
+        callee = next(e for e in exprs if e.expr_id == callee_id)
+        arg0 = next(e for e in exprs if e.expr_id == arg0_id)
+        arg1 = next(e for e in exprs if e.expr_id == arg1_id)
+
+        # Ordinals: callee=0, arg0=1, arg1=2
+        assert callee.ordinal == 0
+        assert arg0.ordinal == 1
+        assert arg1.ordinal == 2
+
+        # Parent relationships
+        assert callee.parent_expr == call_expr.expr_id
+        assert arg0.parent_expr == call_expr.expr_id
+        assert arg1.parent_expr == call_expr.expr_id

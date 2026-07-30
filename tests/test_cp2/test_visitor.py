@@ -2,16 +2,16 @@
 
 import ast
 
-from ir.context import IRContext
 from ir.config import IRConfig
-from ir.visitor import Visitor, UNRESOLVED_LOCATION_ID
+from ir.context import IRContext
 from ir.models import (
-    ScopeKind,
     DeclarationKind,
-    SymbolKind,
+    ScopeKind,
     StatementKind,
+    SymbolKind,
     Visibility,
 )
+from ir.visitor import UNRESOLVED_LOCATION_ID, Visitor
 
 
 class TestVisitor:
@@ -413,7 +413,6 @@ class TestVisitorFunction:
         # Class + Function + AsyncFunction (Assign ignored)
         assert len(symbols) == 3
 
-# tests/test_cp2/test_visitor.py (tambahan)
 
 class TestVisitorAssignment:
     def test_visit_assign_creates_statement(self):

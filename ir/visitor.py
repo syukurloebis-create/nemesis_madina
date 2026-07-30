@@ -599,7 +599,7 @@ class Visitor:
                 return expr_id
 
             # Update payload with base expr_id via Emitter
-            updated = self._emitter.update_expression_payload(
+            self._emitter.update_expression_payload(
                 expr_id,
                 {
                     "base": base_expr_id,
@@ -608,17 +608,122 @@ class Visitor:
                 },
             )
 
-            if not updated:
-                self._diagnostics.add_error(
-                    code="VISITOR-006",
-                    message=f"Expression {expr_id} not found for payload update",
-                    location_id=None,
-                    module_id=None
-                )
-
             return expr_id
 
         finally:
             # Restore parent context
             self._context.expression_parent = previous_parent
             self._context.expression_ordinal = previous_ordinal + 1
+
+    def visit_Call(self, node: ast.Call) -> int | None:
+        """
+        Visit Call node.
+
+        Returns:
+            expr_id of the emitted expression, or None on failure
+        """
+        module_id = self._context.current_module_id
+        if module_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-002",
+                message="No module_id set in context",
+                location_id=None,
+                module_id=None
+            )
+            return None
+
+        parent_expr = self._context.expression_parent
+        ordinal = self._context.expression_ordinal
+
+        # Generate stable ID for the call expression itself
+        module_path = self._context.current_module_name or "<module>"
+        stable_id = stable_expression_id(
+            module_path=module_path,
+            kind=ExpressionKind.CALL,
+            identifier="call",
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+        )
+
+        # Emit call expression (payload will be filled after visiting children)
+        expr_id = self._emitter.emit_expression(
+            kind=ExpressionKind.CALL,
+            module_id=module_id,
+            parent_expr=parent_expr,
+            ordinal=ordinal,
+            location_id=UNRESOLVED_LOCATION_ID,
+            stable_id=stable_id,
+            payload={
+                "callee": None,
+                "args": [],
+                "keywords": [],
+            },
+        )
+
+        previous_parent = self._context.expression_parent
+        previous_ordinal = self._context.expression_ordinal
+
+        try:
+            self._context.expression_parent = expr_id
+            self._context.expression_ordinal = 0  # Reset for children
+
+            # 1. Visit callee (ordinal 0)
+            callee_expr_id = self.visit(node.func)
+            if callee_expr_id is None:
+                self._diagnostics.add_error(
+                    code="VISITOR-007",
+                    message="Failed to visit callee expression",
+                    location_id=None,
+                    module_id=None,
+                )
+                return expr_id
+
+            # Children increment ordinal themselves; no manual increment here
+
+            # 2. Visit args (ordinals 1..N) — fail-fast
+            args_ids: list[int] = []
+            for arg in node.args:
+                arg_expr_id = self.visit(arg)
+                if arg_expr_id is None:
+                    self._diagnostics.add_error(
+                        code="VISITOR-008",
+                        message="Failed to visit call argument",
+                        location_id=None,
+                        module_id=module_id,
+                    )
+                    return expr_id
+                args_ids.append(arg_expr_id)
+
+            # 3. Visit keywords (ordinals N+1..M) — fail-fast
+            keywords: list[dict] = []
+            for kw in node.keywords:
+                if kw.value is not None:
+                    kw_value_id = self.visit(kw.value)
+                    if kw_value_id is None:
+                        self._diagnostics.add_error(
+                            code="VISITOR-009",
+                            message="Failed to visit keyword value",
+                            location_id=None,
+                            module_id=module_id,
+                        )
+                        return expr_id
+                    keywords.append({
+                        "name": kw.arg,
+                        "value": kw_value_id,
+                    })
+
+            # Update payload via Emitter
+            self._emitter.update_expression_payload(
+                expr_id,
+                {
+                    "callee": callee_expr_id,
+                    "args": args_ids,
+                    "keywords": keywords,
+                },
+            )
+
+        finally:
+            self._context.expression_parent = previous_parent
+            self._context.expression_ordinal = previous_ordinal + 1
+
+        return expr_id
