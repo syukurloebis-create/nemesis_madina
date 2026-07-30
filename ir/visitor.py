@@ -1,7 +1,7 @@
 ﻿# ir/visitor.py
 
 import ast
-from typing import Optional
+from typing import Any, Optional
 
 from .context import IRContext
 from .emitter import Emitter, UNRESOLVED_LOCATION_ID
@@ -439,3 +439,90 @@ class Visitor:
             payload=payload,
             location_id=UNRESOLVED_LOCATION_ID,
         )
+
+    def visit_Constant(self, node: ast.Constant) -> int | None:
+        """
+        Visit Constant node.
+
+        Returns:
+            expr_id of the emitted expression, or None on failure
+        """
+        module_id = self._context.current_module_id
+        if module_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-002",
+                message="No module_id set in context",
+                location_id=None,
+                module_id=None
+            )
+            return None
+
+        parent_expr = self._context.expression_parent
+        ordinal = self._context.expression_ordinal
+
+        # Determine value_type and canonical value
+        value = node.value
+        value_type: str
+        canonical_value: Any
+
+        if value is None:
+            value_type = "none"
+            canonical_value = None
+        elif isinstance(value, bool):
+            value_type = "bool"
+            canonical_value = value
+        elif isinstance(value, int):
+            value_type = "int"
+            canonical_value = value
+        elif isinstance(value, float):
+            value_type = "float"
+            canonical_value = value
+        elif isinstance(value, complex):
+            value_type = "complex"
+            canonical_value = [value.real, value.imag]
+        elif isinstance(value, str):
+            value_type = "str"
+            canonical_value = value
+        elif isinstance(value, bytes):
+            value_type = "bytes"
+            canonical_value = value.hex()
+        elif value is Ellipsis:
+            value_type = "ellipsis"
+            canonical_value = None
+        else:
+            self._diagnostics.add_warning(
+                code="VISITOR-004",
+                message=f"Unsupported constant type: {type(value).__name__}",
+                location_id=None,
+                module_id=None
+            )
+            return None
+
+        # Generate stable ID with canonical identifier
+        identifier = f"{value_type}:{canonical_value!r}"
+        module_path = self._context.current_module_name or "<module>"
+        stable_id = stable_expression_id(
+            module_path=module_path,
+            kind=ExpressionKind.CONSTANT,
+            identifier=identifier,
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+        )
+
+        # Emit expression
+        expr_id = self._emitter.emit_expression(
+            kind=ExpressionKind.CONSTANT,
+            module_id=module_id,
+            parent_expr=parent_expr,
+            ordinal=ordinal,
+            location_id=UNRESOLVED_LOCATION_ID,
+            stable_id=stable_id,
+            payload={
+                "value": canonical_value,
+                "value_type": value_type,
+            },
+        )
+
+        self._context.expression_ordinal += 1
+        return expr_id
+
