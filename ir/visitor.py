@@ -878,3 +878,135 @@ class Visitor:
             # Restore parent context regardless of success
             self._context.expression_parent = previous_parent
             self._context.expression_ordinal = previous_ordinal + 1
+
+    def visit_UnaryOp(self, node: ast.UnaryOp) -> int | None:
+        """
+        Visit UnaryOp node.
+
+        Returns:
+            expr_id of the emitted expression, or None on failure
+        """
+        module_id = self._context.current_module_id
+        if module_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-002",
+                message="No module_id set in context",
+                location_id=None,
+                module_id=None
+            )
+            return None
+
+        # Validate operator
+        op = self._unary_op_to_string(node.op)
+        if op is None:
+            self._diagnostics.add_error(
+                code="VISITOR-015",
+                message=f"Unsupported unary operator: {type(node.op).__name__}",
+                location_id=None,
+                module_id=None
+            )
+            return None
+
+        # Begin transaction
+        snapshot = self._emitter.begin_transaction()
+
+        parent_expr = self._context.expression_parent
+        ordinal = self._context.expression_ordinal
+
+        # Generate stable ID
+        module_path = self._context.current_module_name or "<module>"
+        stable_id = stable_expression_id(
+            module_path=module_path,
+            kind=ExpressionKind.UNARY,
+            identifier=f"unaryop_{op}",
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+        )
+
+        # Emit parent expression (payload will be filled after child is verified)
+        expr_id = self._emitter.emit_expression(
+            kind=ExpressionKind.UNARY,
+            module_id=module_id,
+            parent_expr=parent_expr,
+            ordinal=ordinal,
+            location_id=UNRESOLVED_LOCATION_ID,
+            stable_id=stable_id,
+            payload={
+                "op": op,
+                "operand": None,
+            },
+        )
+
+        previous_parent = self._context.expression_parent
+        previous_ordinal = self._context.expression_ordinal
+
+        operand_expr_id: int | None = None
+        success = False
+
+        try:
+            self._context.expression_parent = expr_id
+            self._context.expression_ordinal = 0
+
+            # Visit operand (ordinal 0)
+            operand_expr_id = self.visit(node.operand)
+            if operand_expr_id is None:
+                self._diagnostics.add_error(
+                    code="VISITOR-016",
+                    message="Failed to visit operand of unary operation",
+                    location_id=None,
+                    module_id=None,
+                )
+                success = False
+            else:
+                success = True
+
+            # Only commit if operand is valid
+            if success and operand_expr_id is not None:
+                self._emitter.update_expression_payload(
+                    expr_id,
+                    {
+                        "op": op,
+                        "operand": operand_expr_id,
+                    },
+                )
+                self._emitter.commit_transaction(snapshot)
+                return expr_id
+            else:
+                # Rollback entire transaction
+                self._emitter.rollback_transaction(snapshot)
+                self._diagnostics.add_error(
+                    code="VISITOR-017",
+                    message="Unary operation has incomplete operand",
+                    location_id=None,
+                    module_id=None,
+                )
+                return None
+
+        except Exception:
+            # Rollback on any exception
+            self._emitter.rollback_transaction(snapshot)
+            self._diagnostics.add_error(
+                code="VISITOR-018",
+                message="Unexpected error during unary operation",
+                location_id=None,
+                module_id=None,
+            )
+            return None
+
+        finally:
+            # Restore parent context
+            # On success: ordinal advances
+            # On failure: ordinal stays the same (no expression emitted)
+            self._context.expression_parent = previous_parent
+            self._context.expression_ordinal = (
+                previous_ordinal + 1 if success else previous_ordinal
+            )
+
+    def _unary_op_to_string(self, op: ast.unaryop) -> str | None:
+        mapping = {
+            ast.Not: "not",
+            ast.UAdd: "+",
+            ast.USub: "-",
+            ast.Invert: "~",
+        }
+        return mapping.get(type(op))

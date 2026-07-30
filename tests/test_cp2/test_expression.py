@@ -871,3 +871,191 @@ class TestExpressionIR:
         # Should have error diagnostics
         errors = context.diagnostics.get_errors()
         assert any(e.code == "VISITOR-013" for e in errors)
+
+    # ============ UnaryExpr Tests ============
+
+    def test_unary_not(self):
+        """not a → UnaryExpr"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("not a")
+        unary_node = tree.body[0].value
+        expr_id = visitor.visit_UnaryOp(unary_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        unary_expr = next(e for e in exprs if e.kind == ExpressionKind.UNARY)
+        assert unary_expr.payload["op"] == "not"
+        assert unary_expr.payload["operand"] is not None
+
+    def test_unary_usub(self):
+        """-a → UnaryExpr"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("-a")
+        unary_node = tree.body[0].value
+        expr_id = visitor.visit_UnaryOp(unary_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        unary_expr = next(e for e in exprs if e.kind == ExpressionKind.UNARY)
+        assert unary_expr.payload["op"] == "-"
+
+    def test_unary_uadd(self):
+        """+a → UnaryExpr"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("+a")
+        unary_node = tree.body[0].value
+        expr_id = visitor.visit_UnaryOp(unary_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        unary_expr = next(e for e in exprs if e.kind == ExpressionKind.UNARY)
+        assert unary_expr.payload["op"] == "+"
+
+    def test_unary_invert(self):
+        """~a → UnaryExpr"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("~a")
+        unary_node = tree.body[0].value
+        expr_id = visitor.visit_UnaryOp(unary_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        unary_expr = next(e for e in exprs if e.kind == ExpressionKind.UNARY)
+        assert unary_expr.payload["op"] == "~"
+
+    def test_unary_parent_child(self):
+        """UnaryExpr parent-child relationship"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("not a")
+        unary_node = tree.body[0].value
+        expr_id = visitor.visit_UnaryOp(unary_node)
+
+        assert expr_id is not None
+
+        exprs = context.expressions.all()
+        unary_expr = next(e for e in exprs if e.kind == ExpressionKind.UNARY)
+
+        # Verify operand
+        operand_id = unary_expr.payload["operand"]
+        operand = next(e for e in exprs if e.expr_id == operand_id)
+        assert operand.kind == ExpressionKind.NAME
+        assert operand.payload["id"] == "a"
+        assert operand.parent_expr == unary_expr.expr_id
+        assert operand.ordinal == 0
+
+    def test_unary_ordinal_on_success(self):
+        """UnaryExpr ordinal advances on success"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        # Set initial ordinal
+        context.expression_ordinal = 5
+
+        tree = ast.parse("not a")
+        unary_node = tree.body[0].value
+        expr_id = visitor.visit_UnaryOp(unary_node)
+
+        assert expr_id is not None
+        # Ordinal should advance (success case)
+        assert context.expression_ordinal == 6
+
+    def test_unary_ordinal_on_failure(self):
+        """UnaryExpr ordinal does NOT advance on failure"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        # Set initial ordinal
+        context.expression_ordinal = 5
+
+        # Tuple is not supported in VS2 yet, causing failure
+        tree = ast.parse("not (1, 2)")
+        unary_node = tree.body[0].value
+        expr_id = visitor.visit_UnaryOp(unary_node)
+
+        assert expr_id is None
+        # Ordinal should NOT advance (failure case)
+        assert context.expression_ordinal == 5
+
+    def test_unary_fail_closed(self):
+        """UnaryExpr should be fail-closed: no malformed Expression remains."""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        # Tuple is not supported in VS2 yet, causing failure
+        tree = ast.parse("not (1, 2)")
+        unary_node = tree.body[0].value
+        expr_id = visitor.visit_UnaryOp(unary_node)
+
+        # Should return None (no expression emitted)
+        assert expr_id is None
+
+        # No UnaryExpr should remain in repository
+        exprs = context.expressions.all()
+        unary_exprs = [e for e in exprs if e.kind == ExpressionKind.UNARY]
+        assert len(unary_exprs) == 0
+
+        # Should have error diagnostics
+        errors = context.diagnostics.get_errors()
+        assert any(e.code == "VISITOR-017" for e in errors)
+
+    def test_unary_stable_id_deterministic(self):
+        """Stable ID for UnaryExpr should be deterministic"""
+        context1 = IRContext(config=IRConfig())
+        context1.current_module_id = 1
+        context1.current_module_name = "test"
+
+        context2 = IRContext(config=IRConfig())
+        context2.current_module_id = 1
+        context2.current_module_name = "test"
+
+        visitor1 = Visitor(context1)
+        visitor2 = Visitor(context2)
+
+        tree = ast.parse("not a")
+        unary_node = tree.body[0].value
+
+        visitor1.visit_UnaryOp(unary_node)
+        visitor2.visit_UnaryOp(unary_node)
+
+        unary1 = next(e for e in context1.expressions.all() if e.kind == ExpressionKind.UNARY)
+        unary2 = next(e for e in context2.expressions.all() if e.kind == ExpressionKind.UNARY)
+
+        assert unary1.stable_id == unary2.stable_id
