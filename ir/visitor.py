@@ -1,7 +1,7 @@
 ﻿# ir/visitor.py
 
 import ast
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from .context import IRContext
 from .emitter import Emitter, UNRESOLVED_LOCATION_ID
@@ -12,6 +12,13 @@ from .models import (
     StatementKind,
     ExpressionKind,
 )
+
+ComprehensionNode = Union[
+    ast.ListComp,
+    ast.SetComp,
+    ast.DictComp,
+    ast.GeneratorExp,
+]
 
 
 class Visitor:
@@ -1960,3 +1967,169 @@ class Visitor:
 
     def visit_Dict(self, node: ast.Dict) -> int | None:
         return self._visit_container(node, "dict")
+
+    def visit_ListComp(self, node: ast.ListComp) -> int | None:
+        """Visit Python AST ListComp node."""
+        return self._visit_comprehension_common(node, "list_comp", has_key=False)
+
+    def visit_SetComp(self, node: ast.SetComp) -> int | None:
+        """Visit Python AST SetComp node."""
+        return self._visit_comprehension_common(node, "set_comp", has_key=False)
+
+    def visit_GeneratorExp(self, node: ast.GeneratorExp) -> int | None:
+        """Visit Python AST GeneratorExp node."""
+        return self._visit_comprehension_common(node, "generator_exp", has_key=False)
+
+    def visit_DictComp(self, node: ast.DictComp) -> int | None:
+        """Visit Python AST DictComp node."""
+        return self._visit_comprehension_common(node, "dict_comp", has_key=True)
+
+    def _visit_comprehension_common(
+        self,
+        node: ComprehensionNode,
+        comp_kind: str,
+        has_key: bool,
+    ) -> int | None:
+        module_id = self._context.current_module_id
+    
+        if module_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-002",
+                message="No module_id set in context",
+                location_id=None,
+                module_id=None,
+            )
+            return None
+    
+        # Validate kind matches AST type
+        expected_dict = isinstance(node, ast.DictComp)
+        if expected_dict != has_key:
+            raise ValueError(f"Comprehension kind/AST mismatch: {comp_kind} vs {type(node).__name__}")
+    
+        snapshot = self._emitter.begin_transaction()
+        previous_parent = self._context.expression_parent
+        previous_ordinal = self._context.expression_ordinal
+        success = False
+    
+        try:
+            # Generate stable ID
+            module_path = self._context.current_module_name or "<module>"
+        
+            stable_id = stable_expression_id(
+                module_path=module_path,
+                kind=ExpressionKind.COMPREHENSION,
+                identifier=f"comp_{comp_kind}",
+                lineno=getattr(node, 'lineno', 0),
+                col_offset=getattr(node, 'col_offset', 0),
+            )
+        
+            # Emit comprehension parent FIRST
+            expr_id = self._emitter.emit_expression(
+                kind=ExpressionKind.COMPREHENSION,
+                module_id=module_id,
+                parent_expr=previous_parent,
+                ordinal=previous_ordinal,
+                location_id=UNRESOLVED_LOCATION_ID,
+                stable_id=stable_id,
+                payload={
+                    "kind": comp_kind,
+                    "generators": [],
+                }
+            )
+        
+            # Set context for children
+            self._context.expression_parent = expr_id
+            self._context.expression_ordinal = 0
+        
+            # Visit primary expression(s) - use isinstance narrowing
+            primary_exprs: dict[str, int] = {}
+        
+            if isinstance(node, ast.DictComp):
+                # DictComp: visit key then value
+                key_id = self.visit(node.key)
+                if key_id is None:
+                    raise ValueError("Failed to emit dict key")
+                primary_exprs["key"] = key_id
+            
+                value_id = self.visit(node.value)
+                if value_id is None:
+                    raise ValueError("Failed to emit dict value")
+                primary_exprs["value"] = value_id
+            else:
+                # ListComp/SetComp/GeneratorExp: visit element
+                # Type narrowing: node has 'elt' attribute for these types
+                element_id = self.visit(node.elt)
+                if element_id is None:
+                    raise ValueError("Failed to emit comprehension element")
+                primary_exprs["element"] = element_id
+        
+            # Visit generators
+            generator_data: list[dict[str, Any]] = []
+            for gen_node in node.generators:
+                # Visit target
+                target_id = self.visit(gen_node.target)
+                if target_id is None:
+                    raise ValueError("Failed to emit generator target")
+            
+                # Visit iterable
+                iter_id = self.visit(gen_node.iter)
+                if iter_id is None:
+                    raise ValueError("Failed to emit generator iterable")
+            
+                # Visit ifs
+                if_ids: list[int] = []
+                for if_node in gen_node.ifs:
+                    if_id = self.visit(if_node)
+                    if if_id is None:
+                        raise ValueError("Failed to emit generator if condition")
+                    if_ids.append(if_id)
+            
+                # Store generator metadata
+                is_async = bool(getattr(gen_node, "is_async", False))
+                generator_data.append({
+                    "target": target_id,
+                    "iter": iter_id,
+                    "ifs": if_ids,
+                    "is_async": is_async,
+                })
+        
+            # Build complete payload with explicit type
+            payload: dict[str, Any] = {
+                "kind": comp_kind,
+                "generators": generator_data,
+            }
+        
+            if isinstance(node, ast.DictComp):
+                payload["key"] = primary_exprs["key"]
+                payload["value"] = primary_exprs["value"]
+            else:
+                payload["element"] = primary_exprs["element"]
+        
+            # Update payload
+            self._emitter.update_expression_payload(expr_id, payload)
+        
+            # Commit transaction
+            self._emitter.commit_transaction(snapshot)
+            success = True
+            return expr_id
+        
+        except Exception:
+            # Rollback entire transaction
+            self._emitter.rollback_transaction(snapshot)
+        
+            # Add failure diagnostic
+            self._diagnostics.add_error(
+                code="VISITOR-055",
+                message="Unexpected error during comprehension construction",
+                location_id=None,
+                module_id=module_id,
+            )
+            return None
+        
+        finally:
+            # Restore parent context
+            self._context.expression_parent = previous_parent
+            # Restore ordinal: increment on success, keep on failure
+            self._context.expression_ordinal = (
+                previous_ordinal + 1 if success else previous_ordinal
+            )

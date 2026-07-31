@@ -7,7 +7,6 @@ from ir.config import IRConfig
 from ir.visitor import Visitor
 from ir.models import ExpressionKind
 
-
 class TestExpressionIR:
     def _get_unsupported_lambda(self) -> ast.Lambda:
         """Create an unsupported Lambda node with valid source location."""
@@ -2158,3 +2157,331 @@ class TestExpressionIR:
         exprs = context.expressions.all()
         cont_expr = next(e for e in exprs if e.kind == ExpressionKind.CONTAINER)
         assert cont_expr.payload["ctx"] == "store"
+
+class TestComprehensionExpr:
+    """Test ComprehensionExpr per CP2.4-VS3-D contract."""
+
+    def _create_visitor(self):
+        """Helper to create a configured visitor."""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+        return Visitor(context), context
+
+    def _create_valid_parent(self, visitor, context):
+        """Create a valid parent expression for ordinal tests."""
+        parent_id = visitor._emitter.emit_expression(
+            kind=ExpressionKind.CONSTANT,
+            module_id=1,
+            parent_expr=None,
+            ordinal=0,
+            location_id=0,
+            stable_id="test_parent_stable",
+            payload={"value": 0, "value_type": "int"},
+        )
+        return parent_id
+
+    def test_list_comp_simple(self):
+        """Simple list comprehension: [x for x in range(10)]"""
+        visitor, context = self._create_visitor()
+        
+        source = "[x for x in range(10)]"
+        tree = ast.parse(source)
+        node = tree.body[0].value
+        
+        expr_id = visitor.visit(node)
+        assert expr_id is not None
+        
+        expr = context.expressions.get(expr_id)
+        assert expr is not None
+        assert expr.kind == ExpressionKind.COMPREHENSION
+        assert expr.payload['kind'] == 'list_comp'
+        
+        # Verify element ordinal = 0
+        element_id = expr.payload['element']
+        element = context.expressions.get(element_id)
+        assert element.ordinal == 0
+        assert element.parent_expr == expr_id
+        
+        # Verify generator children
+        gen = expr.payload['generators'][0]
+        
+        target = context.expressions.get(gen['target'])
+        assert target.ordinal == 1
+        assert target.parent_expr == expr_id
+        
+        iter_expr = context.expressions.get(gen['iter'])
+        assert iter_expr.ordinal == 2
+        assert iter_expr.parent_expr == expr_id
+        
+        assert len(gen['ifs']) == 0
+        assert not gen["is_async"]
+
+    def test_dict_comp_ordinals(self):
+        """Dict comprehension: key(0), value(1), target(2), iter(3)"""
+        visitor, context = self._create_visitor()
+        
+        source = "{k: v for k in keys for v in values}"
+        tree = ast.parse(source)
+        node = tree.body[0].value
+        
+        expr_id = visitor.visit(node)
+        assert expr_id is not None
+        
+        expr = context.expressions.get(expr_id)
+        assert expr.payload['kind'] == 'dict_comp'
+        
+        # Verify ordinals
+        key = context.expressions.get(expr.payload['key'])
+        assert key.ordinal == 0
+        assert key.parent_expr == expr_id
+        
+        value = context.expressions.get(expr.payload['value'])
+        assert value.ordinal == 1
+        assert value.parent_expr == expr_id
+        
+        # First generator
+        gen0 = expr.payload['generators'][0]
+        target0 = context.expressions.get(gen0['target'])
+        assert target0.ordinal == 2
+        assert target0.parent_expr == expr_id
+        
+        iter0 = context.expressions.get(gen0['iter'])
+        assert iter0.ordinal == 3
+        assert iter0.parent_expr == expr_id
+        
+        # Second generator
+        gen1 = expr.payload['generators'][1]
+        target1 = context.expressions.get(gen1['target'])
+        assert target1.ordinal == 4
+        assert target1.parent_expr == expr_id
+        
+        iter1 = context.expressions.get(gen1['iter'])
+        assert iter1.ordinal == 5
+        assert iter1.parent_expr == expr_id
+
+    def test_multiple_ifs_ordinals(self):
+        """Multiple ifs: element(0), target(1), iter(2), if0(3), if1(4)"""
+        visitor, context = self._create_visitor()
+        
+        source = "[x for x in range(10) if x > 2 if x < 7]"
+        tree = ast.parse(source)
+        node = tree.body[0].value
+        
+        expr_id = visitor.visit(node)
+        assert expr_id is not None
+        
+        expr = context.expressions.get(expr_id)
+        gen = expr.payload['generators'][0]
+        
+        element = context.expressions.get(expr.payload['element'])
+        assert element.ordinal == 0
+        
+        target = context.expressions.get(gen['target'])
+        assert target.ordinal == 1
+        
+        iter_expr = context.expressions.get(gen['iter'])
+        assert iter_expr.ordinal == 2
+        
+        if0 = context.expressions.get(gen['ifs'][0])
+        assert if0.ordinal == 3
+        
+        if1 = context.expressions.get(gen['ifs'][1])
+        assert if1.ordinal == 4
+
+    def test_transaction_rollback_on_failure(self):
+        """Test transaction rollback when comprehension construction fails."""
+        visitor, context = self._create_visitor()
+        
+        # Use valid AST but with unsupported child
+        source = "[x for x in range(10)]"
+        tree = ast.parse(source)
+        node = tree.body[0].value
+        
+        # Replace elt with unsupported Lambda (using direct AST construction)
+        unsupported_tree = ast.parse("lambda: 1")
+        node.elt = unsupported_tree.body[0].value
+        
+        # Capture initial state
+        before_expr_ids = {expr.expr_id for expr in context.expressions.all()}
+        before_parent = context.expression_parent
+        before_ordinal = context.expression_ordinal
+        
+        # Visit should fail
+        expr_id = visitor.visit(node)
+        assert expr_id is None
+        
+        # Verify state restored
+        after_expr_ids = {expr.expr_id for expr in context.expressions.all()}
+        assert after_expr_ids == before_expr_ids
+        assert context.expression_parent == before_parent
+        assert context.expression_ordinal == before_ordinal
+
+    def test_parent_ordinal_preserved_on_failure(self):
+        """Test parent ordinal is preserved on failure."""
+        visitor, context = self._create_visitor()
+        
+        # Create valid parent
+        parent_id = self._create_valid_parent(visitor, context)
+        
+        # Set context with valid parent
+        context.expression_parent = parent_id
+        context.expression_ordinal = 42
+        
+        # Force failure with unsupported node
+        source = "[x for x in range(10)]"
+        tree = ast.parse(source)
+        node = tree.body[0].value
+        unsupported_tree = ast.parse("lambda: 1")
+        node.elt = unsupported_tree.body[0].value
+        
+        visitor.visit(node)
+        
+        # Verify ordinal and parent unchanged
+        assert context.expression_parent == parent_id
+        assert context.expression_ordinal == 42
+
+    def test_stable_id_deterministic(self):
+        """Test stable IDs are deterministic across fresh contexts."""
+        source = "[x for x in range(10)]"
+        node = ast.parse(source).body[0].value
+        
+        # Visit twice with fresh contexts
+        visitor1, context1 = self._create_visitor()
+        visitor2, context2 = self._create_visitor()
+        
+        id1 = visitor1.visit(node)
+        id2 = visitor2.visit(node)
+        
+        assert id1 is not None
+        assert id2 is not None
+        
+        expr1 = context1.expressions.get(id1)
+        expr2 = context2.expressions.get(id2)
+        
+        # Stable IDs should be identical
+        assert expr1.stable_id == expr2.stable_id
+
+    def test_no_scope_emission(self):
+        """Verify VS3-D does NOT emit Scope."""
+        visitor, context = self._create_visitor()
+        
+        source = "[x for x in range(10)]"
+        tree = ast.parse(source)
+        node = tree.body[0].value
+        
+        expr_id = visitor.visit(node)
+        assert expr_id is not None
+        
+        expr = context.expressions.get(expr_id)
+        assert expr is not None
+        
+        # Verify no scope fields in payload
+        assert "scope" not in expr.payload
+        
+        # Verify no expression has scope_kind attribute
+        for emitted in context.expressions.all():
+            assert not hasattr(emitted, "scope_kind")
+
+    def test_nested_comprehension_parent(self):
+        """Test nested comprehension parent reference."""
+        visitor, context = self._create_visitor()
+        
+        source = "[x for x in [y for y in range(5)]]"
+        tree = ast.parse(source)
+        node = tree.body[0].value
+        
+        outer_id = visitor.visit(node)
+        assert outer_id is not None
+        
+        outer = context.expressions.get(outer_id)
+        
+        # Inner comprehension should be the iterable of outer's first generator
+        gen0 = outer.payload['generators'][0]
+        inner_id = gen0['iter']
+        inner = context.expressions.get(inner_id)
+        
+        # Inner comprehension's parent should be the outer comprehension
+        assert inner.parent_expr == outer_id
+        assert inner.kind == ExpressionKind.COMPREHENSION
+        
+        # Verify transitive closure: inner's children are not direct children of outer
+        inner_children = []
+        for gen in inner.payload['generators']:
+            inner_children.append(gen['target'])
+            inner_children.append(gen['iter'])
+            inner_children.extend(gen['ifs'])
+        
+        for child_id in inner_children:
+            child = context.expressions.get(child_id)
+            # These children should belong to inner, not outer
+            assert child.parent_expr == inner_id
+            assert child.parent_expr != outer_id
+
+    def test_generator_exp(self):
+        """Test generator expression: (x for x in range(10))"""
+        visitor, context = self._create_visitor()
+        
+        source = "(x for x in range(10))"
+        tree = ast.parse(source)
+        node = tree.body[0].value
+        
+        expr_id = visitor.visit(node)
+        assert expr_id is not None
+        
+        expr = context.expressions.get(expr_id)
+        assert expr.payload['kind'] == 'generator_exp'
+        assert 'element' in expr.payload
+        assert len(expr.payload['generators']) == 1
+
+    def test_set_comp_with_if(self):
+        """Test set comprehension with if condition."""
+        visitor, context = self._create_visitor()
+        
+        source = "{x for x in range(10) if x % 2 == 0}"
+        tree = ast.parse(source)
+        node = tree.body[0].value
+        
+        expr_id = visitor.visit(node)
+        assert expr_id is not None
+        
+        expr = context.expressions.get(expr_id)
+        assert expr.payload['kind'] == 'set_comp'
+        
+        gen = expr.payload['generators'][0]
+        assert len(gen['ifs']) == 1
+        
+        # Verify all children have correct parent
+        element = context.expressions.get(expr.payload['element'])
+        assert element.parent_expr == expr_id
+        
+        target = context.expressions.get(gen['target'])
+        assert target.parent_expr == expr_id
+        
+        iter_expr = context.expressions.get(gen['iter'])
+        assert iter_expr.parent_expr == expr_id
+        
+        if_expr = context.expressions.get(gen['ifs'][0])
+        assert if_expr.parent_expr == expr_id
+
+    def test_async_generator(self):
+        """Test async generator in comprehension within async function."""
+        visitor, context = self._create_visitor()
+        
+        # Parse async generator in proper async context
+        source = """
+async def f():
+    return [x async for x in async_stream()]
+"""
+        tree = ast.parse(source)
+        # Navigate: Module -> AsyncFunctionDef -> Return -> ListComp
+        async_func = tree.body[0]
+        return_stmt = async_func.body[0]
+        node = return_stmt.value
+        
+        expr_id = visitor.visit(node)
+        assert expr_id is not None
+        
+        expr = context.expressions.get(expr_id)
+        gen = expr.payload['generators'][0]
+        assert gen["is_async"]
