@@ -9,6 +9,11 @@ from ir.models import ExpressionKind
 
 
 class TestExpressionIR:
+    def _get_unsupported_lambda(self) -> ast.Lambda:
+        """Create an unsupported Lambda node with valid source location."""
+        tree = ast.parse("lambda: 1")
+        return tree.body[0].value
+
     def test_name_expr_load(self):
         """NameExpr with load context."""
         context = IRContext(config=IRConfig())
@@ -855,22 +860,21 @@ class TestExpressionIR:
 
         visitor = Visitor(context)
 
-        # Tuple is not supported in VS2 yet, causing failure
-        tree = ast.parse("a + (1, 2)")
+        before_count = context.expressions.count()
+
+        tree = ast.parse("a + (lambda: 1)")
         binop_node = tree.body[0].value
+
         expr_id = visitor.visit_BinOp(binop_node)
 
-        # Should return None (no expression emitted)
         assert expr_id is None
+        assert context.expressions.count() == before_count
 
-        # No BinaryExpr should remain in repository
-        exprs = context.expressions.all()
-        bin_exprs = [e for e in exprs if e.kind == ExpressionKind.BINARY]
+        bin_exprs = [e for e in context.expressions.all() if e.kind == ExpressionKind.BINARY]
         assert len(bin_exprs) == 0
 
-        # Should have error diagnostics
         errors = context.diagnostics.get_errors()
-        assert any(e.code == "VISITOR-013" for e in errors)
+        assert any(e.code == "VISITOR-012" for e in errors)
 
     # ============ UnaryExpr Tests ============
 
@@ -999,16 +1003,20 @@ class TestExpressionIR:
 
         visitor = Visitor(context)
 
-        # Set initial ordinal
         context.expression_ordinal = 5
 
-        # Tuple is not supported in VS2 yet, causing failure
-        tree = ast.parse("not (1, 2)")
-        unary_node = tree.body[0].value
+        lambda_node = self._get_unsupported_lambda()
+
+        unary_node = ast.UnaryOp(
+            op=ast.Not(),
+            operand=lambda_node,
+            lineno=1,
+            col_offset=0,
+        )
+
         expr_id = visitor.visit_UnaryOp(unary_node)
 
         assert expr_id is None
-        # Ordinal should NOT advance (failure case)
         assert context.expression_ordinal == 5
 
     def test_unary_fail_closed(self):
@@ -1019,22 +1027,27 @@ class TestExpressionIR:
 
         visitor = Visitor(context)
 
-        # Tuple is not supported in VS2 yet, causing failure
-        tree = ast.parse("not (1, 2)")
-        unary_node = tree.body[0].value
+        before_count = context.expressions.count()
+
+        lambda_node = self._get_unsupported_lambda()
+
+        unary_node = ast.UnaryOp(
+            op=ast.Not(),
+            operand=lambda_node,
+            lineno=1,
+            col_offset=0,
+        )
+
         expr_id = visitor.visit_UnaryOp(unary_node)
 
-        # Should return None (no expression emitted)
         assert expr_id is None
+        assert context.expressions.count() == before_count
 
-        # No UnaryExpr should remain in repository
-        exprs = context.expressions.all()
-        unary_exprs = [e for e in exprs if e.kind == ExpressionKind.UNARY]
+        unary_exprs = [e for e in context.expressions.all() if e.kind == ExpressionKind.UNARY]
         assert len(unary_exprs) == 0
 
-        # Should have error diagnostics
         errors = context.diagnostics.get_errors()
-        assert any(e.code == "VISITOR-017" for e in errors)
+        assert any(e.code == "VISITOR-016" for e in errors)
 
     def test_unary_stable_id_deterministic(self):
         """Stable ID for UnaryExpr should be deterministic"""
@@ -1174,12 +1187,18 @@ class TestExpressionIR:
 
         visitor = Visitor(context)
 
-        # Set initial ordinal
         context.expression_ordinal = 5
 
-        # Tuple is not supported in VS2 yet, causing failure
-        tree = ast.parse("(1, 2) < b")
-        compare_node = tree.body[0].value
+        lambda_node = self._get_unsupported_lambda()
+
+        compare_node = ast.Compare(
+            left=lambda_node,
+            ops=[ast.Lt()],
+            comparators=[ast.Name(id="b", ctx=ast.Load())],
+            lineno=1,
+            col_offset=0,
+        )
+
         expr_id = visitor.visit_Compare(compare_node)
 
         assert expr_id is None
@@ -1193,20 +1212,28 @@ class TestExpressionIR:
 
         visitor = Visitor(context)
 
-        # Tuple is not supported in VS2 yet, causing failure
-        tree = ast.parse("(1, 2) < b")
-        compare_node = tree.body[0].value
+        before_count = context.expressions.count()
+
+        lambda_node = self._get_unsupported_lambda()
+
+        compare_node = ast.Compare(
+            left=lambda_node,
+            ops=[ast.Lt()],
+            comparators=[ast.Name(id="b", ctx=ast.Load())],
+            lineno=1,
+            col_offset=0,
+        )
+
         expr_id = visitor.visit_Compare(compare_node)
 
         assert expr_id is None
+        assert context.expressions.count() == before_count
 
-        exprs = context.expressions.all()
-        cmp_exprs = [e for e in exprs if e.kind == ExpressionKind.COMPARE]
-        assert len(cmp_exprs) == 0
+        compare_exprs = [e for e in context.expressions.all() if e.kind == ExpressionKind.COMPARE]
+        assert len(compare_exprs) == 0
 
         errors = context.diagnostics.get_errors()
-        # Either VISITOR-021 (left failed) and/or VISITOR-023 (incomplete comparison)
-        assert any(e.code in ("VISITOR-021", "VISITOR-023") for e in errors)
+        assert any(e.code == "VISITOR-023" for e in errors)
 
     def test_compare_stable_id_deterministic(self):
         """Stable ID for CompareExpr should be deterministic"""
@@ -1347,12 +1374,20 @@ class TestExpressionIR:
 
         visitor = Visitor(context)
 
-        # Set initial ordinal
         context.expression_ordinal = 5
 
-        # Tuple is not supported in VS2 yet, causing failure
-        tree = ast.parse("(1, 2) and b")
-        bool_node = tree.body[0].value
+        lambda_node = self._get_unsupported_lambda()
+
+        bool_node = ast.BoolOp(
+            op=ast.And(),
+            values=[
+                lambda_node,
+                ast.Name(id="b", ctx=ast.Load()),
+            ],
+            lineno=1,
+            col_offset=0,
+        )
+
         expr_id = visitor.visit_BoolOp(bool_node)
 
         assert expr_id is None
@@ -1366,20 +1401,30 @@ class TestExpressionIR:
 
         visitor = Visitor(context)
 
-        # Tuple is not supported in VS2 yet, causing failure
-        tree = ast.parse("(1, 2) and b")
-        bool_node = tree.body[0].value
+        before_count = context.expressions.count()
+
+        lambda_node = self._get_unsupported_lambda()
+
+        bool_node = ast.BoolOp(
+            op=ast.And(),
+            values=[
+                lambda_node,
+                ast.Name(id="b", ctx=ast.Load()),
+            ],
+            lineno=1,
+            col_offset=0,
+        )
+
         expr_id = visitor.visit_BoolOp(bool_node)
 
         assert expr_id is None
+        assert context.expressions.count() == before_count
 
-        exprs = context.expressions.all()
-        bool_exprs = [e for e in exprs if e.kind == ExpressionKind.BOOL]
+        bool_exprs = [e for e in context.expressions.all() if e.kind == ExpressionKind.BOOL]
         assert len(bool_exprs) == 0
 
         errors = context.diagnostics.get_errors()
-        # VISITOR-027: child failure, VISITOR-028: incomplete expression
-        assert any(e.code in ("VISITOR-027", "VISITOR-028") for e in errors)
+        assert any(e.code == "VISITOR-028" for e in errors)
 
     def test_bool_stable_id_deterministic(self):
         """Stable ID for BoolExpr should be deterministic"""
@@ -1607,14 +1652,22 @@ class TestExpressionIR:
 
         visitor = Visitor(context)
 
-        tree = ast.parse("x[(1, 2):]")
-        slice_node = tree.body[0].value.slice
+        before_count = context.expressions.count()
+
+        lambda_node = self._get_unsupported_lambda()
+
+        slice_node = ast.Slice(
+            lower=lambda_node,
+            upper=None,
+            step=None,
+        )
 
         expr_id = visitor.visit_Slice(slice_node)
 
         assert expr_id is None
-        exprs = context.expressions.all()
-        slice_exprs = [e for e in exprs if e.kind == ExpressionKind.SLICE]
+        assert context.expressions.count() == before_count
+
+        slice_exprs = [e for e in context.expressions.all() if e.kind == ExpressionKind.SLICE]
         assert len(slice_exprs) == 0
 
         errors = context.diagnostics.get_errors()
@@ -1795,9 +1848,16 @@ class TestExpressionIR:
 
         context.expression_ordinal = 5
 
-        # Malformed subscript (unsupported slice type)
-        tree = ast.parse("x[(1, 2)]")
-        subscript_node = tree.body[0].value
+        lambda_node = self._get_unsupported_lambda()
+
+        subscript_node = ast.Subscript(
+            value=ast.Name(id="x", ctx=ast.Load()),
+            slice=lambda_node,
+            ctx=ast.Load(),
+            lineno=1,
+            col_offset=0,
+        )
+
         expr_id = visitor.visit_Subscript(subscript_node)
 
         assert expr_id is None
@@ -1813,8 +1873,9 @@ class TestExpressionIR:
 
         before_count = context.expressions.count()
 
-        tree = ast.parse("x[(1, 2)]")
+        tree = ast.parse("x[lambda: 1]")
         subscript_node = tree.body[0].value
+
         expr_id = visitor.visit_Subscript(subscript_node)
 
         assert expr_id is None
@@ -1824,7 +1885,7 @@ class TestExpressionIR:
         assert len(sub_exprs) == 0
 
         errors = context.diagnostics.get_errors()
-        assert any(e.code in ("VISITOR-041", "VISITOR-042") for e in errors)
+        assert any(e.code == "VISITOR-042" for e in errors)
 
     def test_subscript_stable_id_deterministic(self):
         """Same SubscriptExpr from same location → same stable ID"""
@@ -1889,3 +1950,211 @@ class TestExpressionIR:
         slice_exprs = [e for e in exprs if e.kind == ExpressionKind.SLICE]
         assert len(slice_exprs) == 2
         assert slice_exprs[0].stable_id != slice_exprs[1].stable_id
+
+    # ============ ContainerExpr Tests ============
+
+    def test_container_list(self):
+        """[a, b] → ContainerExpr(kind=list)"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("[a, b]")
+        list_node = tree.body[0].value
+        expr_id = visitor.visit_List(list_node)
+
+        assert expr_id is not None
+        exprs = context.expressions.all()
+        cont_expr = next(e for e in exprs if e.kind == ExpressionKind.CONTAINER)
+        assert cont_expr.payload["kind"] == "list"
+        assert len(cont_expr.payload["elements"]) == 2
+
+    def test_container_empty_list(self):
+        """[] → ContainerExpr(kind=list) with empty elements"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("[]")
+        list_node = tree.body[0].value
+        expr_id = visitor.visit_List(list_node)
+
+        assert expr_id is not None
+        exprs = context.expressions.all()
+        cont_expr = next(e for e in exprs if e.kind == ExpressionKind.CONTAINER)
+        assert cont_expr.payload["kind"] == "list"
+        assert len(cont_expr.payload["elements"]) == 0
+
+    def test_container_tuple(self):
+        """(a, b) → ContainerExpr(kind=tuple)"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("(a, b)")
+        tuple_node = tree.body[0].value
+        expr_id = visitor.visit_Tuple(tuple_node)
+
+        assert expr_id is not None
+        exprs = context.expressions.all()
+        cont_expr = next(e for e in exprs if e.kind == ExpressionKind.CONTAINER)
+        assert cont_expr.payload["kind"] == "tuple"
+        assert len(cont_expr.payload["elements"]) == 2
+
+    def test_container_empty_tuple(self):
+        """() → ContainerExpr(kind=tuple) with empty elements"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("()")
+        tuple_node = tree.body[0].value
+        expr_id = visitor.visit_Tuple(tuple_node)
+
+        assert expr_id is not None
+        exprs = context.expressions.all()
+        cont_expr = next(e for e in exprs if e.kind == ExpressionKind.CONTAINER)
+        assert cont_expr.payload["kind"] == "tuple"
+        assert len(cont_expr.payload["elements"]) == 0
+
+    def test_container_set(self):
+        """{a, b} → ContainerExpr(kind=set)"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("{a, b}")
+        set_node = tree.body[0].value
+        expr_id = visitor.visit_Set(set_node)
+
+        assert expr_id is not None
+        exprs = context.expressions.all()
+        cont_expr = next(e for e in exprs if e.kind == ExpressionKind.CONTAINER)
+        assert cont_expr.payload["kind"] == "set"
+        assert len(cont_expr.payload["elements"]) == 2
+
+    def test_container_empty_set(self):
+        """set() → ContainerExpr(kind=set) with empty elements"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        # Python AST represents set() as Call, not ast.Set.
+        # Construct an empty ast.Set explicitly for this IR contract test.
+        set_node = ast.Set(elts=[], lineno=1, col_offset=0)
+
+        expr_id = visitor.visit_Set(set_node)
+
+        assert expr_id is not None
+        exprs = context.expressions.all()
+        cont_expr = next(
+            e for e in exprs if e.kind == ExpressionKind.CONTAINER
+        )
+        assert cont_expr.payload["kind"] == "set"
+        assert len(cont_expr.payload["elements"]) == 0
+
+    def test_container_dict(self):
+        """{'a': 1, 'b': 2} → ContainerExpr(kind=dict)"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("{'a': 1, 'b': 2}")
+        dict_node = tree.body[0].value
+        expr_id = visitor.visit_Dict(dict_node)
+
+        assert expr_id is not None
+        exprs = context.expressions.all()
+        cont_expr = next(e for e in exprs if e.kind == ExpressionKind.CONTAINER)
+        assert cont_expr.payload["kind"] == "dict"
+        assert len(cont_expr.payload["entries"]) == 2
+
+    def test_container_empty_dict(self):
+        """{} → ContainerExpr(kind=dict) with empty entries"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("{}")
+        dict_node = tree.body[0].value
+        expr_id = visitor.visit_Dict(dict_node)
+
+        assert expr_id is not None
+        exprs = context.expressions.all()
+        cont_expr = next(e for e in exprs if e.kind == ExpressionKind.CONTAINER)
+        assert cont_expr.payload["kind"] == "dict"
+        assert len(cont_expr.payload["entries"]) == 0
+
+    def test_container_dict_unpacking(self):
+        """{'a': 1, **mapping} → ContainerExpr(kind=dict) with key:null"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("{'a': 1, **mapping}")
+        dict_node = tree.body[0].value
+        expr_id = visitor.visit_Dict(dict_node)
+
+        assert expr_id is not None
+        exprs = context.expressions.all()
+        cont_expr = next(e for e in exprs if e.kind == ExpressionKind.CONTAINER)
+        assert cont_expr.payload["kind"] == "dict"
+        assert len(cont_expr.payload["entries"]) == 2
+        assert cont_expr.payload["entries"][1]["key"] is None
+
+    def test_container_parent_child(self):
+        """[a, b] → ContainerExpr with parent-child relationships"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("[a, b]")
+        list_node = tree.body[0].value
+        expr_id = visitor.visit_List(list_node)
+
+        assert expr_id is not None
+        exprs = context.expressions.all()
+        cont_expr = next(e for e in exprs if e.kind == ExpressionKind.CONTAINER)
+
+        for i, elem_id in enumerate(cont_expr.payload["elements"]):
+            elem = next(e for e in exprs if e.expr_id == elem_id)
+            assert elem.kind == ExpressionKind.NAME
+            assert elem.parent_expr == cont_expr.expr_id
+            assert elem.ordinal == i
+
+    def test_container_ctx(self):
+        """(a, b) = xs → ContainerExpr with store context"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("(a, b) = xs")
+        tuple_node = tree.body[0].targets[0]
+        expr_id = visitor.visit_Tuple(tuple_node)
+
+        assert expr_id is not None
+        exprs = context.expressions.all()
+        cont_expr = next(e for e in exprs if e.kind == ExpressionKind.CONTAINER)
+        assert cont_expr.payload["ctx"] == "store"

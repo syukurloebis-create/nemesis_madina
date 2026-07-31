@@ -1757,3 +1757,206 @@ class Visitor:
         if not parts:
             return "slice_empty"
         return f"slice_{''.join(parts)}"
+
+    def _visit_container(
+        self,
+        node: ast.List | ast.Tuple | ast.Set | ast.Dict,
+        kind: str,
+    ) -> int | None:
+        """
+        Common implementation for List, Tuple, Set, Dict.
+        """
+        module_id = self._context.current_module_id
+        if module_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-002",
+                message="No module_id set in context",
+                location_id=None,
+                module_id=None
+            )
+            return None
+
+        # Determine ctx for List/Tuple/Set (Dict has no ctx)
+        ctx: str | None = None
+        if hasattr(node, "ctx") and node.ctx is not None:
+            if isinstance(node.ctx, ast.Store):
+                ctx = "store"
+            elif isinstance(node.ctx, ast.Del):
+                ctx = "del"
+            else:
+                ctx = "load"
+
+        # Begin transaction
+        snapshot = self._emitter.begin_transaction()
+
+        parent_expr = self._context.expression_parent
+        ordinal = self._context.expression_ordinal
+
+        # Generate stable ID
+        module_path = self._context.current_module_name or "<module>"
+        stable_id = stable_expression_id(
+            module_path=module_path,
+            kind=ExpressionKind.CONTAINER,
+            identifier=f"container_{kind}",
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+        )
+
+        # Determine payload structure
+        if kind in ("list", "tuple", "set"):
+            payload: dict = {
+                "kind": kind,
+                "elements": [],
+                "ctx": ctx,
+            }
+        else:  # dict
+            payload = {
+                "kind": kind,
+                "entries": [],
+            }
+
+        # Emit parent expression
+        expr_id = self._emitter.emit_expression(
+            kind=ExpressionKind.CONTAINER,
+            module_id=module_id,
+            parent_expr=parent_expr,
+            ordinal=ordinal,
+            location_id=UNRESOLVED_LOCATION_ID,
+            stable_id=stable_id,
+            payload=payload,
+        )
+
+        previous_parent = self._context.expression_parent
+        previous_ordinal = self._context.expression_ordinal
+
+        elements: list[int] = []
+        entries: list[dict] = []
+        success = False
+
+        try:
+            self._context.expression_parent = expr_id
+
+            if kind in ("list", "tuple", "set"):
+                # List/Tuple/Set: elements
+                # Extract elts based on node type
+                if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
+                    elts = node.elts
+                else:
+                    self._diagnostics.add_error(
+                        code="VISITOR-048",
+                        message=f"Unexpected node type for {kind}: {type(node).__name__}",
+                        location_id=None,
+                        module_id=None,
+                    )
+                    self._emitter.rollback_transaction(snapshot)
+                    return None
+
+                for i, elt in enumerate(elts):
+                    self._context.expression_ordinal = i
+                    elt_id = self.visit(elt)
+                    if elt_id is None:
+                        self._diagnostics.add_error(
+                            code="VISITOR-044",
+                            message=f"Failed to visit element {i} of {kind}",
+                            location_id=None,
+                            module_id=None,
+                        )
+                        self._emitter.rollback_transaction(snapshot)
+                        return None
+                    elements.append(elt_id)
+
+                success = True
+                self._emitter.update_expression_payload(
+                    expr_id,
+                    {
+                        "kind": kind,
+                        "elements": elements,
+                        "ctx": ctx,
+                    },
+                )
+
+            else:  # dict
+                # Dict: keys and values
+                if not isinstance(node, ast.Dict):
+                    self._diagnostics.add_error(
+                        code="VISITOR-049",
+                        message=f"Expected Dict node, got {type(node).__name__}",
+                        location_id=None,
+                        module_id=None,
+                    )
+                    self._emitter.rollback_transaction(snapshot)
+                    return None
+
+                for i, (key_node, value_node) in enumerate(zip(node.keys, node.values)):
+                    # key ordinal: 2*i
+                    self._context.expression_ordinal = 2 * i
+                    key_id = None
+                    if key_node is not None:
+                        key_id = self.visit(key_node)
+                        if key_id is None:
+                            self._diagnostics.add_error(
+                                code="VISITOR-045",
+                                message=f"Failed to visit key {i} of dict",
+                                location_id=None,
+                                module_id=None,
+                            )
+                            self._emitter.rollback_transaction(snapshot)
+                            return None
+
+                    # value ordinal: 2*i + 1
+                    self._context.expression_ordinal = 2 * i + 1
+                    value_id = self.visit(value_node)
+                    if value_id is None:
+                        self._diagnostics.add_error(
+                            code="VISITOR-046",
+                            message=f"Failed to visit value {i} of dict",
+                            location_id=None,
+                            module_id=None,
+                        )
+                        self._emitter.rollback_transaction(snapshot)
+                        return None
+
+                    entries.append({
+                        "key": key_id,
+                        "value": value_id,
+                    })
+
+                success = True
+                self._emitter.update_expression_payload(
+                    expr_id,
+                    {
+                        "kind": kind,
+                        "entries": entries,
+                    },
+                )
+
+            self._emitter.commit_transaction(snapshot)
+            return expr_id
+
+        except Exception:
+            self._emitter.rollback_transaction(snapshot)
+            self._diagnostics.add_error(
+                code="VISITOR-047",
+                message=f"Unexpected error during {kind} expression",
+                location_id=None,
+                module_id=None,
+            )
+            return None
+
+        finally:
+            self._context.expression_parent = previous_parent
+            self._context.expression_ordinal = (
+                previous_ordinal + 1 if success else previous_ordinal
+            )
+
+    def visit_List(self, node: ast.List) -> int | None:
+        return self._visit_container(node, "list")
+
+    def visit_Tuple(self, node: ast.Tuple) -> int | None:
+        return self._visit_container(node, "tuple")
+
+    def visit_Set(self, node: ast.Set) -> int | None:
+        return self._visit_container(node, "set")
+
+    def visit_Dict(self, node: ast.Dict) -> int | None:
+        return self._visit_container(node, "dict")
