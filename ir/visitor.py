@@ -1644,7 +1644,7 @@ class Visitor:
         parent_expr = self._context.expression_parent
         ordinal = self._context.expression_ordinal
 
-        # Generate stable ID
+        # Generate stable ID for SubscriptExpr
         module_path = self._context.current_module_name or "<module>"
         stable_id = stable_expression_id(
             module_path=module_path,
@@ -1696,7 +1696,6 @@ class Visitor:
             self._context.expression_ordinal = 1
 
             if isinstance(node.slice, ast.Slice):
-                # Propagate Subscript location to Slice for stable ID
                 slice_id = self.visit_Slice(
                     node.slice,
                     source_lineno=node.lineno,
@@ -1715,6 +1714,7 @@ class Visitor:
                 self._emitter.rollback_transaction(snapshot)
                 return None
 
+            # All children are valid
             success = True
 
             self._emitter.update_expression_payload(
