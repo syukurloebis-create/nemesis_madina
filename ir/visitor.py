@@ -1483,3 +1483,277 @@ class Visitor:
             self._context.expression_ordinal = (
                 previous_ordinal + 1 if success else previous_ordinal
             )
+
+    def visit_Slice(
+        self,
+        node: ast.Slice,
+        source_lineno: int = 0,
+        source_col_offset: int = 0,
+    ) -> int | None:
+        """
+        Visit Slice node.
+
+        Args:
+            node: The Slice AST node
+            source_lineno: Line number from parent SubscriptExpr (if available)
+            source_col_offset: Column offset from parent SubscriptExpr (if available)
+
+        Returns:
+            expr_id of the emitted expression, or None on failure
+        """
+        module_id = self._context.current_module_id
+        if module_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-002",
+                message="No module_id set in context",
+                location_id=None,
+                module_id=None
+            )
+            return None
+
+        # Begin transaction
+        snapshot = self._emitter.begin_transaction()
+
+        parent_expr = self._context.expression_parent
+        ordinal = self._context.expression_ordinal
+
+        # Generate stable ID using source location from parent SubscriptExpr
+        module_path = self._context.current_module_name or "<module>"
+        stable_id = stable_expression_id(
+            module_path=module_path,
+            kind=ExpressionKind.SLICE,
+            identifier="slice",
+            lineno=source_lineno,
+            col_offset=source_col_offset,
+        )
+
+        # Emit parent expression
+        expr_id = self._emitter.emit_expression(
+            kind=ExpressionKind.SLICE,
+            module_id=module_id,
+            parent_expr=parent_expr,
+            ordinal=ordinal,
+            location_id=UNRESOLVED_LOCATION_ID,
+            stable_id=stable_id,
+            payload={},
+        )
+
+        previous_parent = self._context.expression_parent
+        previous_ordinal = self._context.expression_ordinal
+
+        payload: dict = {}
+        success = False
+
+        try:
+            self._context.expression_parent = expr_id
+
+            # 1. Lower (ordinal 0) — only if present
+            if node.lower is not None:
+                self._context.expression_ordinal = 0
+                lower_id = self.visit(node.lower)
+                if lower_id is None:
+                    self._diagnostics.add_error(
+                        code="VISITOR-036",
+                        message="Failed to visit slice lower bound",
+                        location_id=None,
+                        module_id=None,
+                    )
+                    self._emitter.rollback_transaction(snapshot)
+                    return None
+                payload["lower"] = lower_id
+
+            # 2. Upper (ordinal 1) — only if present
+            if node.upper is not None:
+                self._context.expression_ordinal = 1
+                upper_id = self.visit(node.upper)
+                if upper_id is None:
+                    self._diagnostics.add_error(
+                        code="VISITOR-037",
+                        message="Failed to visit slice upper bound",
+                        location_id=None,
+                        module_id=None,
+                    )
+                    self._emitter.rollback_transaction(snapshot)
+                    return None
+                payload["upper"] = upper_id
+
+            # 3. Step (ordinal 2) — only if present
+            if node.step is not None:
+                self._context.expression_ordinal = 2
+                step_id = self.visit(node.step)
+                if step_id is None:
+                    self._diagnostics.add_error(
+                        code="VISITOR-038",
+                        message="Failed to visit slice step",
+                        location_id=None,
+                        module_id=None,
+                    )
+                    self._emitter.rollback_transaction(snapshot)
+                    return None
+                payload["step"] = step_id
+
+            success = True
+
+            self._emitter.update_expression_payload(expr_id, payload)
+            self._emitter.commit_transaction(snapshot)
+            return expr_id
+
+        except Exception:
+            self._emitter.rollback_transaction(snapshot)
+            self._diagnostics.add_error(
+                code="VISITOR-039",
+                message="Unexpected error during slice expression",
+                location_id=None,
+                module_id=None,
+            )
+            return None
+
+        finally:
+            self._context.expression_parent = previous_parent
+            self._context.expression_ordinal = (
+                previous_ordinal + 1 if success else previous_ordinal
+            )
+
+    def visit_Subscript(self, node: ast.Subscript) -> int | None:
+        """
+        Visit Subscript node.
+
+        Returns:
+            expr_id of the emitted expression, or None on failure
+        """
+        module_id = self._context.current_module_id
+        if module_id is None:
+            self._diagnostics.add_error(
+                code="VISITOR-002",
+                message="No module_id set in context",
+                location_id=None,
+                module_id=None
+            )
+            return None
+
+        # Determine context
+        ctx = "load"
+        if isinstance(node.ctx, ast.Store):
+            ctx = "store"
+        elif isinstance(node.ctx, ast.Del):
+            ctx = "del"
+
+        # Begin transaction
+        snapshot = self._emitter.begin_transaction()
+
+        parent_expr = self._context.expression_parent
+        ordinal = self._context.expression_ordinal
+
+        # Generate stable ID
+        module_path = self._context.current_module_name or "<module>"
+        stable_id = stable_expression_id(
+            module_path=module_path,
+            kind=ExpressionKind.SUBSCRIPT,
+            identifier="subscript",
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+        )
+
+        # Emit parent expression (payload will be filled after children are verified)
+        expr_id = self._emitter.emit_expression(
+            kind=ExpressionKind.SUBSCRIPT,
+            module_id=module_id,
+            parent_expr=parent_expr,
+            ordinal=ordinal,
+            location_id=UNRESOLVED_LOCATION_ID,
+            stable_id=stable_id,
+            payload={
+                "value": None,
+                "slice": None,
+                "ctx": ctx,
+            },
+        )
+
+        previous_parent = self._context.expression_parent
+        previous_ordinal = self._context.expression_ordinal
+
+        value_id: int | None = None
+        slice_id: int | None = None
+        success = False
+
+        try:
+            self._context.expression_parent = expr_id
+            self._context.expression_ordinal = 0
+
+            # 1. Visit value (ordinal 0)
+            value_id = self.visit(node.value)
+            if value_id is None:
+                self._diagnostics.add_error(
+                    code="VISITOR-041",
+                    message="Failed to visit subscript value",
+                    location_id=None,
+                    module_id=None,
+                )
+                self._emitter.rollback_transaction(snapshot)
+                return None
+
+            # 2. Visit slice (ordinal 1) — with location propagation for Slice nodes
+            self._context.expression_ordinal = 1
+
+            if isinstance(node.slice, ast.Slice):
+                # Propagate Subscript location to Slice for stable ID
+                slice_id = self.visit_Slice(
+                    node.slice,
+                    source_lineno=node.lineno,
+                    source_col_offset=node.col_offset,
+                )
+            else:
+                slice_id = self.visit(node.slice)
+
+            if slice_id is None:
+                self._diagnostics.add_error(
+                    code="VISITOR-042",
+                    message="Failed to visit subscript slice",
+                    location_id=None,
+                    module_id=None,
+                )
+                self._emitter.rollback_transaction(snapshot)
+                return None
+
+            success = True
+
+            self._emitter.update_expression_payload(
+                expr_id,
+                {
+                    "value": value_id,
+                    "slice": slice_id,
+                    "ctx": ctx,
+                },
+            )
+            self._emitter.commit_transaction(snapshot)
+            return expr_id
+
+        except Exception:
+            self._emitter.rollback_transaction(snapshot)
+            self._diagnostics.add_error(
+                code="VISITOR-043",
+                message="Unexpected error during subscript expression",
+                location_id=None,
+                module_id=None,
+            )
+            return None
+
+        finally:
+            self._context.expression_parent = previous_parent
+            self._context.expression_ordinal = (
+                previous_ordinal + 1 if success else previous_ordinal
+            )
+
+    def _slice_identifier(self, node: ast.Slice) -> str:
+        """Generate deterministic identifier for slice structure."""
+        parts = []
+        if node.lower is not None:
+            parts.append("l")
+        if node.upper is not None:
+            parts.append("u")
+        if node.step is not None:
+            parts.append("s")
+
+        if not parts:
+            return "slice_empty"
+        return f"slice_{''.join(parts)}"

@@ -1404,3 +1404,218 @@ class TestExpressionIR:
         bool2 = next(e for e in context2.expressions.all() if e.kind == ExpressionKind.BOOL)
 
         assert bool1.stable_id == bool2.stable_id
+
+    # ============ SliceExpr Tests ============
+
+    def _get_slice_from_subscript(self, source: str) -> ast.Slice:
+        """Helper to extract Slice node from subscript expression."""
+        tree = ast.parse(source)
+        return tree.body[0].value.slice
+
+    def test_slice_empty(self):
+        """[:] → SliceExpr with empty payload"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        slice_node = self._get_slice_from_subscript("x[:]")
+        expr_id = visitor.visit_Slice(slice_node)
+
+        assert expr_id is not None
+        exprs = context.expressions.all()
+        slice_exprs = [e for e in exprs if e.kind == ExpressionKind.SLICE]
+        assert len(slice_exprs) == 1
+        slice_expr = slice_exprs[0]
+        assert slice_expr.payload == {}
+
+    def test_slice_upper_only(self):
+        """[:2] → SliceExpr with only upper (ordinal=1)"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        slice_node = self._get_slice_from_subscript("x[:2]")
+        expr_id = visitor.visit_Slice(slice_node)
+
+        assert expr_id is not None
+        exprs = context.expressions.all()
+        slice_exprs = [e for e in exprs if e.kind == ExpressionKind.SLICE]
+        assert len(slice_exprs) == 1
+        slice_expr = slice_exprs[0]
+
+        assert "lower" not in slice_expr.payload
+        assert "upper" in slice_expr.payload
+        assert "step" not in slice_expr.payload
+
+        upper_id = slice_expr.payload["upper"]
+        upper_expr = next(e for e in exprs if e.expr_id == upper_id)
+        assert upper_expr.kind == ExpressionKind.CONSTANT
+        assert upper_expr.payload["value"] == 2
+        assert upper_expr.parent_expr == slice_expr.expr_id
+        assert upper_expr.ordinal == 1
+
+    def test_slice_lower_only(self):
+        """[1:] → SliceExpr with only lower (ordinal=0)"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        slice_node = self._get_slice_from_subscript("x[1:]")
+        expr_id = visitor.visit_Slice(slice_node)
+
+        assert expr_id is not None
+        exprs = context.expressions.all()
+        slice_exprs = [e for e in exprs if e.kind == ExpressionKind.SLICE]
+        assert len(slice_exprs) == 1
+        slice_expr = slice_exprs[0]
+
+        assert "lower" in slice_expr.payload
+        assert "upper" not in slice_expr.payload
+        assert "step" not in slice_expr.payload
+
+        lower_id = slice_expr.payload["lower"]
+        lower_expr = next(e for e in exprs if e.expr_id == lower_id)
+        assert lower_expr.kind == ExpressionKind.CONSTANT
+        assert lower_expr.payload["value"] == 1
+        assert lower_expr.parent_expr == slice_expr.expr_id
+        assert lower_expr.ordinal == 0
+
+    def test_slice_step_only(self):
+        """[::2] → SliceExpr with only step (ordinal=2)"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        slice_node = self._get_slice_from_subscript("x[::2]")
+        expr_id = visitor.visit_Slice(slice_node)
+
+        assert expr_id is not None
+        exprs = context.expressions.all()
+        slice_exprs = [e for e in exprs if e.kind == ExpressionKind.SLICE]
+        assert len(slice_exprs) == 1
+        slice_expr = slice_exprs[0]
+
+        assert "lower" not in slice_expr.payload
+        assert "upper" not in slice_expr.payload
+        assert "step" in slice_expr.payload
+
+        step_id = slice_expr.payload["step"]
+        step_expr = next(e for e in exprs if e.expr_id == step_id)
+        assert step_expr.kind == ExpressionKind.CONSTANT
+        assert step_expr.payload["value"] == 2
+        assert step_expr.parent_expr == slice_expr.expr_id
+        assert step_expr.ordinal == 2
+
+    def test_slice_full(self):
+        """[1:2:3] → SliceExpr with lower=0, upper=1, step=2"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        slice_node = self._get_slice_from_subscript("x[1:2:3]")
+        expr_id = visitor.visit_Slice(slice_node)
+
+        assert expr_id is not None
+        exprs = context.expressions.all()
+        slice_exprs = [e for e in exprs if e.kind == ExpressionKind.SLICE]
+        assert len(slice_exprs) == 1
+        slice_expr = slice_exprs[0]
+
+        assert "lower" in slice_expr.payload
+        assert "upper" in slice_expr.payload
+        assert "step" in slice_expr.payload
+
+        lower_id = slice_expr.payload["lower"]
+        upper_id = slice_expr.payload["upper"]
+        step_id = slice_expr.payload["step"]
+
+        lower_expr = next(e for e in exprs if e.expr_id == lower_id)
+        upper_expr = next(e for e in exprs if e.expr_id == upper_id)
+        step_expr = next(e for e in exprs if e.expr_id == step_id)
+
+        assert lower_expr.kind == ExpressionKind.CONSTANT
+        assert lower_expr.payload["value"] == 1
+        assert lower_expr.ordinal == 0
+
+        assert upper_expr.kind == ExpressionKind.CONSTANT
+        assert upper_expr.payload["value"] == 2
+        assert upper_expr.ordinal == 1
+
+        assert step_expr.kind == ExpressionKind.CONSTANT
+        assert step_expr.payload["value"] == 3
+        assert step_expr.ordinal == 2
+
+    def test_slice_stable_id_uniqueness(self):
+        """Two different SliceExpr should have different stable IDs via Subscript location"""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("x[1:2] + y[3:4]")
+        subscript1 = tree.body[0].value.left
+        subscript2 = tree.body[0].value.right
+
+        visitor.visit_Subscript(subscript1)
+        visitor.visit_Subscript(subscript2)
+
+        exprs = context.expressions.all()
+        slice_exprs = [e for e in exprs if e.kind == ExpressionKind.SLICE]
+        assert len(slice_exprs) == 2
+        assert slice_exprs[0].stable_id != slice_exprs[1].stable_id
+
+    def test_slice_stable_id_deterministic_from_subscript_location(self):
+        """Same SliceExpr from same location → same stable ID"""
+        context1 = IRContext(config=IRConfig())
+        context1.current_module_id = 1
+        context1.current_module_name = "test"
+
+        context2 = IRContext(config=IRConfig())
+        context2.current_module_id = 1
+        context2.current_module_name = "test"
+
+        visitor1 = Visitor(context1)
+        visitor2 = Visitor(context2)
+
+        tree1 = ast.parse("x[1:2]")
+        tree2 = ast.parse("x[1:2]")
+
+        visitor1.visit_Subscript(tree1.body[0].value)
+        visitor2.visit_Subscript(tree2.body[0].value)
+
+        slice1 = next(e for e in context1.expressions.all() if e.kind == ExpressionKind.SLICE)
+        slice2 = next(e for e in context2.expressions.all() if e.kind == ExpressionKind.SLICE)
+
+        assert slice1.stable_id == slice2.stable_id
+
+    def test_slice_fail_closed(self):
+        """SliceExpr should be fail-closed: no malformed Expression remains."""
+        context = IRContext(config=IRConfig())
+        context.current_module_id = 1
+        context.current_module_name = "test"
+
+        visitor = Visitor(context)
+
+        tree = ast.parse("x[(1, 2):]")
+        slice_node = tree.body[0].value.slice
+
+        expr_id = visitor.visit_Slice(slice_node)
+
+        assert expr_id is None
+        exprs = context.expressions.all()
+        slice_exprs = [e for e in exprs if e.kind == ExpressionKind.SLICE]
+        assert len(slice_exprs) == 0
+
+        errors = context.diagnostics.get_errors()
+        assert any(e.code == "VISITOR-036" for e in errors)
