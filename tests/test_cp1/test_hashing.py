@@ -29,7 +29,7 @@ EXPECTED_EXPR_ID = (
 )
 
 # Schema version should match CURRENT_VERSION.schema
-assert CURRENT_VERSION.schema == "3.1-candidate"
+assert CURRENT_VERSION.schema == "1.0.0"
 
 
 def test_stable_symbol_id_consistent():
