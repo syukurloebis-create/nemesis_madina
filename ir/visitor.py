@@ -5,10 +5,12 @@ from typing import Any, Optional, Union
 
 from .context import IRContext
 from .emitter import Emitter, UNRESOLVED_LOCATION_ID
-from .hashing import stable_expression_id
+from .hashing import stable_expression_id, stable_statement_id, stable_block_id
 from .models import (
     Scope,
     ScopeKind,
+    BlockKind,
+    BlockRole,
     StatementKind,
     ExpressionKind,
 )
@@ -42,6 +44,114 @@ class Visitor:
         self._context = context
         self._diagnostics = context.diagnostics
         self._emitter = Emitter(context)  # Thin layer
+
+    def _get_root_block_for_scope(self, scope_id: int) -> Optional[int]:
+        roots = [
+            block.block_id
+            for block in self._context.blocks.all()
+            if block.scope_id == scope_id and block.role == BlockRole.ROOT
+        ]
+        if len(roots) > 1:
+            raise ValueError(f"Scope {scope_id} has multiple ROOT Blocks: {roots}")
+        return roots[0] if roots else None
+
+    def _create_root_block(self, scope_id: int, node: Optional[ast.AST] = None) -> int:
+        if self._get_root_block_for_scope(scope_id) is not None:
+            raise ValueError(f"Scope {scope_id} already has a ROOT Block")
+
+        scope = self._context.scopes.get(scope_id)
+        if scope is None:
+            raise ValueError(f"Scope {scope_id} not found")
+
+        kind_map = {
+            ScopeKind.MODULE: BlockKind.MODULE,
+            ScopeKind.FUNCTION: BlockKind.FUNCTION,
+            ScopeKind.METHOD: BlockKind.FUNCTION,
+            ScopeKind.CLASS: BlockKind.FUNCTION,
+        }
+        try:
+            kind = kind_map[scope.kind]
+        except KeyError as exc:
+            raise ValueError(
+                f"Scope kind {scope.kind} cannot create a CP2.5 ROOT Block"
+            ) from exc
+
+        lineno = getattr(node, "lineno", 0) if node is not None else 0
+        col_offset = getattr(node, "col_offset", 0) if node is not None else 0
+
+        stable_id = stable_block_id(
+            module_path=self._context.current_module_name or "<module>",
+            kind=kind,
+            role=BlockRole.ROOT,
+            structural_slot="root",
+            lineno=lineno,
+            col_offset=col_offset,
+        )
+
+        block_id = self._emitter.emit_block(
+            kind=kind,
+            role=BlockRole.ROOT,
+            module_id=self._context.current_module_id,
+            scope_id=scope_id,
+            ordinal=0,
+            parent_block_id=None,
+            stable_id=stable_id,
+            location_id=UNRESOLVED_LOCATION_ID,
+        )
+
+        self._context.statement_ordinals[block_id] = 0
+        self._context.block_ordinals[block_id] = 0
+        return block_id
+
+    def _enter_scope_block_context(self, scope_id: int, node: Optional[ast.AST] = None) -> None:
+        """Enter a new Scope with its own Block context (REPLACE stack)."""
+        root_block_id = self._create_root_block(scope_id, node)
+        self._context.current_block_id = root_block_id
+        self._context.block_stack = [root_block_id]
+        self._context.statement_ordinals[root_block_id] = 0
+        self._context.block_ordinals[root_block_id] = 0
+
+    def _enter_block_context(self, block_id: int) -> None:
+        """Enter a nested Block within the current Scope (append to stack)."""
+        self._context.block_stack.append(block_id)
+        self._context.current_block_id = block_id
+        self._context.statement_ordinals.setdefault(block_id, 0)
+        self._context.block_ordinals.setdefault(block_id, 0)
+
+    def _exit_block_context(self) -> None:
+        """Exit the current Block context."""
+        if self._context.block_stack:
+            self._context.block_stack.pop()
+        self._context.current_block_id = (
+            self._context.block_stack[-1] if self._context.block_stack else None
+        )
+
+    def _get_block_ordinal(self, parent_block_id: int) -> int:
+        ordinal = self._context.block_ordinals.get(parent_block_id, 0)
+        self._context.block_ordinals[parent_block_id] = ordinal + 1
+        return ordinal
+
+    def _get_statement_ordinal(self, block_id: int) -> int:
+        ordinal = self._context.statement_ordinals.get(block_id, 0)
+        self._context.statement_ordinals[block_id] = ordinal + 1
+        return ordinal
+
+    def _current_scope_qualname(self, scope_id: int) -> str:
+        scope = self._context.scopes.get(scope_id)
+        return scope.qualname if scope is not None else "<module>"
+
+    def _save_block_context(self) -> dict:
+        return {
+            "current_block_id": self._context.current_block_id,
+            "block_stack": self._context.block_stack.copy(),
+            # statement_ordinals and block_ordinals are NOT restored here
+            # They are owned by IRContext Transaction
+        }
+
+    def _restore_block_context(self, snapshot: dict) -> None:
+        self._context.current_block_id = snapshot["current_block_id"]
+        self._context.block_stack = snapshot["block_stack"].copy()
+        # Do NOT restore statement_ordinals or block_ordinals here
 
     def visit(self, node: ast.AST) -> int | None:
         """Visit an AST node and emit IR entities."""
@@ -153,14 +263,16 @@ class Visitor:
 
         self._context.scopes.insert(scope)
 
+        # Set module context
+        self._context.current_module_id = module_id
         self._context.current_scope_id = scope_id
+        self._context.current_qualname = module_name
         self._context.scope_stack.append(scope_id)
 
-        # Reset ordinal for module scope
-        self._context.statement_ordinals[scope_id] = 0
+        # CP2.5-INFRA: Create ROOT Block for Module scope
+        self._enter_scope_block_context(scope_id, node)
 
         # Dispatch to supported child nodes
-        # Each child is visited exactly ONCE
         for child in node.body:
             if not isinstance(
                 child,
@@ -181,16 +293,18 @@ class Visitor:
             ):
                 continue
 
-            # Capture enclosing scope BEFORE visiting the child
             parent_scope_id = self._context.current_scope_id
+            parent_qualname = self._context.current_qualname  
             parent_stack_len = len(self._context.scope_stack)
+            block_context = self._save_block_context()
 
-            # Exactly one dispatch per child
-            self.visit(child)
-
-            # Restore enclosing scope after processing a top-level declaration
-            self._context.current_scope_id = parent_scope_id
-            del self._context.scope_stack[parent_stack_len:]
+            try:
+                self.visit(child)
+            finally:
+                self._context.current_scope_id = parent_scope_id
+                self._context.current_qualname = parent_qualname  
+                del self._context.scope_stack[parent_stack_len:]
+                self._restore_block_context(block_context)
 
     def _op_to_string(self, op: ast.operator) -> str | None:
         mapping = {
@@ -252,7 +366,11 @@ class Visitor:
 
         # Update context for children
         self._context.current_scope_id = scope_id
+        self._context.current_qualname = qualname
         self._context.scope_stack.append(scope_id)
+
+        # CP2.5-INFRA: Create ROOT Block for Class scope
+        self._enter_scope_block_context(scope_id, node)
 
         # CP2.2B: NO traversal of node.body
 
@@ -298,7 +416,13 @@ class Visitor:
         )
 
         self._context.current_scope_id = scope_id
+        self._context.current_qualname = qualname 
         self._context.scope_stack.append(scope_id)
+
+        # CP2.5-INFRA: Create ROOT Block for Function scope
+        self._enter_scope_block_context(scope_id, node)
+
+        # CP2.2C: NO traversal of node.body
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         self._visit_function(node, is_async=False)
@@ -339,29 +463,13 @@ class Visitor:
     def visit_Continue(self, node: ast.Continue) -> None:
         self._visit_statement(node, StatementKind.CONTINUE)
 
-    def _get_ordinal(self, scope_id: int) -> int:
-        """Get current ordinal for a scope and increment it."""
-        ordinal = self._context.statement_ordinals.get(scope_id, 0)
-        self._context.statement_ordinals[scope_id] = ordinal + 1
-        return ordinal
-
-    def _visit_statement(
-        self,
-        node: ast.AST,
-        kind: StatementKind,
-        expr_id: Optional[int] = None,
-    ) -> None:
+    def _visit_statement(self, node: ast.AST, kind: StatementKind, expr_id: Optional[int] = None) -> None:
         """Common implementation for statement nodes."""
         module_id = self._context.current_module_id
         if module_id is None:
-            self._diagnostics.add_error(
-                code="VISITOR-002",
-                message="No module_id set in context",
-                location_id=None,
-                module_id=None
-            )
+            self._diagnostics.add_error(...)
             return
-
+    
         scope_id = self._context.current_scope_id
         if scope_id is None:
             self._diagnostics.add_error(
@@ -371,20 +479,37 @@ class Visitor:
                 module_id=None
             )
             return
-
-        ordinal = self._get_ordinal(scope_id)
-
+    
+        # ROOT Block guaranteed by lifecycle
+        block_id = self._context.current_block_id
+        if block_id is None:
+            raise RuntimeError("No current_block_id - ROOT Block should exist")
+        
+        # Get block-local ordinal
+        ordinal = self._get_statement_ordinal(block_id)
+        qualname = self._current_scope_qualname(scope_id)
+    
+        # Generate stable ID
+        stable_id = stable_statement_id(
+            module_path=self._context.current_module_name or "<module>",
+            kind=kind,
+            qualname=self._context.current_qualname or "<module>",
+            lineno=getattr(node, "lineno", 0),
+            col_offset=getattr(node, "col_offset", 0),
+        )
+    
         self._emitter.emit_statement(
             kind=kind,
             module_id=module_id,
             scope_id=scope_id,
+            block_id=block_id,  
             ordinal=ordinal,
             location_id=UNRESOLVED_LOCATION_ID,
-            expr_id=None,  # Expression IR will be added in CP2.4
+            stable_id=stable_id,
+            expr_id=expr_id,
         )
 
     def visit_Import(self, node: ast.Import) -> None:
-        """Visit Import node."""
         module_id = self._context.current_module_id
         if module_id is None:
             self._diagnostics.add_error(
@@ -394,7 +519,7 @@ class Visitor:
                 module_id=None
             )
             return
-
+    
         scope_id = self._context.current_scope_id
         if scope_id is None:
             self._diagnostics.add_error(
@@ -404,21 +529,36 @@ class Visitor:
                 module_id=None
             )
             return
+    
+        block_id = self._context.current_block_id
+        if block_id is None:
+            raise RuntimeError("No current_block_id - ROOT Block should exist")
 
-        ordinal = self._get_ordinal(scope_id)
-
+        ordinal = self._get_statement_ordinal(block_id)
+        qualname = self._current_scope_qualname(scope_id)
+    
+        stable_id = stable_statement_id(
+            module_path=self._context.current_module_name or "<module>",
+            kind=StatementKind.IMPORT,
+            qualname=qualname,
+            lineno=getattr(node, "lineno", 0),
+            col_offset=getattr(node, "col_offset", 0),
+        )
+    
         payload = {
             "names": [
                 {"name": alias.name, "alias": alias.asname}
                 for alias in node.names
             ]
         }
-
+    
         self._emitter.emit_import_statement(
             kind=StatementKind.IMPORT,
             module_id=module_id,
             scope_id=scope_id,
+            block_id=block_id,
             ordinal=ordinal,
+            stable_id=stable_id,
             payload=payload,
             location_id=UNRESOLVED_LOCATION_ID,
         )
@@ -445,7 +585,20 @@ class Visitor:
             )
             return
 
-        ordinal = self._get_ordinal(scope_id)
+        block_id = self._context.current_block_id
+        if block_id is None:
+            raise RuntimeError("No current_block_id - ROOT Block should exist")
+
+        ordinal = self._get_statement_ordinal(block_id)
+        qualname = self._current_scope_qualname(scope_id)
+
+        stable_id = stable_statement_id(
+            module_path=self._context.current_module_name or "<module>",
+            kind=StatementKind.IMPORT_FROM,
+            qualname=qualname,
+            lineno=getattr(node, "lineno", 0),
+            col_offset=getattr(node, "col_offset", 0),
+        )
 
         payload = {
             "module": node.module or "",
@@ -460,7 +613,9 @@ class Visitor:
             kind=StatementKind.IMPORT_FROM,
             module_id=module_id,
             scope_id=scope_id,
+            block_id=block_id,
             ordinal=ordinal,
+            stable_id=stable_id,
             payload=payload,
             location_id=UNRESOLVED_LOCATION_ID,
         )
@@ -2133,3 +2288,85 @@ class Visitor:
             self._context.expression_ordinal = (
                 previous_ordinal + 1 if success else previous_ordinal
             )
+
+    def _ensure_root_block(self, scope_id: int) -> int:
+        """Ensure a ROOT Block exists for the current Scope."""
+        if self._context.current_block_id is not None:
+            return self._context.current_block_id
+    
+        scope = self._context.scopes.get(scope_id)
+        if scope is None:
+            raise ValueError(f"Scope {scope_id} not found")
+    
+        # Map ScopeKind to BlockKind
+        kind_map = {
+            ScopeKind.MODULE: BlockKind.MODULE,
+            ScopeKind.FUNCTION: BlockKind.FUNCTION,
+            ScopeKind.METHOD: BlockKind.FUNCTION,
+            ScopeKind.CLASS: BlockKind.FUNCTION,
+        }
+        kind = kind_map.get(scope.kind, BlockKind.FUNCTION)
+    
+        # Generate stable ID
+        stable_id = stable_block_id(
+            module_path=self._context.current_module_name or "<module>",
+            kind=kind,
+            role=BlockRole.ROOT,
+            structural_slot="root",
+            lineno=0,
+            col_offset=0,
+        )
+    
+        block_id = self._emitter.emit_block(
+            kind=kind,
+            role=BlockRole.ROOT,
+            module_id=self._context.current_module_id,
+            scope_id=scope_id,
+            parent_block_id=None,
+            stable_id=stable_id,
+            location_id=UNRESOLVED_LOCATION_ID,
+        )
+    
+        # Set as current block
+        self._context.current_block_id = block_id
+        self._context.block_stack = [block_id]
+        self._context.statement_ordinals[block_id] = 0
+    
+        return block_id
+
+    def _enter_block(self, block_id: int) -> None:
+        """Enter a Block context."""
+        self._context.block_stack.append(block_id)
+        self._context.current_block_id = block_id
+        self._context.statement_ordinals[block_id] = 0
+
+    def _exit_block(self) -> None:
+        """Exit the current Block context."""
+        if not self._context.block_stack:
+            return
+        self._context.block_stack.pop()
+        self._context.current_block_id = (
+            self._context.block_stack[-1] if self._context.block_stack else None
+        )
+        
+    def _enter_new_scope(
+        self,
+        scope_id: int,
+        node: Optional[ast.AST] = None,
+    ) -> dict:
+        """Enter a new Scope with its own Block context.
+    
+        Returns:
+            Previous block context for caller to restore.
+        """
+        previous = self._save_block_context()
+    
+        # Create ROOT Block for new scope
+        root_block_id = self._create_root_block(scope_id, node)
+    
+        # Set new block context
+        self._context.current_block_id = root_block_id
+        self._context.block_stack = [root_block_id]
+        self._context.statement_ordinals[root_block_id] = 0
+    
+        return previous

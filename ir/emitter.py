@@ -1,17 +1,20 @@
 ﻿# ir/emitter.py
 
-from typing import Optional
+from __future__ import annotations
 
-from .context import IRContext
+from typing import Optional, Dict, Any, Iterator
+from contextlib import contextmanager
+
+from .context import IRContext, TransactionHandle, _TransactionSnapshot
 from .models import (
     Scope, ScopeKind,
     Declaration, DeclarationKind,
     Symbol, SymbolKind, Visibility, SymbolOrigin,
     Statement, StatementKind,
     Expression, ExpressionKind,
+    Block, BlockKind, BlockRole,
 )
 
-# Sentinel for unresolved location
 UNRESOLVED_LOCATION_ID = 0
 
 
@@ -163,70 +166,62 @@ class Emitter:
 
     def emit_statement(
         self,
+        *,
         kind: StatementKind,
         module_id: int,
         scope_id: int,
+        block_id: int,
         ordinal: int,
-        location_id: int = UNRESOLVED_LOCATION_ID,
+        location_id: int,
+        stable_id: str,
         expr_id: Optional[int] = None,
+        payload: Optional[Dict[str, Any]] = None,
     ) -> int:
-        """
-        Emit a statement entity.
-
-        Returns:
-            stmt_id
-        """
+        """Emit a statement entity with block_id."""
         stmt_id = self._context.stmt_alloc.allocate()
-
+    
         statement = Statement(
             stmt_id=stmt_id,
-            stable_id="",
+            stable_id=stable_id,
             kind=kind,
             module_id=module_id,
             scope_id=scope_id,
             ordinal=ordinal,
-            block_id=None,
+            block_id=block_id,
             location_id=location_id,
             expr_id=expr_id,
+            payload=payload or {},
         )
-
         self._context.statements.insert(statement)
         return stmt_id
 
     def emit_import_statement(
         self,
+        *,
         kind: StatementKind,
         module_id: int,
         scope_id: int,
+        block_id: int,
         ordinal: int,
-        payload: dict,
+        stable_id: str,
+        payload: Dict[str, Any],
         location_id: int = UNRESOLVED_LOCATION_ID,
     ) -> int:
-        """
-        Emit an import statement entity.
-
-        Args:
-            kind: IMPORT or IMPORT_FROM
-            payload: Import metadata (module, names, alias, level)
-
-        Returns:
-            stmt_id
-        """
+        """Emit an import statement entity with block_id and stable_id."""
         stmt_id = self._context.stmt_alloc.allocate()
-
+    
         statement = Statement(
             stmt_id=stmt_id,
-            stable_id="",
+            stable_id=stable_id,
             kind=kind,
             module_id=module_id,
             scope_id=scope_id,
             ordinal=ordinal,
-            block_id=None,
+            block_id=block_id,
             location_id=location_id,
             expr_id=None,
             payload=payload,
         )
-
         self._context.statements.insert(statement)
         return stmt_id
 
@@ -292,15 +287,115 @@ class Emitter:
             raise KeyError(f"Expression {expr_id} not found")
 
         expression.payload = payload
+    
+    def emit_block(
+        self,
+        *,
+        kind: BlockKind,
+        role: BlockRole,
+        module_id: int,
+        scope_id: int,
+        ordinal: int,
+        parent_block_id: Optional[int],
+        stable_id: str,
+        location_id: int = UNRESOLVED_LOCATION_ID,
+    ) -> int:    
+        """Emit a Block entity with structural topology validation."""
+    
+        # Validate ROOT invariant
+        if role == BlockRole.ROOT:
+            if parent_block_id is not None:
+                raise ValueError(
+                    f"ROOT Block cannot have parent_block_id (got {parent_block_id})"
+                )
+        else:
+            # Non-root must have parent
+            if parent_block_id is None:
+                raise ValueError(
+                    f"Non-root Block (role={role}) requires parent_block_id"
+                )
+        
+            # Parent must exist
+            parent = self._context.blocks.get(parent_block_id)
+            if parent is None:
+                raise ValueError(
+                    f"Parent Block {parent_block_id} does not exist"
+                )
+        
+            # Scope must match
+            if parent.scope_id != scope_id:
+                raise ValueError(
+                    f"Child Block scope_id ({scope_id}) must equal "
+                    f"parent Block scope_id ({parent.scope_id})"
+                )
+    
+        block_id = self._context.block_alloc.allocate()
+    
+        block = Block(
+            block_id=block_id,
+            stable_id=stable_id,
+            module_id=module_id,
+            scope_id=scope_id,
+            kind=kind,
+            role=role,
+            ordinal=ordinal,
+            parent_block_id=parent_block_id,
+            location_id=location_id,
+        )
+    
+        self._context.blocks.insert(block)
+        return block_id
 
-    def begin_transaction(self) -> dict:
-        """Begin a transaction and return a snapshot."""
-        return self._context.snapshot()
+    # =========================================================================
+    # Transaction API (Semantic)
+    # =========================================================================
 
-    def commit_transaction(self, snapshot: dict) -> None:
-        """Commit a transaction (no-op, snapshot is only for rollback)."""
-        pass
+    def begin_transaction(self) -> TransactionHandle:
+        """Begin a logical transaction.
+        
+        Returns:
+            TransactionHandle (pure identity token, single-use).
+        """
+        return self._context.begin_transaction()
 
-    def rollback_transaction(self, snapshot: dict) -> None:
-        """Rollback a transaction to the snapshot."""
-        self._context.restore(snapshot)
+    def commit_transaction(self, handle: TransactionHandle) -> None:
+        """Commit the logical transaction.
+        
+        Consumes the handle (removes from registry).
+        The handle becomes invalid after this call.
+        """
+        self._context.commit_transaction(handle)
+
+    def rollback_transaction(self, handle: TransactionHandle) -> None:
+        """Rollback the logical transaction to the snapshot.
+        
+        Validates, applies rollback, then consumes the handle.
+        If rollback fails, the handle remains in registry for debugging.
+        The handle becomes invalid after successful rollback.
+        """
+        self._context.rollback_transaction(handle)
+
+    # =========================================================================
+    # High-Level Transaction API (Context Manager)
+    # =========================================================================
+
+    @contextmanager
+    def transaction(self) -> Iterator[TransactionHandle]:
+        """Context manager for transaction.
+        
+        Usage:
+            with emitter.transaction() as tx:
+                # ... emit ...
+            # Auto-commits on success, auto-rollbacks on exception
+        
+        Returns:
+            TransactionHandle for low-level operations if needed.
+            Handle is single-use and becomes invalid after context exits.
+        """
+        handle = self.begin_transaction()
+        try:
+            yield handle
+            self.commit_transaction(handle)
+        except Exception:
+            self.rollback_transaction(handle)
+            raise
