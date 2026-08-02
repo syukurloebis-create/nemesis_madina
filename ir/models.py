@@ -98,6 +98,13 @@ class BlockKind(Enum):
     TRY = "try"
     WITH = "with"
 
+class BlockRole(Enum):
+    ROOT = "root"
+    BODY = "body"
+    ORELSE = "orelse"
+    HANDLER = "handler"
+    FINALLY = "finally"
+
 # ============================================================================
 # Core Models (slots=True, kw_only=True)
 # ============================================================================
@@ -189,8 +196,11 @@ class Expression:
 @dataclass(slots=True, kw_only=True)
 class Block:
     block_id: int
+    stable_id: str
     module_id: int
     scope_id: int
     kind: BlockKind
+    role: BlockRole
     ordinal: int
+    parent_block_id: Optional[int]
     location_id: int
