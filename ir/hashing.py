@@ -1,27 +1,33 @@
-﻿import hashlib
+﻿# ir/hashing.py
 
+import hashlib
 from pathlib import Path
 from typing import List, Tuple, Union, Optional
 from enum import Enum
 
-from . import CURRENT_VERSION, DEFAULT_HASH_ALGORITHM
+from .version import (
+    SCHEMA_VERSION,
+    CURRENT_VERSION,
+    DEFAULT_HASH_ALGORITHM,
+)
 from .models import (
-    DeclarationKind, StatementKind, ExpressionKind, SymbolKind
+    DeclarationKind, StatementKind, ExpressionKind, SymbolKind,
+    BlockKind, BlockRole,
 )
 
 
 class NodeCategory(Enum):
-    """Category of node for stable ID generation (private to hashing)"""
     SYMBOL = "symbol"
     DECLARATION = "decl"
     STATEMENT = "stmt"
     EXPRESSION = "expr"
+    BLOCK = "block"
 
 
 def _stable_id_base(
     module_path: str,
     category: NodeCategory,
-    kind: Union[DeclarationKind, StatementKind, ExpressionKind, SymbolKind],
+    kind: Union[DeclarationKind, StatementKind, ExpressionKind, SymbolKind, BlockKind],
     qualname: str,
     lineno: int,
     col_offset: int,
@@ -40,6 +46,47 @@ def _stable_id_base(
         schema_version = CURRENT_VERSION.schema
     content = f"{schema_version}|{module_path}|{category.value}|{kind.value}|{qualname}|{lineno}|{col_offset}"
     return hashlib.sha256(content.encode('utf-8')).hexdigest()
+
+
+def stable_block_id(
+    module_path: str,
+    kind: BlockKind,
+    role: BlockRole,
+    structural_slot: str,
+    lineno: int,
+    col_offset: int,
+    schema_version: Optional[str] = None,
+) -> str:
+    """Generate stable ID for a Block entity.
+
+    Inputs (deterministic):
+    - module_path
+    - BlockKind
+    - BlockRole
+    - structural_slot: e.g., "root", "body", "orelse", "handler:0"
+    - lineno
+    - col_offset
+    - schema_version
+
+    NOT used:
+    - block_id
+    - parent_block_id
+    - ordinal
+    - traversal order
+    """
+    if schema_version is None:
+        schema_version = SCHEMA_VERSION
+    
+    identifier = f"block_{kind.value}_{role.value}_{structural_slot}"
+    return _stable_id_base(
+        module_path=module_path,
+        category=NodeCategory.BLOCK,
+        kind=kind,
+        qualname=identifier,
+        lineno=lineno,
+        col_offset=col_offset,
+        schema_version=schema_version,
+    )
 
 
 def stable_symbol_id(
