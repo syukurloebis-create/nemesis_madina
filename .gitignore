@@ -110,3 +110,4 @@ storage/
 *.db
 coverage.xml
 *.log
+.env
