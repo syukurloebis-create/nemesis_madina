@@ -9,6 +9,7 @@ from .version import (
     SCHEMA_VERSION,
     CURRENT_VERSION,
     DEFAULT_HASH_ALGORITHM,
+    HASHING_SCHEMA_VERSION,
 )
 from .models import (
     DeclarationKind, StatementKind, ExpressionKind, SymbolKind,
@@ -43,7 +44,7 @@ def _stable_id_base(
     - Output: hex digest (64 karakter)
     """
     if schema_version is None:
-        schema_version = CURRENT_VERSION.schema
+        schema_version = HASHING_SCHEMA_VERSION
     content = f"{schema_version}|{module_path}|{category.value}|{kind.value}|{qualname}|{lineno}|{col_offset}"
     return hashlib.sha256(content.encode('utf-8')).hexdigest()
 
@@ -128,7 +129,7 @@ def stable_expression_id(
     identifier: str,
     lineno: int,
     col_offset: int,
-    schema_version: str = CURRENT_VERSION.schema,
+    schema_version: str = HASHING_SCHEMA_VERSION,
 ) -> str:
     """Generate stable ID for expression nodes."""
     return _stable_id_base(
