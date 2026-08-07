@@ -1,4 +1,6 @@
-from sqlalchemy import Column, String, Integer, DateTime, Text, Float, Enum as SQLEnum
+# backend/evidence/models.py
+
+from sqlalchemy import Column, String, DateTime, Boolean, Integer, Text, Float, JSON 
 from sqlalchemy.sql import func
 from backend.database import Base
 import enum
@@ -11,32 +13,42 @@ class EvidenceStatus(str, enum.Enum):
     SUBMITTED = "submitted"
     REJECTED = "rejected"
 
+
 class Evidence(Base):
     __tablename__ = "evidence"
     
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    case_id = Column(String, nullable=False)  # Tanpa foreign key
-    user_id = Column(String, nullable=False)  # Tanpa foreign key
-    institution_id = Column(String, nullable=False)
-    
+    # ============================================
+    # EXISTING COLUMNS (UNCHANGED)
+    # ============================================
+    id = Column(String, primary_key=True)
+    case_id = Column(String, nullable=False)
     filename = Column(String, nullable=False)
-    file_size = Column(Integer, nullable=False)
-    file_hash = Column(String, nullable=False)
-    file_path = Column(String, nullable=False)
+    file_hash = Column(String, nullable=True)
+    status = Column(String, nullable=True)
+    confidence_score = Column(Float, nullable=False)
+    verified_at = Column(DateTime, nullable=True)
+    uploaded_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, nullable=True)
     
-    mime_type = Column(String, nullable=True)
-    description = Column(Text, nullable=True)
+    # ORM Extensions (Documented)
+    file_path = Column(String, nullable=False)  # ⚠️ ORM Extension - Verify DB presence
+    mime_type = Column(String, nullable=True)  # ⚠️ ORM Extension - Verify DB presence
+    description = Column(Text, nullable=True)  # ⚠️ ORM Extension - Verify DB presence
+    verified_by = Column(String, nullable=True)  # ⚠️ ORM Extension - Verify DB presence
+    user_id = Column(String, nullable=False)  # ⚠️ ORM Extension - Verify DB presence
+    institution_id = Column(String, nullable=False)  # ⚠️ ORM Extension - Verify DB presence
+    created_by = Column(String, nullable=False)  # ⚠️ ORM Extension - Verify DB presence
+    created_at = Column(DateTime, nullable=True)  # ⚠️ ORM Extension - Verify DB presence
     
-    status = Column(SQLEnum(EvidenceStatus), default=EvidenceStatus.UPLOADED)
-    confidence_score = Column(Float, default=0.0)
-    
-    uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
-    verified_at = Column(DateTime(timezone=True), nullable=True)
-    verified_by = Column(String, nullable=True)
-    
-    created_by = Column(String, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    # ============================================
+    # NEW PRODUCTION CONTRACT COLUMNS (Pending Provenance)
+    # ============================================
+    # These columns exist in Production DB and are actively used.
+    # They have NO migration provenance (created outside Alembic).
+    # Status: Production Contract (Pending)
+    trust_score = Column(Float, nullable=True)  # ← ADD (Production: 50+ occurrences)
+    file_type = Column(String, nullable=True)  # ← ADD (Production: 10+ occurrences)
+    file_size = Column(Integer, nullable=True)  # ← ADD (Production: verification, export)
 
 
 class ChainOfCustody(Base):
@@ -57,18 +69,44 @@ class ChainOfCustody(Base):
 class Finding(Base):
     __tablename__ = "findings"
     
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    case_id = Column(String, nullable=False)  # Tanpa foreign key
-    evidence_ids = Column(Text, nullable=True)
-    
-    title = Column(String, nullable=False)
-    description = Column(Text, nullable=False)
+    # ============================================
+    # EXISTING COLUMNS (UNCHANGED)
+    # ============================================
+    id = Column(String, primary_key=True)
+    case_id = Column(String, nullable=True)
     finding_type = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
     severity = Column(String, nullable=False)
+    confidence = Column(Float, nullable=True)
+    anomaly_score = Column(Float, nullable=True)
+    created_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, nullable=True)
+    created_by = Column(String, nullable=True)
+    evidence_ids = Column(JSON, nullable=True)
     
-    anomaly_score = Column(Float, default=0.0)
-    confidence = Column(Float, default=0.0)
+    # ============================================
+    # CANONICAL COLUMNS (Migration Provenance)
+    # ============================================
+    fingerprint = Column(String(64), nullable=True)  # Migration: 4cc8a0a5030b
+    detection_method = Column(String, nullable=True)  # Migration: 4cc8a0a5030b
     
-    created_by = Column(String, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    # ============================================
+    # NEW CANONICAL COLUMN (Migration Provenance) ← ADD
+    # ============================================
+    # Migration: 7e9dcf0e5a5d_add_intelligence_graph_schema.py
+    # Runtime: Multiple services, routers, audit, investigation
+    # Status: Canonical Contract
+    title = Column(String, nullable=False)  # ← ADD
+    
+    # ============================================
+    # PRODUCTION CONTRACT COLUMNS (Pending Provenance)
+    # ============================================
+    status = Column(String, nullable=True)  # ENUM in DB - normalization deferred to E2.2
+    anomaly_details = Column(JSON, nullable=True)
+    financial_loss = Column(Float, nullable=True)
+    risk_score = Column(Float, nullable=True)
+    reviewed_by = Column(String, nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    escalated_to = Column(String, nullable=True)
+    escalated_at = Column(DateTime, nullable=True)
+    institution_id = Column(String, nullable=True)

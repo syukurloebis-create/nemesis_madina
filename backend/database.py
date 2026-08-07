@@ -42,10 +42,9 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.orm import declarative_base
 from sqlalchemy.pool import NullPool
-
 from backend.config import settings
+from sqlalchemy.orm import declarative_base
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +52,7 @@ logger = logging.getLogger(__name__)
 # ENGINE - USING NEW SETTINGS API
 # ============================================================
 
+Base = declarative_base()
 database_url = settings.database.url
 
 engine: AsyncEngine = create_async_engine(
@@ -83,12 +83,6 @@ AsyncSessionLocal = async_sessionmaker(
 # Alias untuk kemudahan
 async_session_maker = AsyncSessionLocal
 SessionFactory = AsyncSessionLocal
-
-# ============================================================
-# BASE MODEL
-# ============================================================
-
-Base = declarative_base()
 
 # ============================================================
 # TYPE HINTS

@@ -1,0 +1,87 @@
+"""
+Infrastructure EventBus Adapter — DEBUG VERSION
+"""
+
+import logging
+from typing import Optional
+
+from backend.core.events.interfaces import IEvent, IEventPublisher, IEventSubscriber
+from backend.core.events.interfaces.subscriber import EventHandler
+from backend.infrastructure.event_bus import InMemoryEventBus, DomainEvent
+
+logger = logging.getLogger(__name__)
+
+
+class InfrastructureEventBusAdapter(IEventPublisher, IEventSubscriber):
+    _shared_bus: Optional[InMemoryEventBus] = None
+
+    @classmethod
+    def get_shared_bus(cls) -> InMemoryEventBus:
+        if cls._shared_bus is None:
+            cls._shared_bus = InMemoryEventBus()
+            print(f"[ADAPTER] Shared bus created: id={id(cls._shared_bus)}")
+        return cls._shared_bus
+
+    def __init__(self, bus: Optional[InMemoryEventBus] = None):
+        if bus is not None:
+            self._bus = bus
+            print(f"[ADAPTER] Using provided bus: id={id(self._bus)}")
+        else:
+            self._bus = self.get_shared_bus()
+            print(f"[ADAPTER] Using shared bus: id={id(self._bus)}")
+        print(f"[ADAPTER] Adapter instance: id={id(self)}")
+
+    async def publish(self, event: IEvent) -> None:
+        print(f"[ADAPTER] publish() called")
+        print(f"    event_type: {event.event_type}")
+        print(f"    bus id: {id(self._bus)}")
+        
+        if event is None:
+            raise ValueError("Event cannot be None")
+        if not event.event_type:
+            raise ValueError("event_type cannot be empty")
+
+        domain_event = DomainEvent()
+        # We need to pass event_type somehow
+        # For now, just use the event type as a string
+        import uuid
+        event_type = event.event_type
+        
+        print(f"[ADAPTER] Creating DomainEvent for: {event_type}")
+        await self._bus.publish(domain_event)
+
+    async def publish_with_correlation(self, event: IEvent, correlation_id: Optional[str] = None) -> None:
+        await self.publish(event)
+
+    def subscribe(self, event_type: str, handler: EventHandler) -> None:
+        print(f"[ADAPTER] subscribe() called")
+        print(f"    event_type: {event_type}")
+        print(f"    bus id: {id(self._bus)}")
+        
+        if not event_type:
+            raise ValueError("event_type cannot be empty")
+        if not callable(handler):
+            raise ValueError("handler must be callable")
+
+        async def domain_handler(domain_event: DomainEvent):
+            print(f"[ADAPTER] domain_handler called for {event_type}")
+            from backend.core.events import BaseEvent
+            payload = {k: v for k, v in domain_event.__dict__.items() if not k.startswith('_')}
+            canonical_event = BaseEvent(
+                event_type=event_type,
+                _payload=payload,
+            )
+            await handler(canonical_event)
+
+        print(f"[ADAPTER] Subscribing to bus for: {event_type}")
+        self._bus.subscribe(event_type, domain_handler)
+
+    def unsubscribe(self, event_type: str, handler: EventHandler) -> None:
+        pass
+
+    def get_handlers(self, event_type: str) -> list[EventHandler]:
+        return []
+
+    @classmethod
+    def reset_shared_bus(cls):
+        cls._shared_bus = None

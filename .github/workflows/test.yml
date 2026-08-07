@@ -1,0 +1,70 @@
+# .github/workflows/test.yml
+name: Test Suite
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test on Python ${{ matrix.python-version }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov mutmut hypothesis psutil
+      
+      - name: Run unit tests
+        run: pytest scripts/tests/unit/ -v
+      
+      - name: Run contract tests
+        run: pytest scripts/tests/contracts/ -v
+      
+      - name: Run rule tests
+        run: pytest scripts/tests/rules/ -v
+      
+      - name: Run integration tests
+        run: pytest scripts/tests/integration/ -v
+      
+      - name: Run E2E tests
+        run: pytest scripts/tests/e2e/ -v
+      
+      - name: Run regression tests
+        run: pytest scripts/tests/regression/ -v
+      
+      - name: Run golden tests
+        run: pytest scripts/tests/golden/ -v
+      
+      - name: Run property tests
+        run: pytest scripts/tests/property/ -v
+      
+      - name: Run performance tests
+        run: pytest scripts/tests/performance/ -v
+      
+      - name: Run coverage with gate
+        run: pytest scripts/tests/ --cov=metadata_inventory --cov-fail-under=95
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: |
+            .pytest_cache/
+            htmlcov/

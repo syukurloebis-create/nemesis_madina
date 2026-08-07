@@ -4,16 +4,18 @@ NEMESIS Madina - Fraud Domain Events
 ✅ Carries Value Objects, not dict
 """
 
-from dataclasses import dataclass
-from typing import ClassVar, Optional
-from datetime import datetime, timezone
-
-from backend.domain.events.base import DomainEvent
-from backend.domain.value_objects.fraud_payload import FraudPayload
-from backend.domain.value_objects.fraud_pattern import FraudPattern, FraudPatternType, FraudPatternSeverity
-from backend.domain.value_objects.legacy_fraud_pattern import LegacyFraudPattern
+from dataclasses import dataclass, field
+from typing import Dict, Any, Tuple, Optional, Mapping
 from backend.domain.value_objects.case_id import CaseId
+from backend.domain.value_objects.legacy_fraud_pattern import LegacyFraudPattern
 from backend.domain.value_objects.fraud_analysis import FraudAnalysis
+from backend.domain.value_objects.fraud_payload import FraudPayload
+from backend.domain.value_objects.fraud_pattern import (
+    FraudPattern,
+    FraudPatternType,
+    FraudPatternSeverity,
+)
+from backend.domain.events.base import DomainEvent
 
 
 @dataclass(frozen=True)
@@ -22,30 +24,40 @@ class FraudAnalysisCompleted(DomainEvent[FraudPayload]):
     EVENT_NAME = "FraudAnalysisCompleted"
     EVENT_VERSION = "1"
 
-# ============================================================================
-# NEW-STYLE EVENT (Target Architecture)
-# ============================================================================
 
 class FraudAnalysisRecorded(FraudAnalysisCompleted):
     """
     Compatibility adapter for old aggregate calls.
 
-    Old: FraudAnalysisRecorded(case_id=..., analysis=...)
-    New: FraudAnalysisCompleted(payload=FraudPayload(...))
-
-    ✅ Plain class (not dataclass) - no field ordering issues
-    ✅ Inherits from new event
-    ✅ Constructor matches old contract
-    ✅ Produces valid DomainEvent
-    ✅ Temporary - will be removed after migration
+    Supports both:
+    - Legacy: FraudAnalysisRecorded(case_id=..., analysis=...)
+    - Modern: FraudAnalysisRecorded(payload=..., metadata=...)
     """
 
-    def __init__(self, case_id: CaseId, analysis: FraudAnalysis):
-        payload = FraudPayload(
-            case_id=case_id,
-            analysis=analysis,
+    def __init__(
+        self,
+        case_id: Optional[CaseId] = None,
+        analysis: Optional[FraudAnalysis] = None,
+        payload: Optional[FraudPayload] = None,
+        metadata: Optional[Mapping[str, Any]] = None,
+    ):
+        # Build payload if not provided
+        if payload is None:
+            if case_id is None or analysis is None:
+                raise ValueError(
+                    "FraudAnalysisRecorded requires either "
+                    "(case_id, analysis) or payload"
+                )
+            payload = FraudPayload(
+                case_id=case_id,
+                analysis=analysis,
+                patterns=tuple(analysis.patterns) if analysis and analysis.patterns else (),
+            )
+
+        super().__init__(
+            payload=payload,
+            metadata=metadata,
         )
-        super().__init__(payload=payload)
 
     @property
     def event_name(self) -> str:
@@ -53,12 +65,10 @@ class FraudAnalysisRecorded(FraudAnalysisCompleted):
 
     @property
     def case_id(self):
-        """Convenience property for backward compatibility"""
         return self.payload.case_id
 
     @property
     def analysis(self):
-        """Convenience property for backward compatibility"""
         return self.payload.analysis
 
 

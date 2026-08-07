@@ -41,7 +41,7 @@ class FraudAssembler:
             low=summary_row.low,
             avg_confidence=summary_row.avg_confidence,
             highest_confidence=summary_row.highest_confidence,
-            validated_patterns=summary_row.validated,
+            validated_patterns=summary_row.validated_patterns,
             patterns=patterns,
             engine_status=engine_status,
             fallback_reason=fallback_reason,

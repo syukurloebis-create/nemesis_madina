@@ -50,9 +50,11 @@ class CaseId:
         return str(self.value)
     
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, CaseId):
-            return False
-        return self.value == other.value
+        if isinstance(other, CaseId):
+            return self.value == other.value
+        if isinstance(other, UUID):
+            return self.value == other
+        return False
     
     def __hash__(self) -> int:
         return hash(self.value)

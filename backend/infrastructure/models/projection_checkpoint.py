@@ -13,12 +13,10 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import declarative_base
+from backend.database import Base
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timezone
 import uuid
-
-Base = declarative_base()
 
 
 class ProcessedEvent(Base):

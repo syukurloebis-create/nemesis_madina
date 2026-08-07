@@ -8,7 +8,7 @@ import logging
 from typing import Dict, Any, Callable, Awaitable
 from enum import Enum
 
-from orchestrator.models import EventType, ExecutionJob
+from backend.orchestrator.models import EventType, ExecutionJob
 
 logger = logging.getLogger(__name__)
 

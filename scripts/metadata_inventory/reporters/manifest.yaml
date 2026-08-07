@@ -1,0 +1,29 @@
+# scripts/metadata_inventory/reporters/manifest.yaml
+reporter_api: 1.0
+schema_version: 1.0
+
+reporters:
+  json:
+    version: 1.0
+    description: "JSON report format"
+    supports: [snapshot, diff]
+    
+  markdown:
+    version: 1.0
+    description: "Markdown human-readable report"
+    supports: [snapshot]
+    
+  mermaid:
+    version: 1.0
+    description: "Mermaid diagram format"
+    supports: [snapshot]
+    
+  sarif:
+    version: 1.0
+    description: "SARIF format for CI integration"
+    supports: [diff, snapshot]
+    
+  snapshot:
+    version: 1.0
+    description: "Snapshot format for baseline comparison"
+    supports: [baseline]

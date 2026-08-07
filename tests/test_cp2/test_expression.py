@@ -5,9 +5,23 @@ import ast
 from ir.context import IRContext
 from ir.config import IRConfig
 from ir.visitor import Visitor
-from ir.models import ExpressionKind
+from ir.models import ExpressionKind, Module
+from .conftest import make_test_context
+
 
 class TestExpressionIR:
+    def _make_context(self) -> IRContext:
+        context = make_test_context()
+        module = Module(
+            module_id=1,
+            name="test",
+            file="test.py",
+            file_hash="hash",
+        )
+        context.modules.insert(module)
+        context.current_module_id = module.module_id
+        return context
+
     def _get_unsupported_lambda(self) -> ast.Lambda:
         """Create an unsupported Lambda node with valid source location."""
         tree = ast.parse("lambda: 1")
@@ -15,9 +29,7 @@ class TestExpressionIR:
 
     def test_name_expr_load(self):
         """NameExpr with load context."""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -37,9 +49,7 @@ class TestExpressionIR:
 
     def test_name_expr_store(self):
         """NameExpr with store context."""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -58,9 +68,7 @@ class TestExpressionIR:
 
     def test_name_expr_del(self):
         """NameExpr with del context."""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -78,9 +86,7 @@ class TestExpressionIR:
 
     def test_name_expr_parent_ordinal(self):
         """NameExpr with parent and ordinal."""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -112,13 +118,8 @@ class TestExpressionIR:
 
     def test_name_expr_stable_id_deterministic(self):
         """Stable ID should be deterministic for same input."""
-        context1 = IRContext(config=IRConfig())
-        context1.current_module_id = 1
-        context1.current_module_name = "test"
-
-        context2 = IRContext(config=IRConfig())
-        context2.current_module_id = 1
-        context2.current_module_name = "test"
+        context1 = make_test_context()
+        context2 = make_test_context()
 
         visitor1 = Visitor(context1)
         visitor2 = Visitor(context2)
@@ -137,9 +138,7 @@ class TestExpressionIR:
 
     def test_constant_none(self):
         """None → ConstantExpr"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -154,9 +153,7 @@ class TestExpressionIR:
 
     def test_constant_bool(self):
         """True → ConstantExpr"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -171,9 +168,7 @@ class TestExpressionIR:
 
     def test_constant_int(self):
         """42 → ConstantExpr"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -188,9 +183,7 @@ class TestExpressionIR:
 
     def test_constant_float(self):
         """3.14 → ConstantExpr"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -205,9 +198,7 @@ class TestExpressionIR:
 
     def test_constant_complex(self):
         """1+2j → ConstantExpr"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -222,9 +213,7 @@ class TestExpressionIR:
 
     def test_constant_str(self):
         """'hello' → ConstantExpr"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -239,9 +228,7 @@ class TestExpressionIR:
 
     def test_constant_bytes(self):
         """b'abc' → ConstantExpr with hex"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -256,9 +243,7 @@ class TestExpressionIR:
 
     def test_constant_ellipsis(self):
         """... → ConstantExpr"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -273,9 +258,7 @@ class TestExpressionIR:
 
     def test_constant_unsupported_type(self):
         """Unsupported constant type → diagnostic + no expression"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -295,9 +278,7 @@ class TestExpressionIR:
 
     def test_constant_parent_ordinal(self):
         """Constant with parent and ordinal."""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -329,13 +310,8 @@ class TestExpressionIR:
 
     def test_constant_stable_id_deterministic(self):
         """Stable ID should be deterministic"""
-        context1 = IRContext(config=IRConfig())
-        context1.current_module_id = 1
-        context1.current_module_name = "test"
-
-        context2 = IRContext(config=IRConfig())
-        context2.current_module_id = 1
-        context2.current_module_name = "test"
+        context1 = make_test_context()
+        context2 = make_test_context()
 
         visitor1 = Visitor(context1)
         visitor2 = Visitor(context2)
@@ -353,9 +329,7 @@ class TestExpressionIR:
 
     def test_attribute_expr_load(self):
         """obj.attr → AttributeExpr with load context"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -377,9 +351,7 @@ class TestExpressionIR:
 
     def test_attribute_expr_store(self):
         """obj.attr = x → AttributeExpr with store context"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -396,9 +368,7 @@ class TestExpressionIR:
 
     def test_attribute_expr_del(self):
         """del obj.attr → AttributeExpr with del context"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -416,9 +386,7 @@ class TestExpressionIR:
 
     def test_attribute_expr_parent_child(self):
         """AttributeExpr should have base as child"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -440,9 +408,7 @@ class TestExpressionIR:
 
     def test_attribute_expr_nested(self):
         """Nested attribute: obj.a.b"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -478,13 +444,8 @@ class TestExpressionIR:
 
     def test_attribute_expr_stable_id_deterministic(self):
         """Stable ID for AttributeExpr should be deterministic"""
-        context1 = IRContext(config=IRConfig())
-        context1.current_module_id = 1
-        context1.current_module_name = "test"
-
-        context2 = IRContext(config=IRConfig())
-        context2.current_module_id = 1
-        context2.current_module_name = "test"
+        context1 = make_test_context()
+        context2 = make_test_context()
 
         visitor1 = Visitor(context1)
         visitor2 = Visitor(context2)
@@ -503,9 +464,7 @@ class TestExpressionIR:
 
     def test_call_empty(self):
         """f() → CallExpr with empty args/keywords"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -523,9 +482,7 @@ class TestExpressionIR:
 
     def test_call_positional(self):
         """f(x) → CallExpr with positional arg"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -542,9 +499,7 @@ class TestExpressionIR:
 
     def test_call_multiple_args(self):
         """f(x, y) → CallExpr with ordered args"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -566,9 +521,7 @@ class TestExpressionIR:
 
     def test_call_keyword(self):
         """f(x, y=1) → CallExpr with keyword arg"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -586,9 +539,7 @@ class TestExpressionIR:
 
     def test_call_kwargs(self):
         """f(**kwargs) → CallExpr with keyword name:null"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -605,9 +556,7 @@ class TestExpressionIR:
 
     def test_call_nested(self):
         """f(g(x)) → CallExpr with nested CallExpr"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -653,9 +602,7 @@ class TestExpressionIR:
 
     def test_call_child_ordinals(self):
         """f(x, y) → CallExpr with correct child ordinals"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -691,9 +638,7 @@ class TestExpressionIR:
 
     def test_binary_add(self):
         """a + b → BinaryExpr"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -728,9 +673,7 @@ class TestExpressionIR:
         ]
 
         for op_str, op_cls in operators:
-            context = IRContext(config=IRConfig())
-            context.current_module_id = 1
-            context.current_module_name = "test"
+            context = make_test_context()
 
             visitor = Visitor(context)
 
@@ -746,9 +689,7 @@ class TestExpressionIR:
 
     def test_binary_parent_child(self):
         """BinaryExpr parent-child relationship"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -779,9 +720,7 @@ class TestExpressionIR:
 
     def test_binary_nested(self):
         """(a + b) * c → nested binary expressions"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -829,13 +768,8 @@ class TestExpressionIR:
 
     def test_binary_stable_id_deterministic(self):
         """Stable ID for BinaryExpr should be deterministic"""
-        context1 = IRContext(config=IRConfig())
-        context1.current_module_id = 1
-        context1.current_module_name = "test"
-
-        context2 = IRContext(config=IRConfig())
-        context2.current_module_id = 1
-        context2.current_module_name = "test"
+        context1 = make_test_context()
+        context2 = make_test_context()
 
         visitor1 = Visitor(context1)
         visitor2 = Visitor(context2)
@@ -853,9 +787,7 @@ class TestExpressionIR:
 
     def test_binary_fail_closed(self):
         """BinaryExpr should be fail-closed: no malformed Expression remains."""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -879,9 +811,7 @@ class TestExpressionIR:
 
     def test_unary_not(self):
         """not a → UnaryExpr"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -898,9 +828,7 @@ class TestExpressionIR:
 
     def test_unary_usub(self):
         """-a → UnaryExpr"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -916,9 +844,7 @@ class TestExpressionIR:
 
     def test_unary_uadd(self):
         """+a → UnaryExpr"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -934,9 +860,7 @@ class TestExpressionIR:
 
     def test_unary_invert(self):
         """~a → UnaryExpr"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -952,9 +876,7 @@ class TestExpressionIR:
 
     def test_unary_parent_child(self):
         """UnaryExpr parent-child relationship"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -977,9 +899,7 @@ class TestExpressionIR:
 
     def test_unary_ordinal_on_success(self):
         """UnaryExpr ordinal advances on success"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -996,9 +916,7 @@ class TestExpressionIR:
 
     def test_unary_ordinal_on_failure(self):
         """UnaryExpr ordinal does NOT advance on failure"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1020,9 +938,7 @@ class TestExpressionIR:
 
     def test_unary_fail_closed(self):
         """UnaryExpr should be fail-closed: no malformed Expression remains."""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1050,13 +966,8 @@ class TestExpressionIR:
 
     def test_unary_stable_id_deterministic(self):
         """Stable ID for UnaryExpr should be deterministic"""
-        context1 = IRContext(config=IRConfig())
-        context1.current_module_id = 1
-        context1.current_module_name = "test"
-
-        context2 = IRContext(config=IRConfig())
-        context2.current_module_id = 1
-        context2.current_module_name = "test"
+        context1 = make_test_context()
+        context2 = make_test_context()
 
         visitor1 = Visitor(context1)
         visitor2 = Visitor(context2)
@@ -1076,9 +987,7 @@ class TestExpressionIR:
 
     def test_compare_eq(self):
         """a == b → CompareExpr"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1096,9 +1005,7 @@ class TestExpressionIR:
 
     def test_compare_chain(self):
         """a < b < c → CompareExpr with two comparators"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1129,9 +1036,7 @@ class TestExpressionIR:
         ]
 
         for op_str, op_cls in operators:
-            context = IRContext(config=IRConfig())
-            context.current_module_id = 1
-            context.current_module_name = "test"
+            context = make_test_context()
 
             visitor = Visitor(context)
 
@@ -1147,9 +1052,7 @@ class TestExpressionIR:
 
     def test_compare_parent_child(self):
         """CompareExpr parent-child relationship"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1180,9 +1083,7 @@ class TestExpressionIR:
 
     def test_compare_ordinal_on_failure(self):
         """CompareExpr ordinal does NOT advance on failure"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1205,9 +1106,7 @@ class TestExpressionIR:
 
     def test_compare_fail_closed(self):
         """CompareExpr should be fail-closed: no malformed Expression remains."""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1236,13 +1135,8 @@ class TestExpressionIR:
 
     def test_compare_stable_id_deterministic(self):
         """Stable ID for CompareExpr should be deterministic"""
-        context1 = IRContext(config=IRConfig())
-        context1.current_module_id = 1
-        context1.current_module_name = "test"
-
-        context2 = IRContext(config=IRConfig())
-        context2.current_module_id = 1
-        context2.current_module_name = "test"
+        context1 = make_test_context()
+        context2 = make_test_context()
 
         visitor1 = Visitor(context1)
         visitor2 = Visitor(context2)
@@ -1260,9 +1154,7 @@ class TestExpressionIR:
 
     def test_compare_malformed_structure(self):
         """Malformed Compare AST should be rejected"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1285,9 +1177,7 @@ class TestExpressionIR:
 
     def test_bool_and(self):
         """a and b → BoolExpr"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1304,9 +1194,7 @@ class TestExpressionIR:
 
     def test_bool_or(self):
         """a or b → BoolExpr"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1323,9 +1211,7 @@ class TestExpressionIR:
 
     def test_bool_chain(self):
         """a and b and c → BoolExpr with 3 values (not nested)"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1342,9 +1228,7 @@ class TestExpressionIR:
 
     def test_bool_parent_child(self):
         """BoolExpr parent-child relationship"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1367,9 +1251,7 @@ class TestExpressionIR:
 
     def test_bool_ordinal_on_failure(self):
         """BoolExpr ordinal does NOT advance on failure"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1394,9 +1276,7 @@ class TestExpressionIR:
 
     def test_bool_fail_closed(self):
         """BoolExpr should be fail-closed: no malformed Expression remains."""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1427,13 +1307,8 @@ class TestExpressionIR:
 
     def test_bool_stable_id_deterministic(self):
         """Stable ID for BoolExpr should be deterministic"""
-        context1 = IRContext(config=IRConfig())
-        context1.current_module_id = 1
-        context1.current_module_name = "test"
-
-        context2 = IRContext(config=IRConfig())
-        context2.current_module_id = 1
-        context2.current_module_name = "test"
+        context1 = make_test_context()
+        context2 = make_test_context()
 
         visitor1 = Visitor(context1)
         visitor2 = Visitor(context2)
@@ -1458,9 +1333,7 @@ class TestExpressionIR:
 
     def test_slice_empty(self):
         """[:] → SliceExpr with empty payload"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1476,9 +1349,7 @@ class TestExpressionIR:
 
     def test_slice_upper_only(self):
         """[:2] → SliceExpr with only upper (ordinal=1)"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1504,9 +1375,7 @@ class TestExpressionIR:
 
     def test_slice_lower_only(self):
         """[1:] → SliceExpr with only lower (ordinal=0)"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1532,9 +1401,7 @@ class TestExpressionIR:
 
     def test_slice_step_only(self):
         """[::2] → SliceExpr with only step (ordinal=2)"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1560,9 +1427,7 @@ class TestExpressionIR:
 
     def test_slice_full(self):
         """[1:2:3] → SliceExpr with lower=0, upper=1, step=2"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1601,9 +1466,7 @@ class TestExpressionIR:
 
     def test_slice_stable_id_uniqueness(self):
         """Two different SliceExpr should have different stable IDs via Subscript location"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1621,13 +1484,8 @@ class TestExpressionIR:
 
     def test_slice_stable_id_deterministic_from_subscript_location(self):
         """Same SliceExpr from same location → same stable ID"""
-        context1 = IRContext(config=IRConfig())
-        context1.current_module_id = 1
-        context1.current_module_name = "test"
-
-        context2 = IRContext(config=IRConfig())
-        context2.current_module_id = 1
-        context2.current_module_name = "test"
+        context1 = make_test_context()
+        context2 = make_test_context()
 
         visitor1 = Visitor(context1)
         visitor2 = Visitor(context2)
@@ -1645,9 +1503,7 @@ class TestExpressionIR:
 
     def test_slice_fail_closed(self):
         """SliceExpr should be fail-closed: no malformed Expression remains."""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1676,9 +1532,7 @@ class TestExpressionIR:
 
     def test_subscript_load(self):
         """x[1] → SubscriptExpr with load context"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1696,9 +1550,7 @@ class TestExpressionIR:
 
     def test_subscript_store(self):
         """x[0] = 1 → SubscriptExpr with store context"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1714,9 +1566,7 @@ class TestExpressionIR:
 
     def test_subscript_del(self):
         """del x[0] → SubscriptExpr with del context"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1732,9 +1582,7 @@ class TestExpressionIR:
 
     def test_subscript_parent_child(self):
         """SubscriptExpr parent-child relationship"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1765,9 +1613,7 @@ class TestExpressionIR:
 
     def test_subscript_with_slice(self):
         """x[1:2] → SubscriptExpr with Slice child and location propagation"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1803,9 +1649,7 @@ class TestExpressionIR:
 
     def test_subscript_nested(self):
         """x[y[0]] → nested SubscriptExpr"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1839,9 +1683,7 @@ class TestExpressionIR:
 
     def test_subscript_ordinal_on_failure(self):
         """SubscriptExpr ordinal does NOT advance on failure"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1864,9 +1706,7 @@ class TestExpressionIR:
 
     def test_subscript_fail_closed(self):
         """SubscriptExpr should be fail-closed: no malformed Expression remains."""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1888,13 +1728,8 @@ class TestExpressionIR:
 
     def test_subscript_stable_id_deterministic(self):
         """Same SubscriptExpr from same location → same stable ID"""
-        context1 = IRContext(config=IRConfig())
-        context1.current_module_id = 1
-        context1.current_module_name = "test"
-
-        context2 = IRContext(config=IRConfig())
-        context2.current_module_id = 1
-        context2.current_module_name = "test"
+        context1 = make_test_context()
+        context2 = make_test_context()
 
         visitor1 = Visitor(context1)
         visitor2 = Visitor(context2)
@@ -1912,9 +1747,7 @@ class TestExpressionIR:
 
     def test_subscript_stable_id_uniqueness(self):
         """x[1] and y[1] at different locations → different stable IDs"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1932,9 +1765,7 @@ class TestExpressionIR:
 
     def test_subscript_slice_location_propagation(self):
         """x[1:2] and y[1:2] → SliceExpr stable IDs different due to location"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1954,9 +1785,7 @@ class TestExpressionIR:
 
     def test_container_list(self):
         """[a, b] → ContainerExpr(kind=list)"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1972,9 +1801,7 @@ class TestExpressionIR:
 
     def test_container_empty_list(self):
         """[] → ContainerExpr(kind=list) with empty elements"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -1990,9 +1817,7 @@ class TestExpressionIR:
 
     def test_container_tuple(self):
         """(a, b) → ContainerExpr(kind=tuple)"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -2008,9 +1833,7 @@ class TestExpressionIR:
 
     def test_container_empty_tuple(self):
         """() → ContainerExpr(kind=tuple) with empty elements"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -2026,9 +1849,7 @@ class TestExpressionIR:
 
     def test_container_set(self):
         """{a, b} → ContainerExpr(kind=set)"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -2044,9 +1865,7 @@ class TestExpressionIR:
 
     def test_container_empty_set(self):
         """set() → ContainerExpr(kind=set) with empty elements"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -2066,9 +1885,7 @@ class TestExpressionIR:
 
     def test_container_dict(self):
         """{'a': 1, 'b': 2} → ContainerExpr(kind=dict)"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -2084,9 +1901,7 @@ class TestExpressionIR:
 
     def test_container_empty_dict(self):
         """{} → ContainerExpr(kind=dict) with empty entries"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -2102,9 +1917,7 @@ class TestExpressionIR:
 
     def test_container_dict_unpacking(self):
         """{'a': 1, **mapping} → ContainerExpr(kind=dict) with key:null"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -2121,9 +1934,7 @@ class TestExpressionIR:
 
     def test_container_parent_child(self):
         """[a, b] → ContainerExpr with parent-child relationships"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -2143,9 +1954,7 @@ class TestExpressionIR:
 
     def test_container_ctx(self):
         """(a, b) = xs → ContainerExpr with store context"""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
 
         visitor = Visitor(context)
 
@@ -2159,13 +1968,16 @@ class TestExpressionIR:
         assert cont_expr.payload["ctx"] == "store"
 
 class TestComprehensionExpr:
-    """Test ComprehensionExpr per CP2.4-VS3-D contract."""
-
     def _create_visitor(self):
-        """Helper to create a configured visitor."""
-        context = IRContext(config=IRConfig())
-        context.current_module_id = 1
-        context.current_module_name = "test"
+        context = make_test_context()
+        module = Module(
+            module_id=1,
+            name="test",
+            file="test.py",
+            file_hash="hash",
+        )
+        context.modules.insert(module)
+        context.current_module_id = module.module_id
         return Visitor(context), context
 
     def _create_valid_parent(self, visitor, context):

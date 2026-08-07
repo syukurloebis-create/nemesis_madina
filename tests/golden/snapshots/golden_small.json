@@ -1,0 +1,28 @@
+{
+  "fraud": {
+    "overall_risk": "LOW",
+    "score": 10.0,
+    "total_patterns": 0,
+    "active_alerts": 0
+  },
+  "graph": {
+    "entities": 0,
+    "relationships": 0
+  },
+  "risk": {
+    "score": 0.0,
+    "level": "UNKNOWN",
+    "status": "UNKNOWN"
+  },
+  "evidence": {
+    "total": 0,
+    "verified": 0,
+    "level": "NO_DATA"
+  },
+  "procurement": {
+    "vendors": 549,
+    "packages": 3630
+  },
+  "status": "operational",
+  "confidence": 13.0
+}

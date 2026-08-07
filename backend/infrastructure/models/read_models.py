@@ -7,10 +7,8 @@ NEMESIS Madina - Read Models for CQRS
 
 from sqlalchemy import Column, String, Float, Integer, DateTime, JSON, Boolean
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import declarative_base
+from backend.database import Base
 from datetime import datetime
-
-Base = declarative_base()
 
 
 class DashboardView(Base):

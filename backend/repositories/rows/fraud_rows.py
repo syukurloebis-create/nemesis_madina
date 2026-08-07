@@ -17,7 +17,7 @@ class FraudSummaryRow:
     low: int = 0
     avg_confidence: float = 0.0
     highest_confidence: float = 0.0
-    validated: int = 0
+    validated_patterns: int = 0
 
 
 @dataclass(frozen=True)

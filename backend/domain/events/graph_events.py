@@ -27,6 +27,8 @@ class GraphPayload:
     has_cycles: bool
     complexity_score: float
     status: str = "SUCCESS"
+    entities: tuple = () 
+    relationships: tuple = ()
 
     def to_dict(self) -> Dict[str, Any]:
         return {

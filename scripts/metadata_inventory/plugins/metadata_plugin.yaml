@@ -1,0 +1,20 @@
+# scripts/metadata_inventory/plugins/metadata_plugin.yaml
+name: metadata_plugin
+version: 1.0.0
+plugin_api: 1.0  # API version compatibility
+description: Metadata discovery and collection plugin
+requires:
+  - sqlalchemy: ">=2.0.0"
+  - framework: ">=1.0.0"
+produces:
+  - raw_metadata
+  - raw_relationships
+  - raw_foreign_keys
+schema:
+  input: discovery_context
+  output: raw_collection
+finding_ids:
+  - ORM001
+  - ORM002
+  - ORM006
+  - ORM009

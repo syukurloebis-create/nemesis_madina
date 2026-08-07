@@ -7,7 +7,8 @@ from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from fastapi import HTTPException, status
 
-from backend.models.user import User, UserRole
+from backend.security.models import User
+from backend.security.enums import UserRole
 from backend.schemas.auth import UserCreate, UserUpdate
 from backend.services.jwt_service import JWTService
 

@@ -1,0 +1,24 @@
+# scripts/metadata_inventory/recommendation_registry.yaml
+schema_version: 1.0
+registry_version: 1.0.0
+
+policies:
+  enterprise:
+    ORM001:
+      text: "Consider consolidating to single metadata or configure Alembic for multiple targets"
+      documentation: "https://docs.nemesis.com/architecture/orm/ORM001"
+      severity_override: null
+    ORM003:
+      text: "MANDATORY: Consolidate metadata to resolve cross-metadata foreign key violation"
+      documentation: "https://docs.nemesis.com/architecture/orm/ORM003"
+      severity_override: ERROR
+    
+  community:
+    ORM001:
+      text: "Review metadata fragmentation and consider consolidation if needed"
+      documentation: "https://docs.nemesis.com/architecture/orm/ORM001"
+      severity_override: null
+    ORM003:
+      text: "Cross-metadata foreign key detected. Consider architectural review."
+      documentation: "https://docs.nemesis.com/architecture/orm/ORM003"
+      severity_override: WARNING

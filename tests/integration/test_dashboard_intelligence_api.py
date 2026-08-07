@@ -19,6 +19,7 @@ class TestDashboardIntelligenceAPI:
     
     CASE_ID = "446e216d-eb0e-487e-8e6b-ec943468ea20"
     UNKNOWN_CASE = "00000000-0000-0000-0000-000000000000"
+    EMPTY_CASE = "99999999-9999-9999-9999-999999999999"
     
     @pytest.mark.asyncio
     async def test_endpoint_returns_200_for_valid_case(self, client):
@@ -87,12 +88,12 @@ class TestDashboardIntelligenceAPI:
     @pytest.mark.asyncio
     async def test_empty_summary_for_other_collectors(self, client):
         """Test other collectors return empty summary."""
-        response = await client.get(f"/api/v1/dashboard/intelligence/{self.CASE_ID}")
+        response = await client.get(f"/api/v1/dashboard/intelligence/{self.EMPTY_CASE}")
         assert response.status_code == 200
-        
+
         data = response.json()
-        
-        # ✅ Graph, Risk, Evidence, Procurement tetap kosong (Fraud only)
+    
+        # ✅ Semua collector kosong
         assert data["graph"]["entities"] == 0
         assert data["graph"]["relationships"] == 0
         assert data["risk"]["score"] == 0

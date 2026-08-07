@@ -8,7 +8,7 @@ import logging
 
 from domain.case_aggregate import CaseAggregate
 from domain.event_sourcing_repository import EventSourcingRepository
-from backend.models.existing import Case as CaseModel
+from backend.cases.models import Case as CaseModel
 
 logger = logging.getLogger(__name__)
 

@@ -1,0 +1,30 @@
+# scripts/metadata_inventory/finding_registry.yaml
+
+schema_version: 1.0
+registry_version: 1.2.0  # Semantic version untuk registry
+last_updated: 2026-08-04
+
+findings:
+  ORM001:
+    severity: WARNING
+    category: metadata
+    title: "Multiple metadata objects detected"
+    description: "Found multiple Base objects in the application"
+    remediation: "Consider consolidating to single metadata or configure Alembic for multiple targets"
+    documentation: "https://docs.nemesis.com/architecture/orm/ORM001"
+    
+  ORM002:
+    severity: ERROR
+    category: schema
+    title: "Duplicate table detected"
+    description: "Same table name exists in multiple metadata"
+    remediation: "Resolve duplicate table naming to avoid ambiguity"
+    documentation: "https://docs.nemesis.com/architecture/orm/ORM002"
+    
+  ORM003:
+    severity: ERROR
+    category: boundary
+    title: "Cross-metadata foreign key detected"
+    description: "Foreign key references table in different metadata"
+    remediation: "Consolidate metadata to resolve cross-metadata foreign key violation"
+    documentation: "https://docs.nemesis.com/architecture/orm/ORM003"

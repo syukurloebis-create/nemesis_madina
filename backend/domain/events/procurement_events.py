@@ -28,6 +28,8 @@ class ProcurementPayload:
     risk_score: float
     confidence: float
     status: str = "SUCCESS"
+    packages: tuple = ()  # ← ADD THIS
+    vendors: tuple = ()
 
     def to_dict(self) -> Dict[str, Any]:
         return {

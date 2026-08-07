@@ -28,7 +28,6 @@ class CalculatedFraud:
     fallback_reason: Optional[FallbackReason] = None
     error: Optional[str] = None
 
-
 class FraudScoreCalculator:
     """Fraud Score Calculator — Pure Function."""
 
@@ -39,6 +38,23 @@ class FraudScoreCalculator:
         weights: Optional[FraudWeights] = None,
     ) -> CalculatedFraud:
         """Calculate fraud metrics from DTO."""
+    
+        # ✅ Short-circuit untuk fallback/error state
+        if dto.engine_status != EngineStatus.OK:
+            return CalculatedFraud(
+                overall_risk=Severity.UNKNOWN,
+                score=0.0,
+                severity_score=0.0,
+                confidence_score=0.0,
+                validated_score=0.0,
+                pattern_variety_score=0.0,
+                active_alerts=0,
+                high_confidence=0,
+                engine_status=dto.engine_status,
+                fallback_reason=getattr(dto, 'fallback_reason', None),
+                error=getattr(dto, 'error', None),
+            )
+    
         if weights is None:
             weights = cls._default_weights()
 
@@ -74,6 +90,32 @@ class FraudScoreCalculator:
         )
 
     @classmethod
+    def _calculate_overall_risk(cls, dto: FraudCollectorDTO) -> Severity:
+        """Highest severity present."""
+        if dto.total_patterns == 0:
+            return Severity.UNKNOWN
+        if dto.critical > 0:
+            return Severity.CRITICAL
+        if dto.high > 0:
+            return Severity.HIGH
+        if dto.medium > 0:
+            return Severity.MEDIUM
+        if dto.low > 0:
+            return Severity.LOW
+    
+        return Severity.UNKNOWN
+
+    @classmethod
+    def _calculate_severity_score(cls, overall_risk: Severity) -> float:
+        """Convert severity to score 0-100."""
+        # ✅ UNKNOWN → 0
+        if overall_risk == Severity.UNKNOWN:
+            return 0.0
+    
+        rank = SeverityRank.from_string(overall_risk.value)
+        return (rank.value / 4) * 100
+
+    @classmethod
     def _default_weights(cls) -> FraudWeights:
         """Default weights for fraud scoring."""
         return FraudWeights(
@@ -100,21 +142,6 @@ class FraudScoreCalculator:
             pattern_variety_score * weights.variety_weight
         )
 
-    # ===== Business Rules =====
-
-    @classmethod
-    def _calculate_overall_risk(cls, dto: FraudCollectorDTO) -> Severity:
-        """Highest severity present."""
-        if dto.critical > 0:
-            return Severity.CRITICAL
-        if dto.high > 0:
-            return Severity.HIGH
-        if dto.medium > 0:
-            return Severity.MEDIUM
-        if dto.low > 0:
-            return Severity.LOW
-        return Severity.LOW
-
     @classmethod
     def _calculate_active_alerts(cls, dto: FraudCollectorDTO) -> int:
         """CRITICAL + HIGH patterns."""
@@ -124,12 +151,6 @@ class FraudScoreCalculator:
     def _calculate_high_confidence(cls, dto: FraudCollectorDTO) -> int:
         """Patterns with confidence >= 80%."""
         return sum(1 for p in dto.patterns if p.confidence >= 80.0)
-
-    @classmethod
-    def _calculate_severity_score(cls, overall_risk: Severity) -> float:
-        """Convert severity to score 0-100."""
-        rank = SeverityRank.from_string(overall_risk.value)
-        return (rank.value / 4) * 100
 
     @classmethod
     def _calculate_confidence_score(cls, dto: FraudCollectorDTO) -> float:

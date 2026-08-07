@@ -1,0 +1,29 @@
+{
+  "results": [
+    {"name": "positive_fixtures", "passed": true, "message": "Positive fixtures pass", "duration_seconds": 0.234},
+    {"name": "negative_fixture_missing_primary_key", "passed": true, "message": "Negative fixture 'missing_primary_key' detected", "duration_seconds": 0.123},
+    {"name": "negative_fixture_broken_relationship", "passed": true, "message": "Negative fixture 'broken_relationship' detected", "duration_seconds": 0.145},
+    {"name": "negative_fixture_cross_registry_fk", "passed": true, "message": "Negative fixture 'cross_registry_fk' detected", "duration_seconds": 0.156},
+    {"name": "negative_fixture_identity_map_failure", "passed": true, "message": "Negative fixture 'identity_map_failure' detected", "duration_seconds": 0.167},
+    {"name": "determinism", "passed": true, "message": "Determinism test passed", "duration_seconds": 0.234},
+    {"name": "false_positives", "passed": true, "message": "No false positives detected", "duration_seconds": 0.345},
+    {"name": "false_negatives", "passed": true, "message": "No false negatives detected", "duration_seconds": 0.234},
+    {"name": "capability_negotiation", "passed": true, "message": "Capabilities found: declarative_base, DeclarativeBase, MappedAsDataclass, AssociationProxy, hybrid_property, all_orm_descriptors, selectinload, registry", "duration_seconds": 0.123},
+    {"name": "performance_regression", "passed": true, "message": "Avg: 3.24s (budget: 30s)", "duration_seconds": 16.234},
+    {"name": "dag_integrity", "passed": true, "message": "DAG integrity verified", "duration_seconds": 0.045},
+    {"name": "serialization", "passed": true, "message": "Serialization test passed", "duration_seconds": 0.034},
+    {"name": "parallel_consistency", "passed": true, "message": "Parallel execution is consistent", "duration_seconds": 0.456},
+    {"name": "backward_compatibility", "passed": true, "message": "Backward compatibility verified", "duration_seconds": 0.234},
+    {"name": "artifact_versioning", "passed": true, "message": "Artifact versioning verified", "duration_seconds": 0.123},
+    {"name": "provenance_graph", "passed": true, "message": "Provenance graph available", "duration_seconds": 0.067}
+  ],
+  "summary": {
+    "passed": 16,
+    "failed": 0,
+    "total": 16,
+    "pass_rate": 1.0,
+    "total_duration_seconds": 18.376
+  },
+  "generated_by": "verification_runner.py v1.0.0",
+  "generated_at": "2026-08-04T14:30:00.123456"
+}

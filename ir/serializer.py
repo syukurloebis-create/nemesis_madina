@@ -59,3 +59,5 @@ class CanonicalSerializer:
         if isinstance(obj, datetime):
             return obj.isoformat()
         return str(obj)
+
+Serializer = CanonicalSerializer

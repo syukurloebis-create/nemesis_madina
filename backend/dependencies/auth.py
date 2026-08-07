@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 from jose import JWTError
 
 from backend.database import get_db
-from backend.models.user import User, UserRole
+from backend.security.models import User
+from backend.security.enums import UserRole
 from backend.services.jwt_service import JWTService
 from backend.services.auth_service import AuthService
 

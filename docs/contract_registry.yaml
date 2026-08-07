@@ -1,0 +1,48 @@
+# docs/contract_registry.yaml
+# CP2.5.1 - Final Contract Ownership Registry
+
+version: "1.0"
+date: "2026-08-07"
+
+tables:
+  users:
+    source_of_truth: Production DB
+    status: Reconciled
+    columns:
+      id: { type: VARCHAR, status: Canonical }
+      # ... other columns
+
+  outbox_messages:
+    source_of_truth: Production DB
+    status: Reconciled
+    columns:
+      id: { type: INTEGER, status: Canonical }
+      # ... other columns
+
+  cases:
+    source_of_truth: Production DB
+    status: Reconciled
+    columns:
+      workflow_stage: { status: Canonical, provenance: Production + Runtime }
+      risk_score: { status: Canonical, provenance: Production + Runtime }
+      risk_level: { status: Canonical, provenance: Production + Runtime }
+      risk_factors: { status: External, provenance: Unknown, action: Document only }
+      # ... other columns
+
+  evidence:
+    source_of_truth: ORM (Modernization)
+    status: Reconciled
+    columns:
+      trust_score: { status: Production Contract, provenance: Pending }
+      file_type: { status: Production Contract, provenance: Pending }
+      # ... other columns
+
+  findings:
+    source_of_truth: Production DB
+    status: Reconciled
+    columns:
+      fingerprint: { status: Canonical, provenance: Migration 4cc8a0a5030b }
+      detection_method: { status: Canonical, provenance: Migration 7e9dc + 4cc8a0 }
+      title: { status: Canonical, provenance: Migration 7e9dcf0e5a5d }
+      status: { status: Canonical, provenance: Migration + ENUM, action: Type normalization pending }
+      # ... other columns

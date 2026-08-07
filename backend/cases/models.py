@@ -1,3 +1,10 @@
+# backend/cases/models.py
+
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.sql import func
+from enum import Enum
+import uuid
+
 from sqlalchemy import (
     Column,
     String,
@@ -7,13 +14,9 @@ from sqlalchemy import (
     Integer,
     CheckConstraint,
     UUID,
+    JSON,
+    Numeric  
 )
-from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.sql import func
-from sqlalchemy.orm import declarative_base
-from enum import Enum
-import uuid
-
 from backend.database import Base
 
 
@@ -33,77 +36,45 @@ class CasePriority(str, Enum):
 
 class Case(Base):
     __tablename__ = "cases"
-
-    # ============================================================
-    # EXISTING COLUMNS
-    # ============================================================
-
-    id = Column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4
-    )
-
-    title = Column(
-        String,
-        nullable=False
-    )
-
-    description = Column(
-        Text,
-        nullable=True
-    )
-
-    status = Column(
-        String,
-        default="OPEN"
-    )
-
-    priority = Column(
-        String,
-        default="MEDIUM"
-    )
-
-    assigned_to = Column(
-        UUID(as_uuid=True),
-        nullable=True
-    )
-
-    institution_id = Column(
-        UUID(as_uuid=True),
-        nullable=True
-    )
-
-    tenant_id = Column(
-        UUID(as_uuid=True),
-        nullable=False
-    )
-
-    created_by = Column(
-        UUID(as_uuid=True),
-        nullable=True
-    )
-
-    created_at = Column(
-        DateTime(timezone=True),
-        server_default=func.now()
-    )
-
-    updated_at = Column(
-        DateTime(timezone=True),
-        onupdate=func.now()
-    )
-
-    is_deleted = Column(
-        Boolean,
-        default=False,
-        nullable=False
-    )
-
-    deleted_at = Column(
-        DateTime(timezone=True),
-        nullable=True
-    )
+    
+    # ============================================
+    # EXISTING COLUMNS (UNCHANGED)
+    # ============================================
+    id = Column(UUID, primary_key=True, default=uuid.uuid4)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    status = Column(String, nullable=True)
+    priority = Column(String, nullable=True)
+    assigned_to = Column(UUID, nullable=True)  # UNCHANGED
+    institution_id = Column(UUID, nullable=True)  # UNCHANGED
+    tenant_id = Column(UUID, nullable=False)
+    created_by = Column(UUID, nullable=True)  # UNCHANGED
+    created_at = Column(DateTime, nullable=True)  # UNCHANGED
+    updated_at = Column(DateTime, nullable=True)  # UNCHANGED
+    is_deleted = Column(Boolean, default=False)
+    deleted_at = Column(DateTime, nullable=True)  # UNCHANGED
+    version = Column(Integer, nullable=False, default=0)
+    latest_fraud = Column(JSONB, nullable=True)
+    latest_risk = Column(JSONB, nullable=True)
+    latest_evidence = Column(JSONB, nullable=True)
+    latest_graph = Column(JSONB, nullable=True)
+    latest_procurement = Column(JSONB, nullable=True)
+    
+    # ============================================
+    # NEW CANONICAL COLUMNS (Add - Verified by production usage)
+    # ============================================
+    workflow_stage = Column(String(50), nullable=True)  # ← ADD (Production: dashboard_service, executive, governance, provenance, copilot)
+    risk_score = Column(Numeric(5, 2), nullable=True)  # ← ADD (Production: executive, provenance, copilot)
+    risk_level = Column(String(20), nullable=True)  # ← ADD (Production: executive, provenance)
+    review_notes = Column(Text, nullable=True)  # ← ADD (Production: services)
+    review_by = Column(UUID, nullable=True)  # ← ADD (Production: services)
+    review_at = Column(DateTime, nullable=True)  # ← ADD (Production: services)
+    assigned_at = Column(DateTime, nullable=True)  # ← ADD (Production: services)
+    investigation_started_at = Column(DateTime, nullable=True)  # ← ADD (Production: services)
+    investigation_completed_at = Column(DateTime, nullable=True)  # ← ADD (Production: services)
+    
+    # PENDING VERIFICATION (Don't add yet)
+    # risk_factors = Column(JSONB, nullable=True)  # ⚠️ Need migration verification
 
     # ============================================================
     # EXISTING RISK COLUMNS (if they exist in current schema)

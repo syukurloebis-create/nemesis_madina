@@ -1,0 +1,188 @@
+[
+  {
+    "test": "positive_fixtures",
+    "timestamp": 1722796800.123,
+    "duration_seconds": 0.234,
+    "data": {
+      "config": {
+        "models": [
+          {"name": "User", "module": "backend.models.user", "tablename": "users", "pk": "id"},
+          {"name": "Order", "module": "backend.models.order", "tablename": "orders", "pk": "id"}
+        ],
+        "registries": ["backend.database.Base"],
+        "relationships": [{"from": "Order", "to": "User", "type": "many_to_one"}]
+      },
+      "result": {"system_health": "HEALTHY"}
+    }
+  },
+  {
+    "test": "negative_fixture_missing_primary_key",
+    "timestamp": 1722796800.456,
+    "duration_seconds": 0.123,
+    "data": {
+      "config": {"models": [{"name": "User", "module": "backend.models.user", "tablename": "users", "pk": null}]},
+      "result": {"findings": [{"type": "MAPPER_INTEGRITY_FAILURE"}]},
+      "expected": "MAPPER_INTEGRITY_FAILURE",
+      "detected": true
+    }
+  },
+  {
+    "test": "negative_fixture_broken_relationship",
+    "timestamp": 1722796800.789,
+    "duration_seconds": 0.145,
+    "data": {
+      "config": {
+        "models": [
+          {"name": "User", "module": "backend.models.user", "tablename": "users", "pk": "id"},
+          {"name": "Order", "module": "backend.models.order", "tablename": "orders", "pk": "id"}
+        ],
+        "relationships": [{"from": "Order", "to": "Nonexistent", "type": "many_to_one"}]
+      },
+      "result": {"findings": [{"type": "MAPPER_CONFIG_FAILURE"}]},
+      "expected": "MAPPER_CONFIG_FAILURE",
+      "detected": true
+    }
+  },
+  {
+    "test": "negative_fixture_cross_registry_fk",
+    "timestamp": 1722796801.123,
+    "duration_seconds": 0.156,
+    "data": {
+      "config": {
+        "models": [
+          {"name": "User", "module": "backend.models.user", "tablename": "users", "pk": "id", "registry": "A"},
+          {"name": "Order", "module": "backend.models.order", "tablename": "orders", "pk": "id", "registry": "B"}
+        ],
+        "foreign_keys": [{"from": "Order.user_id", "to": "User.id"}]
+      },
+      "result": {"findings": [{"type": "CROSS_REGISTRY_DEPS"}]},
+      "expected": "CROSS_REGISTRY_DEPS",
+      "detected": true
+    }
+  },
+  {
+    "test": "negative_fixture_identity_map_failure",
+    "timestamp": 1722796801.456,
+    "duration_seconds": 0.167,
+    "data": {
+      "config": {
+        "models": [{"name": "User", "module": "backend.models.user", "tablename": "users", "pk": "id"}],
+        "identity_map_broken": true
+      },
+      "result": {"findings": [{"type": "IDENTITY_MAP_ERROR"}]},
+      "expected": "IDENTITY_MAP_ERROR",
+      "detected": true
+    }
+  },
+  {
+    "test": "determinism",
+    "timestamp": 1722796801.789,
+    "duration_seconds": 0.234,
+    "data": {
+      "hash1": "a1b2c3d4e5f6g7h8",
+      "hash2": "a1b2c3d4e5f6g7h8",
+      "match": true
+    }
+  },
+  {
+    "test": "false_positives",
+    "timestamp": 1722796802.123,
+    "duration_seconds": 0.345,
+    "data": {"runs": 5, "false_positives": 0}
+  },
+  {
+    "test": "false_negatives",
+    "timestamp": 1722796802.456,
+    "duration_seconds": 0.234,
+    "data": {"tested": ["missing_primary_key", "broken_relationship", "cross_registry_fk"], "missed": []}
+  },
+  {
+    "test": "capability_negotiation",
+    "timestamp": 1722796802.789,
+    "duration_seconds": 0.123,
+    "data": {
+      "discovered": [
+        "declarative_base",
+        "DeclarativeBase",
+        "MappedAsDataclass",
+        "AssociationProxy",
+        "hybrid_property",
+        "all_orm_descriptors",
+        "selectinload",
+        "registry"
+      ],
+      "required": ["declarative_base", "registry", "selectinload"],
+      "all_found": true
+    }
+  },
+  {
+    "test": "performance_regression",
+    "timestamp": 1722796803.123,
+    "duration_seconds": 16.234,
+    "data": {
+      "times": [3.21, 3.18, 3.25, 3.22, 3.35],
+      "avg": 3.242,
+      "p95": 3.35,
+      "p99": 3.35,
+      "budget": 30.0,
+      "within_budget": true
+    }
+  },
+  {
+    "test": "dag_integrity",
+    "timestamp": 1722796803.456,
+    "duration_seconds": 0.045,
+    "data": {
+      "nodes": ["node1", "node2"],
+      "errors": [],
+      "no_cycle": true
+    }
+  },
+  {
+    "test": "serialization",
+    "timestamp": 1722796803.789,
+    "duration_seconds": 0.034,
+    "data": {"success": true}
+  },
+  {
+    "test": "parallel_consistency",
+    "timestamp": 1722796804.123,
+    "duration_seconds": 0.456,
+    "data": {
+      "seq_consistent": true,
+      "par_consistent": true,
+      "consistent": true
+    }
+  },
+  {
+    "test": "backward_compatibility",
+    "timestamp": 1722796804.456,
+    "duration_seconds": 0.234,
+    "data": {
+      "v1_retrieved": true,
+      "v2_retrieved": true,
+      "versions_different": true
+    }
+  },
+  {
+    "test": "artifact_versioning",
+    "timestamp": 1722796804.789,
+    "duration_seconds": 0.123,
+    "data": {
+      "versions": 3,
+      "all_exist": true,
+      "all_verified": true
+    }
+  },
+  {
+    "test": "provenance_graph",
+    "timestamp": 1722796805.123,
+    "duration_seconds": 0.067,
+    "data": {
+      "has_decision": true,
+      "has_finding": true,
+      "has_evidence": true,
+      "has_artifact": true
+    }
+  }
+]

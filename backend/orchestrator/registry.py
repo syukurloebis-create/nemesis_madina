@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 from uuid import uuid4
 
-from orchestrator.models import ExecutionJob, JobStatus, EventType
+from backend.orchestrator.models import ExecutionJob, JobStatus, EventType
 
 logger = logging.getLogger(__name__)
 

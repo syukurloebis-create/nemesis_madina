@@ -18,8 +18,7 @@ import asyncio
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from backend.application.commands.analyze_case_command import AnalyzeCaseCommand
-from backend.application.commands.analysis_mapper import AnalyzeCaseCommandHandler
+from backend.application.commands.analysis_mapper import AnalyzeCaseCommand, AnalyzeCaseCommandHandler
 from backend.infrastructure.domain_command_uow_factory import DomainCommandUoWFactory
 from backend.application.queries.get_dashboard_handler import GetDashboardQueryHandler
 from backend.infrastructure.unit_of_work import DomainUnitOfWork
@@ -29,7 +28,8 @@ from backend.infrastructure.outbox.outbox import OutboxRepository
 from backend.infrastructure.outbox.publisher import OutboxPublisher
 from backend.domain.value_objects.case_id import CaseId
 from backend.domain.value_objects.fraud_analysis import FraudAnalysis
-
+from backend.domain.value_objects.fraud_pattern import FraudPattern, FraudPatternType, FraudPatternSeverity
+from backend.domain.enums.risk_level import RiskLevel
 
 pytestmark = [
     pytest.mark.integration,
@@ -129,7 +129,7 @@ class TestCommandFlow:
         
         # 7. Verify outbox entry
         async with setup["uow"]._session_factory() as session:
-            outbox = OutboxRepository(session, get_serializer())
+
             entries = await outbox.get_pending()
             assert len(entries) >= 1
             
@@ -146,7 +146,26 @@ class TestCommandFlow:
         # 1. First command
         command1 = AnalyzeCaseCommand(
             case_id=case_id,
-            fraud_analysis=FraudAnalysis(score=0.85, patterns=[], confidence=0.92),
+            fraud_analysis = FraudAnalysis(
+                case_id=str(case_id),
+                patterns=[
+                    FraudPattern(
+                        pattern_type=FraudPatternType.ANOMALY,
+                        severity=FraudPatternSeverity.HIGH,
+                        confidence=0.92,
+                        validated=False,
+                        indicators=["unusual_amount", "velocity_breach"],
+                    )
+                ],
+                overall_risk=RiskLevel.HIGH,
+                score=85.0,  # 0-100 scale
+                total_patterns=1,
+                active_alerts=0,
+                high_confidence=1,
+                validated_patterns=0,
+                highest_confidence=92.0,
+                average_confidence=92.0,
+            )
         )
         result1 = await setup["command_handler"].handle(command1)
         

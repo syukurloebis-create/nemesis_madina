@@ -1,0 +1,163 @@
+{
+  "timestamp": "2026-08-06T05:04:31.891637",
+  "summary": {
+    "registries": 5,
+    "models": 25,
+    "violations": 3,
+    "critical_count": 2,
+    "high_count": 1
+  },
+  "registries": [
+    {
+      "module": "backend.database",
+      "file_path": "backend\\database.py",
+      "fingerprint": "04688c3e",
+      "models": [],
+      "tables": []
+    },
+    {
+      "module": "backend.models.user",
+      "file_path": "backend\\models\\user.py",
+      "fingerprint": "888c531e",
+      "models": [
+        {
+          "name": "User",
+          "module": "backend.models.user",
+          "file_path": "backend\\models\\user.py",
+          "base_class": "Base",
+          "table_name": "users",
+          "columns": [],
+          "relationships": []
+        }
+      ],
+      "tables": [
+        "users"
+      ]
+    },
+    {
+      "module": "backend.infrastructure.models.projection_checkpoint",
+      "file_path": "backend\\infrastructure\\models\\projection_checkpoint.py",
+      "fingerprint": "5a8a444d",
+      "models": [
+        {
+          "name": "ProcessedEvent",
+          "module": "backend.infrastructure.models.projection_checkpoint",
+          "file_path": "backend\\infrastructure\\models\\projection_checkpoint.py",
+          "base_class": "Base",
+          "table_name": "processed_events",
+          "columns": [],
+          "relationships": []
+        },
+        {
+          "name": "ProjectionCheckpointModel",
+          "module": "backend.infrastructure.models.projection_checkpoint",
+          "file_path": "backend\\infrastructure\\models\\projection_checkpoint.py",
+          "base_class": "Base",
+          "table_name": "projection_checkpoints",
+          "columns": [],
+          "relationships": []
+        }
+      ],
+      "tables": [
+        "processed_events",
+        "projection_checkpoints"
+      ]
+    },
+    {
+      "module": "backend.infrastructure.models.read_models",
+      "file_path": "backend\\infrastructure\\models\\read_models.py",
+      "fingerprint": "54231a9b",
+      "models": [
+        {
+          "name": "DashboardView",
+          "module": "backend.infrastructure.models.read_models",
+          "file_path": "backend\\infrastructure\\models\\read_models.py",
+          "base_class": "Base",
+          "table_name": "dashboard_view",
+          "columns": [],
+          "relationships": []
+        }
+      ],
+      "tables": [
+        "dashboard_view"
+      ]
+    },
+    {
+      "module": "scripts.metadata_inventory.capability_negotiation",
+      "file_path": "scripts\\metadata_inventory\\capability_negotiation.py",
+      "fingerprint": "36141b6c",
+      "models": [
+        {
+          "name": "Test",
+          "module": "scripts.metadata_inventory.capability_negotiation",
+          "file_path": "scripts\\metadata_inventory\\capability_negotiation.py",
+          "base_class": "Base",
+          "table_name": "test",
+          "columns": [],
+          "relationships": []
+        }
+      ],
+      "tables": [
+        "test"
+      ]
+    }
+  ],
+  "violations": [
+    {
+      "type": "MULTIPLE_REGISTRIES",
+      "severity": "CRITICAL",
+      "description": "Found 5 declarative_base() instances",
+      "details": {
+        "registries": [
+          "backend.database",
+          "backend.models.user",
+          "backend.infrastructure.models.projection_checkpoint",
+          "backend.infrastructure.models.read_models",
+          "scripts.metadata_inventory.capability_negotiation"
+        ]
+      }
+    },
+    {
+      "type": "EMPTY_CANONICAL",
+      "severity": "CRITICAL",
+      "description": "backend.database.Base has no models registered",
+      "details": {
+        "expected": "All models should use this registry"
+      }
+    },
+    {
+      "type": "ORPHAN_MODELS",
+      "severity": "HIGH",
+      "description": "20 models not mapped to any registry",
+      "details": {
+        "models": [
+          "Case",
+          "Evidence",
+          "ChainOfCustody",
+          "Finding",
+          "GraphEntity",
+          "GraphRelationship",
+          "CollusionDetection",
+          "GraphMetadata",
+          "RiskScore",
+          "AnomalyDetection",
+          "Alert",
+          "IntelligenceReport",
+          "FraudDetection",
+          "Event",
+          "Snapshot",
+          "Case",
+          "User",
+          "AuditLog",
+          "OutboxModel",
+          "RupPaketDetailed"
+        ]
+      }
+    }
+  ],
+  "recommendations": [
+    "Consolidate 5 registries into backend.database.Base",
+    "Update all models to import Base from backend.database instead of creating new Base",
+    "Map 1 orphan models to backend.database.Base"
+  ]
+}

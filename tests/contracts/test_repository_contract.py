@@ -13,6 +13,7 @@ from backend.repositories.sqlalchemy.risk_repository_impl import RiskRepositoryI
 from backend.repositories.sqlalchemy.evidence_repository_impl import EvidenceRepositoryImpl
 from backend.repositories.sqlalchemy.procurement_repository_impl import ProcurementRepositoryImpl
 from backend.infrastructure.sql_repository import SQLRepository
+from backend.infrastructure.sql_repository import SQLRepository
 from backend.infrastructure.sql_keys import SQLKey
 from backend.infrastructure.exceptions import SQLExecutionError
 from backend.infrastructure.unit_of_work import UnitOfWork
@@ -33,7 +34,8 @@ class TestRepositoryContract:
     @pytest.mark.asyncio
     async def test_fraud_repository_contract(self, db_session, uow_factory):
         """Repository harus match SQL Audit #3.1."""
-        sql_repo = SQLRepository().initialize()
+        sql_repo = SQLRepository()
+        sql_repo.initialize()
         repo = FraudRepositoryImpl(sql_repo)
         helper = SQLAuditHelper(db_session)
         case_uuid = UUID(self.CASE_ID)

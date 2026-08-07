@@ -17,7 +17,7 @@ class TestSQLContract:
     # ✅ Expected columns (minimal set)
     FRAUD_SUMMARY_COLUMNS = {
         "total_patterns", "critical", "high", "medium", "low",
-        "avg_confidence", "highest_confidence", "validated"
+        "avg_confidence", "highest_confidence", "validated_patterns"
     }
     
     @pytest.fixture
@@ -40,7 +40,7 @@ class TestSQLContract:
             f"Missing columns. Expected {self.FRAUD_SUMMARY_COLUMNS}, got {set(row.keys())}"
         
         # ✅ Contract: Non-NULL columns
-        non_null = ["total_patterns", "critical", "high", "medium", "low", "validated"]
+        non_null = ["total_patterns", "critical", "high", "medium", "low", "validated_patterns"]
         for col in non_null:
             assert row[col] is not None, f"Column {col} should not be NULL"
         

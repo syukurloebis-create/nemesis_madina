@@ -1,0 +1,107 @@
+{
+  "system_health": "HEALTHY",
+  "deployment_decisions": {
+    "development": "GO",
+    "ci": "GO",
+    "staging": "GO",
+    "production": "GO"
+  },
+  "findings": [],
+  "metadata": {
+    "timestamp": "2026-08-04T14:30:00.123456",
+    "environment": "production",
+    "sqlalchemy_version": "2.0.23",
+    "capabilities": [
+      "declarative_base",
+      "DeclarativeBase",
+      "MappedAsDataclass",
+      "AssociationProxy",
+      "hybrid_property",
+      "all_orm_descriptors",
+      "selectinload",
+      "registry"
+    ]
+  },
+  "verification_results": {
+    "discovery": {
+      "registry_discovery": {
+        "status": "PASS",
+        "registries": 1,
+        "details": {"metadata_id": 140238492, "tables": 44}
+      },
+      "model_discovery": {
+        "status": "PASS",
+        "models": 44,
+        "details": {"concrete": 40, "abstract": 4}
+      }
+    },
+    "runtime": {
+      "registry_growth": {
+        "status": "INFO",
+        "details": "3 modules no growth - already registered"
+      },
+      "runtime_registration": {
+        "status": "PASS",
+        "modules": 44
+      }
+    },
+    "orm": {
+      "mapper_integrity": {
+        "status": "PASS",
+        "mappers": 44,
+        "details": {"valid": 44, "invalid": 0}
+      },
+      "mapper_configuration": {
+        "status": "PASS",
+        "details": {"warnings": 0}
+      },
+      "metadata_ownership": {
+        "status": "PASS",
+        "groups": 1
+      },
+      "registry_consistency": {
+        "status": "PASS",
+        "details": {"orphan_registries": 0, "orphan_mappers": 0}
+      },
+      "cross_registry_deps": {
+        "status": "PASS",
+        "dependencies": 0
+      },
+      "bootstrap_completeness": {
+        "status": "PASS",
+        "completeness": 1.0,
+        "details": {"expected": 44, "actual": 44}
+      },
+      "mapper_lifecycle": {
+        "status": "PASS",
+        "details": {"configured": 44, "unconfigured": 0, "failed": 0}
+      }
+    },
+    "persistence": {
+      "persistence_contract": {
+        "status": "PASS",
+        "details": {"create_all": true, "reflection": true, "compare": true}
+      },
+      "identity_map": {
+        "status": "PASS",
+        "details": {"session": true, "merge": true, "expire": true, "expunge": true, "detached": true}
+      },
+      "unit_of_work": {
+        "status": "PASS",
+        "details": {"flush": true, "dirty": true, "autoflush": true, "rollback": true}
+      }
+    },
+    "behavioral": {
+      "lazy_loading": {
+        "status": "PASS",
+        "details": {"tested": 5, "passed": 5}
+      },
+      "eager_loading": {
+        "status": "PASS",
+        "details": {"tested": 5, "passed": 5}
+      }
+    }
+  },
+  "generated_by": "verification_runner.py v1.0.0",
+  "generated_at": "2026-08-04T14:30:00.123456"
+}

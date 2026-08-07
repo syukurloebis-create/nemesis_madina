@@ -32,24 +32,26 @@ class RiskScoreCalculator:
     def calculate(
         cls,
         dto: RiskCollectorDTO,
-        weights: RiskWeights = None,  # ← PARAMETER EKSPLISIT
+        weights: RiskWeights = None,
     ) -> CalculatedRisk:
-        """
-        Calculate risk from DTO.
-        
-        Args:
-            dto: RiskCollectorDTO from collector
-            weights: RiskWeights (optional, uses default if None)
-            
-        Returns:
-            CalculatedRisk: Pure calculation result
-        """
-        # ===== Use default weights if not provided =====
+        """Calculate risk from DTO."""
+    
         if weights is None:
             config = CalculatorConfig.default()
             weights = config.get_risk_weights()
-        
-        # ===== If database already has level, use it =====
+    
+        # ✅ Jika engine status error → return UNKNOWN
+        if dto.engine_status != EngineStatus.OK:
+            return CalculatedRisk(
+                score=0.0,
+                level=RiskLevel.UNKNOWN,
+                anomaly_score=0.0,
+                collusion_score=0.0,
+                financial_score=0.0,
+                engine_status=dto.engine_status,
+            )
+    
+        # ✅ Jika database sudah memiliki level, gunakan itu
         if dto.level and dto.level.upper() != "UNKNOWN":
             return CalculatedRisk(
                 score=dto.score,
@@ -57,17 +59,28 @@ class RiskScoreCalculator:
                 anomaly_score=dto.anomaly_score,
                 collusion_score=dto.collusion_score,
                 financial_score=dto.financial_score,
-                engine_status=dto.engine_status,  # ← PROPAGATE
+                engine_status=dto.engine_status,
             )
-        
-        # ===== Otherwise calculate from components =====
+    
+        # ✅ Jika DTO menyatakan UNKNOWN, gunakan UNKNOWN (TANPA inferensi dari angka)
+        if dto.level == "UNKNOWN":
+            return CalculatedRisk(
+                score=0.0,
+                level=RiskLevel.UNKNOWN,
+                anomaly_score=0.0,
+                collusion_score=0.0,
+                financial_score=0.0,
+                engine_status=dto.engine_status,
+            )
+    
+        # Calculate from components
         score = (
             dto.anomaly_score * weights.anomaly_weight +
             dto.collusion_score * weights.collusion_weight +
             dto.financial_score * weights.financial_weight
         )
-        
-        # ===== Determine level from score =====
+    
+        # Determine level from score
         if score >= 80:
             level = RiskLevel.CRITICAL
         elif score >= 60:
@@ -78,12 +91,12 @@ class RiskScoreCalculator:
             level = RiskLevel.LOW
         else:
             level = RiskLevel.UNKNOWN
-        
+    
         return CalculatedRisk(
             score=round(score, 2),
             level=level,
             anomaly_score=round(dto.anomaly_score, 2),
             collusion_score=round(dto.collusion_score, 2),
             financial_score=round(dto.financial_score, 2),
-            engine_status=dto.engine_status,  # ← PROPAGATE
+            engine_status=dto.engine_status,
         )

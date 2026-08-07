@@ -1,0 +1,71 @@
+name: ORM Verification Gate
+
+on:
+  pull_request:
+    paths:
+      - 'backend/models/**'
+      - 'backend/infrastructure/models/**'
+      - 'alembic/**'
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+      
+      - name: Run ORM Verification
+        run: |
+          python scripts/metadata_inventory/verification_runner.py --env ci
+      
+      - name: Upload verification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-evidence-${{ github.sha }}
+          path: verification_evidence/
+      
+      - name: Check deployment decision
+        run: |
+          DECISION=$(python -c "import json; print(json.load(open('verification_evidence/verification_results.json'))['deployment_decisions']['ci'])")
+          if [ "$DECISION" = "STOP" ]; then
+            echo "❌ Verification failed - deployment blocked"
+            exit 1
+          fi
+          echo "✅ Verification passed - deployment allowed"
+      
+      - name: Verify combined checksum
+        run: |
+          python -c "
+          import json
+          import hashlib
+          with open('verification_evidence/manifest.json') as f:
+              manifest = json.load(f)
+          expected = manifest['combined_checksum']
+          
+          combined = {
+              'self_validation': json.load(open('verification_evidence/self_validation_results.json')),
+              'verification': json.load(open('verification_evidence/verification_results.json')),
+              'execution_log': json.load(open('verification_evidence/execution_log.json'))
+          }
+          actual = hashlib.sha256(json.dumps(combined, sort_keys=True, default=str).encode()).hexdigest()[:16]
+          
+          if expected != actual:
+              print(f'Checksum mismatch: expected {expected}, got {actual}')
+              exit(1)
+          print('✅ Checksum verified')
+          "

@@ -1,38 +1,79 @@
-﻿"""
-Domain Enums — Package export.
+﻿# backend/domain/enums/__init__.py
+"""
+Domain Enums Registry
 
-Semua enum di-export dari sini agar import konsisten.
+This module exports all domain enums used across the NEMESIS system.
+All enums are defined in separate files and imported here for convenience.
+
+Note: RiskLevel is imported from risk_level.py (canonical owner).
+Do not import from risk.py (duplicate definition).
 """
 
-from .engine import EngineName, EngineStatus, EngineType
+# ============================================
+# Imports from each module
+# ============================================
+
+from .alerts import AlertSeverity, AlertStatus
+from .classification import DataClassification
 from .dashboard import DashboardStatus, RecoveryState
-from .severity import Severity
-from .risk_level import RiskLevel
+from .detection import DetectionType
+from .engine import EngineName, EngineStatus, EngineType
 from .evidence import EvidenceLevel
 from .fallback import FallbackReason
+from .finding import FindingStatus
+from .risk_calculation_source import RiskCalculationSource
+from .risk_level import RiskLevel
+from .severity import Severity, SeverityRank
 
-# ============================================================================
-# BACKWARD COMPATIBILITY — Phase B (akan dihapus di Phase E)
-# ============================================================================
-
-# EngineType sudah di-export dari .engine
-# FallbackReason sudah di-export dari .fallback
+# ============================================
+# Public API
+# ============================================
 
 __all__ = [
-    # Engine
-    "EngineName",
-    "EngineStatus",
-    "EngineType",          
+    # Alerts
+    "AlertSeverity",
+    "AlertStatus",
+    
+    # Classification
+    "DataClassification",
     
     # Dashboard
     "DashboardStatus",
     "RecoveryState",
     
-    # Severity
-    "Severity",
-    "RiskLevel",
+    # Detection
+    "DetectionType",
+    
+    # Engine
+    "EngineName",
+    "EngineStatus",
+    "EngineType",
+    
+    # Evidence
     "EvidenceLevel",
     
     # Fallback
-    "FallbackReason",      
+    "FallbackReason",
+    
+    # Finding
+    "FindingStatus",
+    
+    # Risk
+    "RiskCalculationSource",
+    "RiskLevel",  # From risk_level.py (canonical)
+    
+    # Severity
+    "Severity",
+    "SeverityRank",
 ]
+
+# ============================================
+# Notes
+# ============================================
+
+# RiskLevel.UNKNOWN is domain-only, NOT stored in database
+# Database uses: CRITICAL, HIGH, MEDIUM, LOW, INFO
+# Mapping: UNKNOWN ↔ INFO is pending ADR decision (E2.2A-3)
+
+# Do NOT export from risk.py (duplicate RiskLevel)
+# Canonical RiskLevel is in risk_level.py

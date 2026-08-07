@@ -1,20 +1,23 @@
 # backend/repositories/sqlalchemy/procurement_repository_impl.py
 
 from typing import Optional, Sequence
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func, distinct
 
 from backend.application.dto.investigation_criteria import InvestigationCriteria
 from backend.application.dto.procurement_record import ProcurementRecord
 from backend.application.dto.search_options import SearchOptions
 from backend.infrastructure.models.procurement import RupPaketDetailed
+from backend.infrastructure.sql_repository import SQLRepository
+from backend.infrastructure.sql_keys import SQLKey
+from backend.infrastructure.unit_of_work import IUnitOfWork
+from backend.repositories.rows.procurement_rows import ProcurementSummaryRow
 
 
 class ProcurementRepositoryImpl:
-    """PostgreSQL implementation of ProcurementRepository."""
+    """Procurement Repository Implementation using SQLRepository."""
 
-    def __init__(self, session: AsyncSession):
-        self._session = session
+    def __init__(self, sql_repo: SQLRepository):
+        self._sql_repo = sql_repo
 
     @staticmethod
     def _safe_str(value: Optional[str]) -> str:
@@ -45,11 +48,27 @@ class ProcurementRepositoryImpl:
         options: Optional[SearchOptions] = None,
     ) -> Sequence[ProcurementRecord]:
         """Search procurement records by criteria."""
-        self._validate_options(options)
-        stmt = self._build_statement(criteria, options)
-        result = await self._session.execute(stmt)
-        rows = result.scalars().all()
-        return [self._to_record(row) for row in rows]
+        # TODO: Implement using SQLRepository pattern
+        # For now, this needs to be refactored to use SQLRepository
+        raise NotImplementedError("search() must be refactored to use SQLRepository")
+
+    async def get_summary(self, uow: IUnitOfWork) -> ProcurementSummaryRow:
+        """Get procurement summary."""
+        row = await self._sql_repo.fetch_one(
+            uow,
+           SQLKey.PROCUREMENT_SUMMARY,
+        )
+
+        if not row:
+            return ProcurementSummaryRow.empty()
+
+        return ProcurementSummaryRow(
+            packages=row.get("packages", 0),
+            vendors=row.get("vendors", 0),
+            instansi_count=row.get("instansi_count", 0),
+            total_value=float(row.get("total_value", 0) or 0),
+            avg_value=float(row.get("avg_value", 0) or 0),
+        )
 
     def _build_statement(
         self,
