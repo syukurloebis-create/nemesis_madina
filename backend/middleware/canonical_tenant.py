@@ -30,6 +30,7 @@ class CanonicalTenantMiddleware(BaseHTTPMiddleware):
 
     PUBLIC_PATHS = {
         "/health",
+        "/health/dashboard",
         "/metrics",
         "/openapi.json",
         "/docs",

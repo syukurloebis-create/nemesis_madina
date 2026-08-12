@@ -27,7 +27,6 @@ class AuthService:
     """Authentication business logic - Canonical Async Implementation"""
 
     @staticmethod
-    @staticmethod
     def get_password_hash(password: str) -> str:
         """Hash password using bcrypt."""
         password_bytes = password.encode("utf-8")
@@ -35,22 +34,15 @@ class AuthService:
         return hashed.decode("utf-8")
 
     @staticmethod
-    def verify_password(
-        plain_password: str,
-        hashed_password: str,
-    ) -> bool:
+    def verify_password(plain_password: str, hashed_password: str) -> bool:
         """Verify password against bcrypt hash."""
         plain_bytes = plain_password.encode("utf-8")
         hash_bytes = hashed_password.encode("utf-8")
         return bcrypt.checkpw(plain_bytes, hash_bytes)
 
     @staticmethod
-    async def authenticate_user(
-        db: AsyncSession,
-        username: str,
-        password: str,
-    ) -> Optional[User]:
-        """Authenticate user with username and password"""
+    async def authenticate_user(db: AsyncSession, username: str, password: str) -> Optional[User]:
+        """Authenticate user with username and password."""
         result = await db.execute(
             select(User).where(User.username == username)
         )
@@ -71,11 +63,8 @@ class AuthService:
         return user
 
     @staticmethod
-    async def create_user(
-        db: AsyncSession,
-        user_data: UserCreate,
-    ) -> User:
-        """Create new user"""
+    async def create_user(db: AsyncSession, user_data: UserCreate) -> User:
+        """Create new user."""
         # Check if username already exists
         result = await db.execute(
             select(User).where(User.username == user_data.username)
@@ -112,11 +101,7 @@ class AuthService:
         return user
 
     @staticmethod
-    async def update_user(
-        db: AsyncSession,
-        user_id: str,
-        user_data: UserUpdate,
-    ) -> User:
+    async def update_user(db: AsyncSession, user_id: str, user_data: UserUpdate) -> User:
         """Update user information (self-service only)."""
         result = await db.execute(
             select(User).where(User.id == user_id)
@@ -142,11 +127,7 @@ class AuthService:
         return user
 
     @staticmethod
-    async def admin_update_user(
-        db: AsyncSession,
-        user_id: str,
-        user_data: AdminUserUpdate,
-    ) -> User:
+    async def admin_update_user(db: AsyncSession, user_id: str, user_data: AdminUserUpdate) -> User:
         """Administrative user update - allows role and is_active changes."""
         result = await db.execute(
             select(User).where(User.id == user_id)
@@ -181,23 +162,25 @@ class AuthService:
         await db.refresh(user)
         return user
 
-def create_tokens(user: User) -> Dict[str, Any]:
-    """Create access and refresh tokens"""
-    token_data = {
-        "sub": user.id,           # SEC-5: immutable identity
-        "username": user.username,
-        "role": user.role,
-        "user_id": user.id,
-        "tenant_id": str(user.tenant_id),  # ← ADDED (Phase 4)
-    }
 
-    access_token = JWTService.create_access_token(token_data)
-    refresh_token = JWTService.create_refresh_token(token_data)
+    @staticmethod
+    def create_tokens(user: User) -> Dict[str, Any]:
+        """Create access and refresh tokens."""
+        token_data = {
+            "sub": user.id,
+            "username": user.username,
+            "role": user.role,
+            "user_id": user.id,
+            "tenant_id": str(user.tenant_id),
+        }
 
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer",
-        "expires_in": 30 * 60,
-        "user": user,
-    }
+        access_token = JWTService.create_access_token(token_data)
+        refresh_token = JWTService.create_refresh_token(token_data)
+
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+            "expires_in": 30 * 60,
+            "user": user,
+        }
