@@ -90,15 +90,17 @@ class EnhancedEventStore(EventStore):
         # Get snapshots for this aggregate
         result = await self.session.execute(
             text("""
-                SELECT version, created_at
+                SELECT snapshot_version, created_at
                 FROM snapshots
-                WHERE aggregate_id = :aggregate_id 
+                WHERE aggregate_id = :aggregate_id
                   AND aggregate_type = :aggregate_type
-                ORDER BY version DESC
+                  AND tenant_id = :tenant_id
+                ORDER BY snapshot_version DESC
             """),
             {
                 "aggregate_id": aggregate_id,
-                "aggregate_type": aggregate_type
+                "aggregate_type": aggregate_type,
+                "tenant_id": self.tenant_id
             }
         )
         snapshot_rows = result.fetchall()

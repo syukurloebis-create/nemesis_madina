@@ -46,6 +46,7 @@ PERSISTENCE_INVENTORY: Dict[str, PersistenceType] = {
     "events": PersistenceType.ORM_EXISTING,
     "evidence": PersistenceType.ORM_EXISTING,
     "findings": PersistenceType.ORM_EXISTING,
+    "tenants": PersistenceType.ORM_EXISTING,
     "graph_entities": PersistenceType.ORM_EXISTING,
     "graph_metadata": PersistenceType.ORM_EXISTING,
     "graph_relationships": PersistenceType.ORM_EXISTING,
@@ -67,9 +68,10 @@ PERSISTENCE_INVENTORY: Dict[str, PersistenceType] = {
     # ============================================
     # SQL REPOSITORY (16 tables)
     # ============================================
+    "access_log": PersistenceType.SQL_REPOSITORY,
     "approvals": PersistenceType.SQL_REPOSITORY,
     "assignments": PersistenceType.SQL_REPOSITORY,
-    "custody": PersistenceType.SQL_REPOSITORY,
+    "custody_chain": PersistenceType.SQL_REPOSITORY,
     "evidence_files": PersistenceType.SQL_REPOSITORY,
     "finding_action_logs": PersistenceType.SQL_REPOSITORY,
     "finding_assignments": PersistenceType.SQL_REPOSITORY,
@@ -82,7 +84,6 @@ PERSISTENCE_INVENTORY: Dict[str, PersistenceType] = {
     "outcome": PersistenceType.SQL_REPOSITORY,
     "recovery_actions": PersistenceType.SQL_REPOSITORY,
     "risk_explanations": PersistenceType.SQL_REPOSITORY,
-    "rup_paket": PersistenceType.SQL_REPOSITORY,
     
     # ============================================
     # SQL ASSET (1 table)
@@ -95,14 +96,13 @@ PERSISTENCE_INVENTORY: Dict[str, PersistenceType] = {
     "finding_comments": PersistenceType.MIGRATION_ONLY,
     "fraud_evidence": PersistenceType.MIGRATION_ONLY,
     "graph_entity_metrics": PersistenceType.MIGRATION_ONLY,
-    "historical_risk_data": PersistenceType.MIGRATION_ONLY,
-    "model_metrics": PersistenceType.MIGRATION_ONLY,
+    "model_metrics": PersistenceType.SQL_REPOSITORY,
     
     # ============================================
     # UNKNOWN (2 tables - need business confirmation)
     # ============================================
-    "follow_up": PersistenceType.UNKNOWN,
-    "investigation_recommendations": PersistenceType.UNKNOWN,
+    
+    "investigation_recommendations": PersistenceType.SQL_REPOSITORY,
     
     # ============================================
     # SYSTEM (1 table)
@@ -291,28 +291,47 @@ def validate_inventory(
 def validate_database_against_inventory() -> bool:
     """
     Validate database against inventory.
-    This function should be called during application startup.
+    
+    This function uses synchronous SQLAlchemy engine because it is called
+    from Alembic (synchronous runtime) and from pytest (async runtime).
+    Using sync engine avoids event loop conflicts.
     """
-    import asyncpg
+    from sqlalchemy import create_engine, text
     from backend.config import settings
-    import asyncio
-    
-    async def get_db_tables():
-        conn = await asyncpg.connect(settings.DATABASE_SYNC_URL)
-        result = await conn.fetch("SELECT tablename FROM pg_tables WHERE schemaname='public'")
-        await conn.close()
-        return {row['tablename'] for row in result}
-    
-    db_tables = asyncio.run(get_db_tables())
-    
+
+    def get_db_tables():
+        """Get tables using synchronous connection."""
+        # Use sync URL (remove +asyncpg if present)
+        sync_url = settings.DATABASE_SYNC_URL
+        if "+asyncpg" in sync_url:
+            sync_url = sync_url.replace("postgresql+asyncpg://", "postgresql://")
+        
+        engine = create_engine(
+            sync_url,
+            pool_pre_ping=True,
+            pool_size=1,
+            max_overflow=0,
+        )
+        
+        with engine.connect() as conn:
+            result = conn.execute(
+                text("SELECT tablename FROM pg_tables WHERE schemaname='public'")
+            )
+            tables = {row[0] for row in result}
+        
+        engine.dispose()
+        return tables
+
+    db_tables = get_db_tables()
+
     # Get ORM metadata
     from backend.bootstrap.models import bootstrap_models
     from backend.database import Base
     bootstrap_models()
     orm_tables = set(Base.metadata.tables.keys())
-    
+
     results = validate_inventory(db_tables, orm_tables)
-    
+
     print("=" * 60)
     print("PERSISTENCE INVENTORY VALIDATION")
     print("=" * 60)
@@ -326,22 +345,22 @@ def validate_database_against_inventory() -> bool:
     print(f"  Unknown: {results['summary']['unknown']}")
     print(f"  System: {results['summary']['system']}")
     print()
-    
+
     if results["errors"]:
         print("❌ ERRORS:")
         for err in results["errors"]:
             print(f"  {err}")
-    
+
     if results["warnings"]:
         print("⚠️ WARNINGS:")
         for warn in results["warnings"]:
             print(f"  {warn}")
-    
+
     if not results["errors"] and not results["warnings"]:
         print("✅ All tables accounted for. Inventory is complete.")
-    
+
     print("=" * 60)
-    
+
     return results["status"] == "PASS"
 
 

@@ -1,10 +1,15 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 from typing import Optional
 import uuid
 from datetime import datetime, timedelta
 import random
 
-router = APIRouter()
+from backend.dependencies.auth import require_case_view
+
+router = APIRouter(
+    dependencies=[Depends(require_case_view)],
+)
+
 
 @router.get("/")
 async def get_cases(

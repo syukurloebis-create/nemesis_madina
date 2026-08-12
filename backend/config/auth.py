@@ -7,23 +7,21 @@ from pydantic import Field, ConfigDict
 
 
 class AuthSettings(BaseSettings):
-    """Authentication settings."""
-    
-    model_config = ConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore",
-        frozen=True,
-        case_sensitive=False
-    )
-    
-    secret_key: str = Field("dev-secret-key-change-in-production", alias="SECRET_KEY")
-    algorithm: str = Field("HS256", alias="JWT_ALGORITHM")
-    access_token_expire_minutes: int = Field(30, alias="JWT_ACCESS_TOKEN_EXPIRE_MINUTES")
-    refresh_token_expire_days: int = Field(7, alias="JWT_REFRESH_TOKEN_EXPIRE_DAYS")
+    secret_key: str = "dev-secret-key-change-in-production"
+    algorithm: str = "HS256"
+
+    access_token_expire_minutes: int = 30
+    refresh_token_expire_days: int = 7
+
+    password_min_length: int = 8
+    password_max_length: int = 72
+
+    password_require_uppercase: bool = True
+    password_require_lowercase: bool = True
+    password_require_digit: bool = True
+    password_require_special: bool = True
 
 
-# ✅ Create auth_settings here
 auth_settings = AuthSettings()
 
 __all__ = ["auth_settings", "AuthSettings"]

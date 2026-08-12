@@ -13,49 +13,35 @@ _bootstrapped = False
 
 
 def bootstrap_models(force: bool = False) -> None:
-    """Bootstrap all ORM models."""
+    """
+    Bootstrap all ORM models.
+    
+    This function should ONLY register models with Base.metadata.
+    It should NOT create tables, run DDL, or have side effects.
+    """
     global _bootstrapped
     
     if _bootstrapped and not force:
         return
     
-    logger.info("Bootstrapping ORM models...")
-    
-    # ============================================
-    # CANONICAL MODELS (Single Source of Truth)
-    # ============================================
-    
-    # Core models - User is still in models/user.py
-    # (We're not changing this yet - Phase 2)
-    import backend.security.models
+    # Import all model modules to register with Base.metadata
+    import backend.models.tenant
     import backend.models.user
-    import backend.models.event         # events, snapshots
-    import backend.cases.models         # cases (canonical)
-    
-    # Infrastructure models
+    import backend.models.event
+    import backend.cases.models
     import backend.infrastructure.models.read_models
     import backend.infrastructure.models.projection_checkpoint
     import backend.infrastructure.models.outbox
     import backend.infrastructure.models.procurement
-    
-    # Domain models
     import backend.evidence.models
     import backend.graph.models
     import backend.intelligence.models
+
+    from backend.models.existing import AuditLog 
     
-    # Security models (skip User duplicate - handled in Phase 2)
-    # import backend.security.models  # Contains duplicate User - skip for now
-    
-    # Legacy compatibility
-    import backend.models.existing
-    
-    # Verification
-    from backend.database import Base
-    table_count = len(Base.metadata.tables)
-    logger.info(f"ORM models bootstrapped: {table_count} tables registered")
-    
-    if table_count == 0:
-        logger.warning("No tables registered after bootstrap - check model imports")
+    # Do NOT call create_all() here
+    # Do NOT run any DDL
+    # Do NOT connect to database
     
     _bootstrapped = True
 

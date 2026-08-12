@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
 from backend.core.version import VersionInfo
 from backend.infrastructure.sql_repository import SQLRepository
 from backend.middleware.request_id_middleware import RequestIDMiddleware
+from backend.middleware.canonical_tenant import CanonicalTenantMiddleware
 
 # Routers — Finding
 from backend.routers.finding import router as finding_router
@@ -68,11 +69,13 @@ from backend.routers.evidence import router as evidence_router
 from backend.routers.fraud import router as fraud_router
 from backend.routers.fraud_detail_router import router as fraud_detail_router
 from backend.routers.graph import router as graph_router
-from backend.routers.investigations import router as investigation_router
+from backend.routers.investigation import router as investigation_router
 from backend.routers.procurement import router as procurement_router
 from backend.routers.recommendations import router as recommendations_router
 from backend.routers.risk import router as risk_router
 from backend.routers.vendors import router as vendors_router
+from backend.routers.historical import router as historical_router
+from backend.routers.snapshot import router as snapshot_router
 
 
 # ============================================================
@@ -172,7 +175,7 @@ app.add_middleware(
 )
 
 app.add_middleware(RequestIDMiddleware)
-
+app.add_middleware(CanonicalTenantMiddleware)
 
 # ============================================================
 # REGISTER ROUTERS — DETERMINISTIC
@@ -218,7 +221,12 @@ logger.info("[OK] Investigation router registered at /api/v1/investigation")
 app.include_router(vendors_router, prefix="/api/v1/vendors", tags=["Vendors"])
 logger.info("[OK] Vendors router registered at /api/v1/vendors")
 
-# --- Intelligence & Dashboard ---
+app.include_router(historical_router, prefix="/api/v1")
+logger.info("[OK] Historical router registered at /api/v1/historical")
+
+app.include_router(snapshot_router, prefix="/api/v1")
+logger.info("[OK] Snapshot router registered at /api/v1/snapshots")
+
 app.include_router(
     intelligence_router,
     prefix="/api/v1",

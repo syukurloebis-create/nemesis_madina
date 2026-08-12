@@ -1,4 +1,5 @@
 # backend/routers/historical.py
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
@@ -8,7 +9,8 @@ import logging
 
 from backend.infrastructure.database import get_db
 from backend.services.historical_service import HistoricalService
-from backend.security.dependencies import require_role
+from backend.dependencies.auth import require_permission
+from backend.domain.enums.permission import Permission
 from backend.cases.event_store import get_case_events
 
 logger = logging.getLogger(__name__)
@@ -20,7 +22,8 @@ router = APIRouter(prefix="/historical", tags=["Historical Reconstruction"])
 async def get_case_state_at_time(
     case_id: str,
     timestamp: str = Query(..., description="ISO format timestamp e.g., 2026-06-15T04:00:00"),
-    session: AsyncSession = Depends(get_db)
+    session: AsyncSession = Depends(get_db),
+    _: any = Depends(require_permission(Permission.CASE_VIEW))
 ):
     """Get case state at specific timestamp (Time Travel)"""
     from backend.services.replay_service import ReplayService
@@ -64,7 +67,7 @@ async def get_state_at_timestamp(
     case_id: str,
     timestamp: str = Query(..., description="ISO format timestamp"),
     db: AsyncSession = Depends(get_db),
-    _: any = Depends(require_role(["ADMIN", "AUDITOR", "INVESTIGATOR"]))
+    _: any = Depends(require_permission(Permission.CASE_VIEW))
 ):
     """Get case state at a specific historical timestamp"""
 
@@ -100,7 +103,7 @@ async def get_forensic_timeline(
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
-    _: any = Depends(require_role(["ADMIN", "AUDITOR", "INVESTIGATOR"]))
+    _: any = Depends(require_permission(Permission.CASE_VIEW))
 ):
     """Get forensic timeline for a case"""
 
@@ -146,7 +149,7 @@ async def compare_versions(
     version_a: int = Query(..., ge=1),
     version_b: int = Query(..., ge=1),
     db: AsyncSession = Depends(get_db),
-    _: any = Depends(require_role(["ADMIN", "INVESTIGATOR"]))
+    _: any = Depends(require_permission(Permission.CASE_VIEW))
 ):
     """Compare two versions of a case with detailed diff"""
     from backend.services.replay_service import ReplayService

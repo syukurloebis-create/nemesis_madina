@@ -343,15 +343,23 @@ def build_application_container(infra: InfrastructureContainer) -> ApplicationCo
     logger.info("Graph components initialized successfully")
 
     # ============================================================
-    # 8. Service Container
+    # 8. Search Repository (Direct injection - not in ServiceContainer)
     # ============================================================
-
+    
+    # procurement_search_repo = ProcurementSearchRepositoryImpl(
+    #    infra.session_factory  # type: async_sessionmaker
+    # )
+    
+    # ============================================================
+    # 9. Service Container - NO repositories in ServiceContainer
+    # ============================================================
+    
     services = ServiceContainer(
         dashboard=dashboard_service,
         risk_application=risk_application_service,
         graph_regeneration=graph_regeneration_service,
     )
-
+    
     # ============================================================
     # 10. Health Container
     # ============================================================

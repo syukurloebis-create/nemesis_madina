@@ -25,18 +25,12 @@ class FindingAssignmentService:
         result = await self.db.execute(
             text(
                 """
-                SELECT
-                    id,
-                    finding_id,
-                    analyst_id,
-                    analyst_name,
-                    assigned_by,
-                    role,
-                    status,
-                    notes,
-                    created_at
+                SELECT id, finding_id, analyst_id, analyst_name, role,
+                       assigned_by, assigned_at, notes, status,
+                       due_date, sla_deadline, is_active,
+                       created_at, updated_at
                 FROM finding_assignments
-                WHERE finding_id=:finding_id
+                WHERE finding_id = :finding_id AND is_active = true
                 AND status='ACTIVE'
                 LIMIT 1
                 """
@@ -77,13 +71,20 @@ class FindingAssignmentService:
                 """
                 INSERT INTO finding_assignments
                 (
+                    id,
                     finding_id,
                     analyst_id,
                     analyst_name,
-                    assigned_by,
                     role,
+                    assigned_by,
+                    assigned_at,
                     notes,
-                    status
+                    status,
+                    due_date,
+                    sla_deadline,
+                    is_active,
+                    created_at,
+                    updated_at
                 )
 
                 VALUES

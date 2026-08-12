@@ -73,7 +73,7 @@ class GraphMetadata(Base):
     checksum = Column(String, nullable=False)
     reason = Column(String, nullable=True)
     regenerated_by = Column(String, default="system")
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     
     __table_args__ = (
         Index("idx_graph_metadata_case_id", "case_id"),

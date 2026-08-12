@@ -2,18 +2,19 @@
 Investigasi Router - NEMESIS V8+
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query, Depends, HTTPException
+from backend.dependencies.auth import (
+    require_case_view,
+    require_case_create,
+    require_case_update,
+)
 from typing import List, Optional
-from datetime import datetime
 from pydantic import BaseModel
 import uuid
+from datetime import datetime, timedelta
 
-# ============================================
-# ROUTER - TANPA PREFIX (sudah di main.py)
-# ============================================
-router = APIRouter(prefix="/investigation", tags=["Investigation"])
+router = APIRouter()
 
-print("[Router] Investigation router initialized with prefix: /api/v1/investigation")
 
 # ============================================
 # MODELS
@@ -159,52 +160,94 @@ mock_investigations = {
 # ENDPOINTS
 # ============================================
 
-@router.get("/stats")
-async def get_stats(case_id: str = Query(...)):
-    """Get investigation statistics"""
-    print(f"[Router] GET /stats for case: {case_id}")
-    
-    if case_id not in mock_investigations:
-        return {
-            "total": 0,
-            "in_progress": 0,
-            "review": 0,
-            "completed": 0,
-            "pending": 0,
-            "escalated": 0
-        }
-    
-    invs = mock_investigations[case_id]
+@router.get(
+    "/case/{case_id}",
+    dependencies=[Depends(require_case_view)],
+)
+async def get_investigations_by_case(case_id: str):
+    """Get all investigations for a case."""
+    return mock_investigations.get(case_id, [])
+
+@router.get(
+    "/stats",
+    dependencies=[Depends(require_case_view)],
+)
+async def get_investigations_stats(case_id: str = Query(...)):
+    """Get investigation statistics."""
+    investigations = mock_investigations.get(case_id, [])
     return {
-        "total": len(invs),
-        "in_progress": len([i for i in invs if i["status"] == "IN_PROGRESS"]),
-        "review": len([i for i in invs if i["status"] == "REVIEW"]),
-        "completed": len([i for i in invs if i["status"] == "COMPLETED"]),
-        "pending": len([i for i in invs if i["status"] == "PENDING"]),
-        "escalated": len([i for i in invs if i["status"] == "ESCALATED"])
+        "total": len(investigations),
+        "in_progress": sum(1 for i in investigations if i["status"] == "IN_PROGRESS"),
+        "pending": sum(1 for i in investigations if i["status"] == "PENDING"),
+        "review": sum(1 for i in investigations if i["status"] == "REVIEW"),
+        "completed": sum(1 for i in investigations if i["status"] == "COMPLETED"),
+        "escalated": sum(1 for i in investigations if i["status"] == "ESCALATED"),
     }
 
-@router.get("/case/{case_id}")
-async def get_investigations(case_id: str):
-    """Get all investigations for a case"""
-    print(f"[Router] GET /case/{case_id}")
-    
-    if case_id not in mock_investigations:
-        return []
-    return mock_investigations[case_id]
-
-@router.get("/{investigation_id}")
+@router.get(
+    "/{investigation_id}",
+    dependencies=[Depends(require_case_view)],
+)
 async def get_investigation(investigation_id: str):
-    """Get investigation by ID"""
-    print(f"[Router] GET /{investigation_id}")
-    
-    for case_id, invs in mock_investigations.items():
-        for inv in invs:
+    """Get investigation by ID."""
+    for investigations in mock_investigations.values():
+        for inv in investigations:
             if inv["id"] == investigation_id:
                 return inv
     raise HTTPException(status_code=404, detail="Investigation not found")
 
-@router.post("/")
+@router.patch(
+    "/{investigation_id}/status",
+    dependencies=[Depends(require_case_update)],
+)
+async def update_investigation_status(
+    investigation_id: str,
+    data: StatusUpdate,  # ← BODY
+):
+    """Update investigation status and progress."""
+    for investigations in mock_investigations.values():
+        for i, inv in enumerate(investigations):
+            if inv["id"] == investigation_id:
+                inv["status"] = data.status
+                inv["progress"] = data.progress
+                inv["updated_at"] = datetime.now().isoformat()
+                return {
+                    "message": "Status updated",
+                    "status": data.status,
+                    "progress": data.progress,
+                    "investigation": investigations[i]
+                }
+    raise HTTPException(status_code=404, detail="Investigation not found")
+
+@router.post(
+    "/{investigation_id}/notes",
+    dependencies=[Depends(require_case_update)],
+)
+async def add_investigation_note(
+    investigation_id: str,
+    note: str = Query(...),
+):
+    """Add note to investigation"""
+    for investigations in mock_investigations.values():
+        for inv in investigations:
+            if inv["id"] == investigation_id:
+                inv["notes"] = inv.get("notes", []) + [note]
+                return {
+                    "message": "Note added successfully",
+                    "investigation_id": investigation_id,
+                    "note": note,
+                    "timestamp": datetime.now().isoformat()
+                }
+    raise HTTPException(status_code=404, detail="Investigation not found")
+
+# ============================================
+# UNIQUE ROUTES WITH DEPENDENCIES
+# ============================================
+
+@router.post(
+    "/",
+    dependencies=[Depends(require_case_create)],
+)
 async def create_investigation(data: InvestigationCreate):
     """Create new investigation"""
     print(f"[Router] POST / with data: {data}")
@@ -237,22 +280,10 @@ async def create_investigation(data: InvestigationCreate):
     
     return new_inv
 
-@router.patch("/{investigation_id}/status")
-async def update_status(investigation_id: str, data: StatusUpdate):
-    """Update investigation status"""
-    print(f"[Router] PATCH /{investigation_id}/status with data: {data}")
-    
-    for case_id, invs in mock_investigations.items():
-        for idx, inv in enumerate(invs):
-            if inv["id"] == investigation_id:
-                inv["status"] = data.status
-                inv["progress"] = data.progress
-                inv["updated_at"] = datetime.now().isoformat()
-                mock_investigations[case_id][idx] = inv
-                return {"message": "Status updated", "status": data.status, "progress": data.progress}
-    raise HTTPException(status_code=404, detail="Investigation not found")
-
-@router.post("/{investigation_id}/escalate")
+@router.post(
+    "/{investigation_id}/escalate",
+    dependencies=[Depends(require_case_update)],
+)
 async def escalate_investigation(investigation_id: str, data: EscalateRequest):
     """Escalate investigation"""
     print(f"[Router] POST /{investigation_id}/escalate with data: {data}")
@@ -267,7 +298,10 @@ async def escalate_investigation(investigation_id: str, data: EscalateRequest):
                 return {"message": "Escalated", "reason": data.reason, "target_level": data.target_level}
     raise HTTPException(status_code=404, detail="Investigation not found")
 
-@router.get("/{investigation_id}/evidence")
+@router.get(
+    "/{investigation_id}/evidence",
+    dependencies=[Depends(require_case_view)],
+)
 async def get_evidence(investigation_id: str):
     """Get evidence"""
     return [
@@ -275,7 +309,10 @@ async def get_evidence(investigation_id: str):
         for i in range(1, 6)
     ]
 
-@router.get("/{investigation_id}/team")
+@router.get(
+    "/{investigation_id}/team",
+    dependencies=[Depends(require_case_view)],
+)
 async def get_team(investigation_id: str):
     """Get team members"""
     return [
@@ -283,23 +320,17 @@ async def get_team(investigation_id: str):
         for i in range(1, 4)
     ]
 
-@router.post("/{investigation_id}/notes")
-async def add_note(investigation_id: str, data: dict):
-    """Add note"""
-    return {
-        "id": f"note-{uuid.uuid4().hex[:8]}",
-        "content": data.get("content", ""),
-        "created_at": datetime.now().isoformat(),
-        "created_by_name": "System"
-    }
-
-@router.get("/{investigation_id}/notes")
+@router.get(
+    "/{investigation_id}/notes",
+    dependencies=[Depends(require_case_view)],
+)
 async def get_notes(investigation_id: str):
     """Get notes"""
     return [
         {"id": f"note-{i}", "content": f"Note {i}", "created_at": datetime.now().isoformat()}
         for i in range(1, 3)
     ]
+
 
 print("[OK] Investigation endpoints registered:")
 print("  GET    /api/v1/investigation/stats")

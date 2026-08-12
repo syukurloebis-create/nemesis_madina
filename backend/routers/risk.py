@@ -1,12 +1,19 @@
 """
 Risk Router - Fixed (tanpa prefix internal)
+KOSONGKAN prefix - main.py akan menambahkan /api/v1/risk
 """
-from fastapi import APIRouter, Query
+
+from fastapi import APIRouter, Query, Depends
 from typing import Optional
 from datetime import datetime
 
-# ✅ KOSONGKAN prefix - main.py akan menambahkan /api/v1/risk
-router = APIRouter(tags=["Risk"])
+from backend.dependencies.auth import require_intelligence_view
+
+router = APIRouter(
+    tags=["Risk"],
+    dependencies=[Depends(require_intelligence_view)],
+)
+
 
 async def risk_summary():
     return {

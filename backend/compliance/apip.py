@@ -104,7 +104,7 @@ class APIPCompliance:
 
     def _check_security(self) -> str:
         try:
-            from backend.security.rbac import get_rbac
+            from backend.dependencies.auth import require_permission
             return "compliant"
         except ImportError:
             return "non-compliant"

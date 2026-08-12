@@ -1,8 +1,20 @@
 # backend/evidence/models.py
 
-from sqlalchemy import Column, String, DateTime, Boolean, Integer, Text, Float, JSON 
-from sqlalchemy.sql import func
+from sqlalchemy import (
+    Column,
+    String,
+    DateTime,
+    Boolean,
+    Integer,
+    Text,
+    Float,
+    JSON,
+    Index,
+    UniqueConstraint,
+)
+from sqlalchemy.dialects.postgresql import ENUM
 from backend.database import Base
+from sqlalchemy.sql import func
 import enum
 import uuid
 
@@ -73,22 +85,22 @@ class Finding(Base):
     # EXISTING COLUMNS (UNCHANGED)
     # ============================================
     id = Column(String, primary_key=True)
-    case_id = Column(String, nullable=True)
-    finding_type = Column(String, nullable=False)
-    description = Column(Text, nullable=False)
-    severity = Column(String, nullable=False)
+    case_id = Column(String, nullable=False)
+    finding_type = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
+    severity = Column(String, nullable=True)
     confidence = Column(Float, nullable=True)
     anomaly_score = Column(Float, nullable=True)
-    created_at = Column(DateTime, nullable=True)
-    updated_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=True, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=True) 
     created_by = Column(String, nullable=True)
     evidence_ids = Column(JSON, nullable=True)
     
     # ============================================
     # CANONICAL COLUMNS (Migration Provenance)
     # ============================================
-    fingerprint = Column(String(64), nullable=True)  # Migration: 4cc8a0a5030b
-    detection_method = Column(String, nullable=True)  # Migration: 4cc8a0a5030b
+    fingerprint = Column(String(64), nullable=True)
+    detection_method = Column(String, nullable=True)
     
     # ============================================
     # NEW CANONICAL COLUMN (Migration Provenance) ← ADD
@@ -101,12 +113,26 @@ class Finding(Base):
     # ============================================
     # PRODUCTION CONTRACT COLUMNS (Pending Provenance)
     # ============================================
-    status = Column(String, nullable=True)  # ENUM in DB - normalization deferred to E2.2
+    status = Column(ENUM('DRAFT', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'ESCALATED', name='findingstatus'), nullable=True)
     anomaly_details = Column(JSON, nullable=True)
     financial_loss = Column(Float, nullable=True)
     risk_score = Column(Float, nullable=True)
     reviewed_by = Column(String, nullable=True)
-    reviewed_at = Column(DateTime, nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
     escalated_to = Column(String, nullable=True)
-    escalated_at = Column(DateTime, nullable=True)
+    escalated_at = Column(DateTime(timezone=True), nullable=True)
     institution_id = Column(String, nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "case_id",
+            "finding_type",
+            "detection_method",
+            "fingerprint",
+            name="uq_findings_case_type_method_fp",
+        ),
+        Index(
+            "idx_findings_fingerprint",
+            "fingerprint",
+        ),
+    )

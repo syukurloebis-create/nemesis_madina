@@ -14,8 +14,8 @@ export const investigationApi = {
     apiClient.post('/api/v1/investigation/', data),
   
   // Update status
-  updateStatus: (id: string, status: string, progress: number) =>
-    apiClient.patch(`/api/v1/investigation/${id}/status`, { status, progress }),
+  updateStatus: async (id: string, status: string, progress?: number) => {
+    const response = await apiClient.patch(`/api/v1/investigation/${id}/status`, { status, progress });
   
   // Escalate
   escalate: (id: string, reason: string, targetLevel: string) =>

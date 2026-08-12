@@ -1,4 +1,4 @@
-"""
+f"""
 Database Configuration - SINGLE SOURCE OF TRUTH
 
 Centralized database connection and session management for NEMESIS.
@@ -120,21 +120,6 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 
-def get_db_session() -> AsyncSession:
-    """
-    Get a session for background tasks.
-
-    Returns:
-        AsyncSession: A session that must be manually managed
-
-    Example:
-        session = get_db_session()
-        async with session:
-            await session.execute(...)
-    """
-    return AsyncSessionLocal()
-
-
 async def run_with_new_session(
     func: Callable[..., Awaitable[T]],
     *args,
@@ -162,21 +147,6 @@ async def run_with_new_session(
     async with AsyncSessionLocal() as session:
         return await func(session, *args, **kwargs)
 
-
-async def ensure_db_connection() -> bool:
-    """
-    Check database connectivity.
-
-    Returns:
-        bool: True if connection is successful
-    """
-    try:
-        async with AsyncSessionLocal() as session:
-            await session.execute(text("SELECT 1"))
-            return True
-    except Exception as e:
-        logger.error(f"Database connection failed: {e}")
-        return False
 
 # ============================================================
 # COMPATIBILITY LAYER - LEGACY FUNCTIONS

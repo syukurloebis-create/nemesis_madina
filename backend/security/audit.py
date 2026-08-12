@@ -182,7 +182,7 @@ class SecurityAuditor:
     def _check_rbac(self) -> bool:
         """Check RBAC implementation"""
         try:
-            from backend.security.rbac import get_rbac
+            from backend.dependencies.auth import require_permission
             return True
         except ImportError:
             return False

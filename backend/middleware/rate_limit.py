@@ -8,26 +8,41 @@ from datetime import datetime, timedelta
 from functools import wraps
 from fastapi import Request, HTTPException, status
 
+
 # Simple in-memory rate limiter
 class RateLimiter:
     def __init__(self):
         self.requests: Dict[str, list] = defaultdict(list)
-    
+
     def is_allowed(self, key: str, limit: int, window: int) -> Tuple[bool, int]:
-        """Check if request is allowed"""
         now = time.time()
         window_start = now - window
-        
+
         # Clean old requests
         self.requests[key] = [t for t in self.requests[key] if t > window_start]
-        
+
         # Check limit
         if len(self.requests[key]) >= limit:
             return False, int(self.requests[key][0] + window - now)
-        
+
         # Add current request
         self.requests[key].append(now)
         return True, 0
+
+    def reset(self, key: str | None = None) -> None:
+        """Reset rate limit state.
+
+        Intended for deterministic test isolation.
+        Does not affect production behavior.
+
+        Args:
+            key: Optional specific key to reset. If None, reset all.
+        """
+        if key is None:
+            self.requests.clear()
+        else:
+            self.requests.pop(key, None)
+
 
 # Global rate limiter instance
 _rate_limiter = RateLimiter()

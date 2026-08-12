@@ -1,10 +1,5 @@
 # backend/cases/models.py
 
-from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.sql import func
-from enum import Enum
-import uuid
-
 from sqlalchemy import (
     Column,
     String,
@@ -15,9 +10,14 @@ from sqlalchemy import (
     CheckConstraint,
     UUID,
     JSON,
-    Numeric  
+    Numeric,
+    Index,
 )
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.sql import func
 from backend.database import Base
+import uuid
+from enum import Enum
 
 
 class CaseStatus(str, Enum):
@@ -36,83 +36,53 @@ class CasePriority(str, Enum):
 
 class Case(Base):
     __tablename__ = "cases"
-    
-    # ============================================
-    # EXISTING COLUMNS (UNCHANGED)
-    # ============================================
-    id = Column(UUID, primary_key=True, default=uuid.uuid4)
+
+    # Database canonical: UUID PK
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
+
     status = Column(String, nullable=True)
     priority = Column(String, nullable=True)
-    assigned_to = Column(UUID, nullable=True)  # UNCHANGED
-    institution_id = Column(UUID, nullable=True)  # UNCHANGED
-    tenant_id = Column(UUID, nullable=False)
-    created_by = Column(UUID, nullable=True)  # UNCHANGED
-    created_at = Column(DateTime, nullable=True)  # UNCHANGED
-    updated_at = Column(DateTime, nullable=True)  # UNCHANGED
-    is_deleted = Column(Boolean, default=False)
-    deleted_at = Column(DateTime, nullable=True)  # UNCHANGED
-    version = Column(Integer, nullable=False, default=0)
-    latest_fraud = Column(JSONB, nullable=True)
-    latest_risk = Column(JSONB, nullable=True)
-    latest_evidence = Column(JSONB, nullable=True)
-    latest_graph = Column(JSONB, nullable=True)
-    latest_procurement = Column(JSONB, nullable=True)
-    
-    # ============================================
-    # NEW CANONICAL COLUMNS (Add - Verified by production usage)
-    # ============================================
-    workflow_stage = Column(String(50), nullable=True)  # ← ADD (Production: dashboard_service, executive, governance, provenance, copilot)
-    risk_score = Column(Numeric(5, 2), nullable=True)  # ← ADD (Production: executive, provenance, copilot)
-    risk_level = Column(String(20), nullable=True)  # ← ADD (Production: executive, provenance)
-    review_notes = Column(Text, nullable=True)  # ← ADD (Production: services)
-    review_by = Column(UUID, nullable=True)  # ← ADD (Production: services)
-    review_at = Column(DateTime, nullable=True)  # ← ADD (Production: services)
-    assigned_at = Column(DateTime, nullable=True)  # ← ADD (Production: services)
-    investigation_started_at = Column(DateTime, nullable=True)  # ← ADD (Production: services)
-    investigation_completed_at = Column(DateTime, nullable=True)  # ← ADD (Production: services)
-    
-    # PENDING VERIFICATION (Don't add yet)
-    # risk_factors = Column(JSONB, nullable=True)  # ⚠️ Need migration verification
 
-    # ============================================================
-    # EXISTING RISK COLUMNS (if they exist in current schema)
-    # ============================================================
-    # Uncomment these if they are already in your database
-    # If not, add them in a separate migration first
-    #
-    # risk_score = Column(Float, nullable=True, default=0.0)
-    # risk_level = Column(String, nullable=True, default="LOW")
-    # risk_factors = Column(JSONB, nullable=True)
+    assigned_to = Column(UUID(as_uuid=True), nullable=True)
+    assigned_at = Column(DateTime, nullable=True)
 
-    # ============================================================
-    # NEW: DDD REPOSITORY COLUMNS
-    # ============================================================
+    institution_id = Column(UUID(as_uuid=True), nullable=True)
+    tenant_id = Column(UUID(as_uuid=True), nullable=False)
 
-    # Version for optimistic locking
-    version = Column(
-        Integer,
-        nullable=False,
-        default=0,
-        server_default="0",
-    )
+    created_by = Column(UUID(as_uuid=True), nullable=True)
+    created_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, nullable=True)
 
-    # Latest analysis snapshots as JSONB
+    is_deleted = Column(Boolean, nullable=False, default=False, server_default="false")
+    deleted_at = Column(DateTime, nullable=True)
+
+    # Single version definition
+    version = Column(Integer, nullable=False, default=0, server_default="0")
+
+    # Latest analysis snapshots - GIN indexed for JSON queries
     latest_fraud = Column(JSONB, nullable=True)
     latest_risk = Column(JSONB, nullable=True)
     latest_evidence = Column(JSONB, nullable=True)
     latest_graph = Column(JSONB, nullable=True)
     latest_procurement = Column(JSONB, nullable=True)
 
-    # ============================================================
-    # TABLE CONSTRAINTS
-    # ============================================================
+    workflow_stage = Column(String(50), nullable=True)
 
+    risk_score = Column(Numeric(5, 2), nullable=True)
+    risk_level = Column(String(20), nullable=True)
+
+    review_notes = Column(Text, nullable=True)
+    review_by = Column(UUID(as_uuid=True), nullable=True)
+    review_at = Column(DateTime, nullable=True)
+
+    investigation_started_at = Column(DateTime, nullable=True)
+    investigation_completed_at = Column(DateTime, nullable=True)
+
+    # ✅ PATCH: ADDED 2 GIN indexes (preserved existing CheckConstraint)
     __table_args__ = (
-        CheckConstraint(
-            "version >= 0",
-            name="ck_cases_version_non_negative"
-        ),
-        # Add other constraints as needed
+        CheckConstraint("version >= 0", name="ck_cases_version_non_negative"),
+        Index("idx_cases_latest_fraud", "latest_fraud", postgresql_using="gin"),
+        Index("idx_cases_latest_risk", "latest_risk", postgresql_using="gin"),
     )

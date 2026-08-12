@@ -7,7 +7,8 @@ from typing import Optional
 from backend.infrastructure.database import get_db
 from backend.services.snapshot_service import SnapshotService
 from backend.cases.event_store import EventStore
-from backend.security.dependencies import require_role
+from backend.dependencies.auth import require_permission
+from backend.domain.enums.permission import Permission
 
 router = APIRouter(prefix="/snapshots", tags=["Snapshots"])
 
@@ -16,7 +17,7 @@ router = APIRouter(prefix="/snapshots", tags=["Snapshots"])
 async def create_snapshot(
     case_id: str,
     db: AsyncSession = Depends(get_db),
-    _: any = Depends(require_role(["ADMIN"]))
+    _: any = Depends(require_permission(Permission.CASE_UPDATE))
 ):
     """Create a snapshot for a case"""
     
@@ -52,7 +53,7 @@ async def create_snapshot(
 async def get_latest_snapshot(
     case_id: str,
     db: AsyncSession = Depends(get_db),
-    _: any = Depends(require_role(["ADMIN", "AUDITOR", "INVESTIGATOR"]))
+    _: any = Depends(require_permission(Permission.CASE_VIEW))
 ):
     """Get latest snapshot for a case"""
     
@@ -77,7 +78,7 @@ async def get_snapshot_at_version(
     case_id: str,
     version: int,
     db: AsyncSession = Depends(get_db),
-    _: any = Depends(require_role(["ADMIN", "AUDITOR", "INVESTIGATOR"]))
+    _: any = Depends(require_permission(Permission.CASE_VIEW))
 ):
     """Get snapshot at specific version"""
     
@@ -103,7 +104,7 @@ async def list_snapshots(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
-    _: any = Depends(require_role(["ADMIN", "AUDITOR", "INVESTIGATOR"]))
+    _: any = Depends(require_permission(Permission.CASE_VIEW))
 ):
     """List all snapshots for a case"""
     
@@ -131,7 +132,7 @@ async def delete_old_snapshots(
     case_id: str,
     keep_count: int = Query(10, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
-    _: any = Depends(require_role(["ADMIN"]))
+    _: any = Depends(require_permission(Permission.CASE_UPDATE))
 ):
     """Delete old snapshots, keeping only the most recent ones"""
     
@@ -157,7 +158,7 @@ async def delete_old_snapshots(
 async def get_snapshot_stats(
     case_id: str,
     db: AsyncSession = Depends(get_db),
-    _: any = Depends(require_role(["ADMIN", "AUDITOR", "INVESTIGATOR"]))
+    _: any = Depends(require_permission(Permission.CASE_VIEW))
 ):
     """Get snapshot statistics for a case"""
     
@@ -179,7 +180,7 @@ async def create_auto_snapshot(
     case_id: str,
     interval: int = Query(50, ge=10, le=200),
     db: AsyncSession = Depends(get_db),
-    _: any = Depends(require_role(["ADMIN"]))
+    _: any = Depends(require_permission(Permission.CASE_UPDATE))
 ):
     """Create snapshot automatically if needed (every N events)"""
     

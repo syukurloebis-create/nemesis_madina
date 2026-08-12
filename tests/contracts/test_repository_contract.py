@@ -11,7 +11,7 @@ from backend.repositories.sqlalchemy.fraud_repository_impl import FraudRepositor
 from backend.repositories.sqlalchemy.graph_repository_impl import GraphRepositoryImpl
 from backend.repositories.sqlalchemy.risk_repository_impl import RiskRepositoryImpl
 from backend.repositories.sqlalchemy.evidence_repository_impl import EvidenceRepositoryImpl
-from backend.repositories.sqlalchemy.procurement_repository_impl import ProcurementRepositoryImpl
+from backend.repositories.sqlalchemy.procurement_summary_repository_impl import ProcurementSummaryRepositoryImpl
 from backend.infrastructure.sql_repository import SQLRepository
 from backend.infrastructure.sql_repository import SQLRepository
 from backend.infrastructure.sql_keys import SQLKey

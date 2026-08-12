@@ -25,6 +25,15 @@ class ApplicationSettings:
     @property
     def DATABASE_SYNC_URL(self):
         return self.database.sync_url
+
+    @property
+    def DATABASE_ASYNC_URL(self) -> str:
+        """Async database URL for SQLAlchemy."""
+        # Ensure the URL uses asyncpg driver
+        url = self.DATABASE_SYNC_URL
+        if "+asyncpg" not in url and url.startswith("postgresql"):
+            url = url.replace("postgresql://", "postgresql+asyncpg://")
+        return url
     
     @property
     def DEBUG(self):
