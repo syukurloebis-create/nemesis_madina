@@ -1,41 +1,49 @@
 """
-Authentication Schemas
+Authentication Schemas - Canonical SEC-6 Contract
 """
+
+from typing import Optional
 from datetime import datetime
-from typing import Optional, List
+from uuid import UUID
+
 from pydantic import BaseModel, EmailStr, Field, validator
 from backend.services.password_validator import PasswordValidator
+
 
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
-    full_name: Optional[str] = Field(None, max_length=100)
-    role: Optional[str] = Field(default="viewer")
-    
+    full_name: str = Field(..., max_length=100)
+    # REMOVED: role (forced in service)
+
+
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8, max_length=72)
-    
-    @validator('password')
+
+    @validator("password")
     def validate_password(cls, v):
         is_valid, error = PasswordValidator.validate(v)
         if not is_valid:
             raise ValueError(error)
         return v
-    
-    @validator('username')
+
+    @validator("username")
     def validate_username(cls, v):
-        if not v.isalnum() and '_' not in v:
-            raise ValueError("Username must contain only alphanumeric characters and underscore")
+        if not v.replace("_", "").isalnum():
+            raise ValueError(
+                "Username must contain only alphanumeric characters and underscore"
+            )
         return v
+
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = Field(None, max_length=100)
     email: Optional[EmailStr] = None
     password: Optional[str] = Field(None, min_length=8, max_length=72)
-    role: Optional[str] = None
-    is_active: Optional[bool] = None
-    
-    @validator('password')
+    # REMOVED: role
+    # REMOVED: is_active
+
+    @validator("password")
     def validate_password(cls, v):
         if v is not None:
             is_valid, error = PasswordValidator.validate(v)
@@ -43,22 +51,43 @@ class UserUpdate(BaseModel):
                 raise ValueError(error)
         return v
 
+
+class AdminUserUpdate(BaseModel):
+    """Administrative user update - requires admin privileges."""
+    full_name: Optional[str] = Field(None, max_length=100)
+    email: Optional[EmailStr] = None
+    password: Optional[str] = Field(None, min_length=8, max_length=72)
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+    tenant_id: Optional[UUID] = None
+
+    @validator("password")
+    def validate_password(cls, v):
+        if v is not None:
+            is_valid, error = PasswordValidator.validate(v)
+            if not is_valid:
+                raise ValueError(error)
+        return v
+
+
 class UserResponse(BaseModel):
-    id: int
+    id: str
     username: str
     email: str
-    full_name: Optional[str]
+    full_name: str
     role: str
+    tenant_id: UUID
     is_active: bool
-    last_login: Optional[datetime]
-    created_at: datetime
-    
+    created_at: datetime  # ← FIXED: datetime, not object
+
     class Config:
         from_attributes = True
+
 
 class LoginRequest(BaseModel):
     username: str
     password: str
+
 
 class LoginResponse(BaseModel):
     access_token: str
@@ -67,25 +96,29 @@ class LoginResponse(BaseModel):
     expires_in: int
     user: UserResponse
 
+
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
 
 class RefreshTokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     expires_in: int
 
+
 class TokenData(BaseModel):
     sub: str
     username: str
     role: str
-    user_id: int
+    user_id: str
+
 
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str = Field(..., min_length=8, max_length=72)
-    
-    @validator('new_password')
+
+    @validator("new_password")
     def validate_password(cls, v):
         is_valid, error = PasswordValidator.validate(v)
         if not is_valid:

@@ -1,131 +1,127 @@
 """
 JWT Token Service
 """
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any
-from jose import JWTError, jwt
+
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict
+
 from fastapi import HTTPException, status
+from jose import JWTError, jwt
+
 from backend.config.auth import auth_settings
 
+
 class JWTService:
-    """JWT token management service"""
-    
+    """JWT token management service."""
+
     @staticmethod
     def create_access_token(data: Dict[str, Any]) -> str:
-        """Create JWT access token"""
-        to_encode = data.copy()
-        expire = datetime.utcnow() + timedelta(
-            minutes=auth_settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+        """Create JWT access token."""
+        now = datetime.now(timezone.utc)
+        expire = now + timedelta(
+            minutes=auth_settings.access_token_expire_minutes
         )
-        to_encode.update({
-            "exp": expire,
-            "type": "access",
-            "iat": datetime.utcnow()
-        })
+
+        to_encode = data.copy()
+        to_encode.update(
+            {
+                "exp": expire,
+                "type": "access",
+                "iat": now,
+            }
+        )
+
         return jwt.encode(
             to_encode,
-            auth_settings.JWT_SECRET_KEY,
-            algorithm=auth_settings.JWT_ALGORITHM
+            auth_settings.secret_key,
+            algorithm=auth_settings.algorithm,
         )
-    
+
     @staticmethod
     def create_refresh_token(data: Dict[str, Any]) -> str:
-        """Create JWT refresh token"""
-        to_encode = data.copy()
-        expire = datetime.utcnow() + timedelta(
-            days=auth_settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS
+        """Create JWT refresh token."""
+        now = datetime.now(timezone.utc)
+        expire = now + timedelta(
+            days=auth_settings.refresh_token_expire_days
         )
-        to_encode.update({
-            "exp": expire,
-            "type": "refresh",
-            "iat": datetime.utcnow()
-        })
+
+        to_encode = data.copy()
+        to_encode.update(
+            {
+                "exp": expire,
+                "type": "refresh",
+                "iat": now,
+            }
+        )
+
         return jwt.encode(
             to_encode,
-            auth_settings.JWT_SECRET_KEY,
-            algorithm=auth_settings.JWT_ALGORITHM
+            auth_settings.secret_key,
+            algorithm=auth_settings.algorithm,
         )
-    
+
     @staticmethod
     def decode_token(token: str) -> Dict[str, Any]:
-        """Decode and validate JWT token"""
+        """Decode and validate JWT token."""
         try:
             payload = jwt.decode(
                 token,
-                auth_settings.JWT_SECRET_KEY,
-                algorithms=[auth_settings.JWT_ALGORITHM]
+                auth_settings.secret_key,
+                algorithms=[auth_settings.algorithm],
             )
             return payload
-        except JWTError as e:
+        except JWTError as exc:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Invalid token: {str(e)}",
-                headers={"WWW-Authenticate": "Bearer"}
-            )
-    
+                detail=f"Invalid token: {str(exc)}",
+                headers={"WWW-Authenticate": "Bearer"},
+            ) from exc
+
     @staticmethod
     def verify_access_token(token: str) -> Dict[str, Any]:
-        """Verify access token is valid and not expired"""
+        """Verify access token is valid and not expired."""
         payload = JWTService.decode_token(token)
-        
-        # Check token type
+
         if payload.get("type") != "access":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token type",
-                headers={"WWW-Authenticate": "Bearer"}
+                headers={"WWW-Authenticate": "Bearer"},
             )
-        
-        # Check expiration
-        exp = payload.get("exp")
-        if exp and datetime.utcnow() > datetime.fromtimestamp(exp):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token has expired",
-                headers={"WWW-Authenticate": "Bearer"}
-            )
-        
+
         return payload
-    
+
     @staticmethod
     def verify_refresh_token(token: str) -> Dict[str, Any]:
-        """Verify refresh token is valid and not expired"""
+        """Verify refresh token is valid and not expired."""
         payload = JWTService.decode_token(token)
-        
-        # Check token type
+
         if payload.get("type") != "refresh":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token type"
+                detail="Invalid token type",
+                headers={"WWW-Authenticate": "Bearer"},
             )
-        
-        # Check expiration
-        exp = payload.get("exp")
-        if exp and datetime.utcnow() > datetime.fromtimestamp(exp):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Refresh token has expired"
-            )
-        
+
         return payload
-    
+
     @staticmethod
     def refresh_access_token(refresh_token: str) -> Dict[str, Any]:
-        """Generate new access token from refresh token"""
+        """Generate a new access token from a refresh token."""
         payload = JWTService.verify_refresh_token(refresh_token)
-        
-        # Create new access token
+
         user_data = {
             "sub": payload.get("sub"),
             "username": payload.get("username"),
             "role": payload.get("role"),
-            "user_id": payload.get("user_id")
+            "tenant_id": payload.get("tenant_id"),
+            "user_id": payload.get("user_id"),
         }
-        
+
         access_token = JWTService.create_access_token(user_data)
-        
+
         return {
             "access_token": access_token,
             "token_type": "bearer",
-            "expires_in": auth_settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60
+            "expires_in": auth_settings.access_token_expire_minutes * 60,
         }
