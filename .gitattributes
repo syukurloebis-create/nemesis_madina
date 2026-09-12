@@ -1,0 +1,42 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Explicit text files
+*.py    text
+*.tsx   text
+*.ts    text
+*.js    text
+*.jsx   text
+*.json  text
+*.md    text
+*.yml   text
+*.yaml  text
+*.html  text
+*.css   text
+*.toml  text
+*.ini   text
+*.cfg   text
+*.txt   text
+
+# Binary files (no conversion)
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.pdf   binary
+*.xlsx  binary
+*.docx  binary
+*.zip   binary
+*.iso   binary
+*.mp4   binary
+*.avi   binary
+*.exe   binary
+
+# LF for shell scripts
+*.sh    text eol=lf
+
+# CRLF for Windows
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
