@@ -21,12 +21,14 @@ class GraphNode:
         business_key: Unique business identifier
         entity_type: Type of entity (vendor, package, officer, etc.)
         name: Display name
+        source_id: Optional
         extra_data: Additional metadata (business-specific)
     """
     
     business_key: str
     entity_type: str
     name: str
+    source_id: Optional[int] = None 
     extra_data: Dict[str, Any] = None
     
     def __post_init__(self):

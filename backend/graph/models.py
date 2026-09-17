@@ -23,6 +23,10 @@ class GraphEntity(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     created_by = Column(String, nullable=True)
 
+    # ✅ R16.3.5: Dedicated identity columns
+    business_key = Column(String(255), nullable=False)
+    source_id = Column(Integer, nullable=True)
+
 
 class GraphRelationship(Base):
     __tablename__ = "graph_relationships"

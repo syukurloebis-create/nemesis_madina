@@ -48,10 +48,9 @@ class GraphToOrmMapper:
                 institution_id=str(aggregate.institution_id),
                 entity_type=node.entity_type,
                 name=node.name,
-                extra_data={
-                    "business_key": node.business_key,
-                    **node.extra_data,
-                },
+                business_key=node.business_key,
+                source_id=node.source_id,
+                extra_data=node.extra_data,
             )
             entities.append(entity)
         return entities

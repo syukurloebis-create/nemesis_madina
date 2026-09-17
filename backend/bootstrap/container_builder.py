@@ -53,8 +53,14 @@ from backend.services.dashboard_intelligence_service import (
 from backend.calculators.procurement_score_calculator import (
     ProcurementScoreCalculator,
 )
+from backend.services.rup_to_graph_bridge_service import (
+    RupToGraphBridgeService,
+)
 from backend.services.risk_application_service import RiskApplicationService
 from backend.services.risk_projection_service import RiskProjectionService
+from backend.repositories.sqlalchemy.procurement_search_repository_impl import (
+    ProcurementSearchRepositoryImpl,
+)
 from backend.repositories.sqlalchemy.graph_repository_impl import GraphRepositoryImpl
 from backend.repositories.sqlalchemy.evidence_repository_impl import EvidenceRepositoryImpl
 from backend.repositories.sqlalchemy.risk_command_repository_impl import RiskCommandRepositoryImpl
@@ -86,6 +92,7 @@ from backend.graph.infrastructure.interfaces.clock import SystemClock
 from backend.graph.application.assembler import GraphAssembler
 from backend.graph.application.projection_mapper import GraphProjectionMapper
 from backend.graph.application.service import GraphRegenerationService
+
 
 
 logger = logging.getLogger(__name__)
@@ -345,21 +352,32 @@ def build_application_container(infra: InfrastructureContainer) -> ApplicationCo
     # ============================================================
     # 8. Search Repository (Direct injection - not in ServiceContainer)
     # ============================================================
-    
-    # procurement_search_repo = ProcurementSearchRepositoryImpl(
-    #    infra.session_factory  # type: async_sessionmaker
-    # )
-    
+
+    procurement_search_repo = ProcurementSearchRepositoryImpl(
+        session_factory=infra.session_factory,  # ← Gunakan infra.session_factory, BUKAN async_session_maker
+    )
+
     # ============================================================
-    # 9. Service Container - NO repositories in ServiceContainer
+    # 9. RUP to Graph Bridge
     # ============================================================
-    
+
+    rup_to_graph_bridge = RupToGraphBridgeService(
+        rup_repository=procurement_search_repo,
+        graph_service=graph_regeneration_service,
+    )
+
+    # ============================================================
+    # 10. Service Container
+    # ============================================================
+
     services = ServiceContainer(
         dashboard=dashboard_service,
         risk_application=risk_application_service,
         graph_regeneration=graph_regeneration_service,
+        rup_to_graph_bridge=rup_to_graph_bridge,
+        graph_repository=graph_repository,
     )
-    
+
     # ============================================================
     # 10. Health Container
     # ============================================================
