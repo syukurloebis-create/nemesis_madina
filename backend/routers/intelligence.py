@@ -1,103 +1,105 @@
-"""
-Intelligence Endpoints — Thin Controllers.
+"""Intelligence Router — Graph Risk Analysis."""
 
-ARCHITECTURE:
-- Router = Thin Controller
-- NO business logic
-- NO SQL directly
-- NO manual DI
-- Delegates to RiskApplicationService from container
-
-FLOW:
-Router → RiskApplicationService (from container) → IntelligenceService → RiskProjectionService → CommandRepository
-"""
-
-from datetime import datetime
+import logging
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, Request
-import logging
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.domain.enums.risk_calculation_source import RiskCalculationSource
+from backend.database import get_db
+from backend.dependencies.auth import get_current_active_user
+from backend.security.models import User
+from backend.services.entity_graph_intelligence_service import (
+    EntityGraphIntelligenceService,
+)
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/intelligence", tags=["intelligence"])
 
 
-@router.post("/score")
-async def calculate_risk_score(
-    request: Request,
-    case_id: str = Query(..., description="Case ID"),
-    fraud_score: Optional[float] = Query(0, description="Fraud score from ML"),
-):
-    """
-    Calculate and persist risk score.
-
-    ARCHITECTURE:
-    - Router = Thin Controller (NO business logic)
-    - Delegates to RiskApplicationService from container
-    - Uses pure IntelligenceService for calculation
-    - Persists via RiskProjectionService
-    - Dashboard reads from risk_scores (unchanged)
-    """
-    try:
-        # ✅ Ambil service dari container (SINGLE SOURCE OF TRUTH)
-        container = request.app.state.container
-        service = container.services.risk_application
-
-        result = await service.calculate_and_persist(
-            case_id=UUID(case_id),
-            fraud_score=fraud_score or 0,
-            calculated_by=RiskCalculationSource.API,
-        )
-
-        return {
-            **result,
-            "timestamp": datetime.now().isoformat(),
-            "version": "v3.0",
-        }
-
-    except ValueError as e:
-        logger.error(f"Validation error: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Error calculating risk score: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+def get_intelligence_service() -> EntityGraphIntelligenceService:
+    """Get Entity Graph Intelligence Service."""
+    return EntityGraphIntelligenceService()
 
 
 @router.get("/graph-risk/{case_id}")
 async def get_graph_risk(
-    case_id: str,
-    request: Request,
-):
-    """
-    Get graph risk analysis.
+    case_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+    service: EntityGraphIntelligenceService = Depends(get_intelligence_service),
+) -> dict:
+    """Get graph-based risk analysis for a case."""
+    logger.info("Graph risk analysis for case: %s", case_id)
 
-    ⚠️ LEGACY: This endpoint still uses GraphRiskAnalyzer directly.
-    Will be migrated to use GraphRepository in Phase 2.
-    """
     try:
-        from intelligence.graph.risk_analyzer import GraphRiskAnalyzer
-        
-        # ✅ Ambil db dari container (via session_factory)
-        container = request.app.state.container
-        async with container.infrastructure.session_factory() as session:
-            result = await GraphRiskAnalyzer.calculate_graph_risk(case_id, session)
-            return result
-            
+        # Get graph nodes for the case
+        from sqlalchemy import text
+
+        result = await db.execute(
+            text("""
+                SELECT
+                    id,
+                    name,
+                    entity_type,
+                    risk_score,
+                    extra_data
+                FROM graph_entities
+                WHERE case_id = :case_id
+                AND entity_type = 'vendor'
+            """),
+            {"case_id": str(case_id)}
+        )
+
+        vendors = result.mappings().all()
+
+        if not vendors:
+            return {
+                "case_id": str(case_id),
+                "risk_score": 0,
+                "level": "UNKNOWN",
+                "vendors": [],
+                "analysis": "No vendor data found"
+            }
+
+        # Analyze each vendor
+        vendor_analysis = []
+        total_risk = 0
+
+        for vendor in vendors:
+            analysis = await service.analyze_entity(
+                vendor["name"],
+                db
+            )
+            vendor_analysis.append(analysis)
+            total_risk += analysis.get("entity", {}).get("risk_score", 0)
+
+        avg_risk = total_risk / len(vendors) if vendors else 0
+
+        # Determine risk level
+        if avg_risk >= 70:
+            level = "HIGH"
+        elif avg_risk >= 40:
+            level = "MEDIUM"
+        elif avg_risk > 0:
+            level = "LOW"
+        else:
+            level = "UNKNOWN"
+
+        return {
+            "case_id": str(case_id),
+            "risk_score": round(avg_risk, 2),
+            "level": level,
+            "vendor_count": len(vendors),
+            "vendors": vendor_analysis,
+            "analysis": f"Analyzed {len(vendors)} vendors with average risk {avg_risk:.1f}"
+        }
+
     except Exception as e:
-        logger.error(f"Error getting graph risk: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/health")
-async def health_check():
-    """Health check endpoint."""
-    return {
-        "status": "healthy",
-        "service": "intelligence",
-        "version": "v3.0",
-        "timestamp": datetime.now().isoformat(),
-    }
+        logger.exception("Graph risk analysis failed for case %s", case_id)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to analyze graph risk: {str(e)}"
+        )

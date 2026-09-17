@@ -8,7 +8,7 @@ from backend.services.dashboard_intelligence_analytics_service import (
 )
 
 router = APIRouter(
-    prefix="/dashboard/intelligence",
+    prefix="/dashboard/summary",
     tags=["Dashboard Intelligence"]
 )
 

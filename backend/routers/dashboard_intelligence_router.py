@@ -1,3 +1,5 @@
+# backend/routers/dashboard_intelligence_router.py
+
 """
 Dashboard Intelligence Router — FastAPI.
 
@@ -9,12 +11,14 @@ Architecture Decision:
 
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
-from typing import Optional, List
+from typing import Dict, List, Optional
 from backend.bootstrap.dashboard import create_dashboard_service
 from backend.database import get_db
 from backend.services.dashboard_intelligence_service import DashboardIntelligenceService
 from backend.dashboard.models.dashboard_response import DashboardResponse
 from backend.dashboard.pipelines.constants import PipelineName
+from backend.dependencies.auth import require_intelligence_view  # ← TAMBAHKAN
+from backend.security.models import User  # ← TAMBAHKAN
 
 logger = logging.getLogger(__name__)
 
@@ -28,14 +32,15 @@ async def get_dashboard_intelligence(
         None,
         description="Comma-separated pipeline sections: risk,fraud,graph,evidence,procurement"
     ),
-    db_session=Depends(get_db)
+    db_session=Depends(get_db),
+    current_user: User = Depends(require_intelligence_view),  # ← TAMBAHKAN
 ) -> DashboardResponse:
     """
     Get aggregated dashboard intelligence.
-    
+
     Returns:
         DashboardResponse with all pipeline results.
-    
+
     Example:
         GET /api/v1/dashboard/intelligence?case_id=123&sections=risk,fraud
     """
@@ -48,22 +53,22 @@ async def get_dashboard_intelligence(
                 for s in sections.split(",")
                 if s.strip()
             ]
-        
+
         # Create service
         service = create_dashboard_service(db_session)
-        
+
         # Get intelligence
         result = await service.get_intelligence(
             case_id=case_id,
             sections=parsed_sections
         )
-        
+
         return result
-        
+
     except ValueError as e:
         logger.error(f"Invalid pipeline section: {e}")
         raise HTTPException(status_code=400, detail=f"Invalid section: {e}")
-    
+
     except Exception as e:
         logger.error(f"Dashboard intelligence error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -71,7 +76,8 @@ async def get_dashboard_intelligence(
 
 @router.get("/intelligence/health", response_model=dict)
 async def dashboard_health(
-    db_session=Depends(get_db)
+    db_session=Depends(get_db),
+    current_user: User = Depends(require_intelligence_view),  # ← TAMBAHKAN
 ) -> dict:
     """
     Health check for dashboard intelligence.

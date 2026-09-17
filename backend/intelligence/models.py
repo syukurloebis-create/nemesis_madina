@@ -51,33 +51,48 @@ class AlertStatus(str, enum.Enum):
 
 class RiskScore(Base):
     """Risk score for a case or entity"""
-    
+
     __tablename__ = "risk_scores"
-    
+
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     case_id = Column(UUID(as_uuid=True), ForeignKey("cases.id", ondelete="CASCADE"), nullable=False, index=True)
     entity_id = Column(String, nullable=True, index=True)  # Person, company, account
     entity_type = Column(String, nullable=True)  # person, company, account
-    
+
     # Risk metrics
     overall_score = Column(Float, nullable=False)  # 0-100
     risk_level = Column(Enum(RiskLevel), nullable=False)
-    
-    # Component scores
-    anomaly_score = Column(Float, default=0.0)
-    collusion_score = Column(Float, default=0.0)
-    financial_score = Column(Float, default=0.0)
-    temporal_score = Column(Float, default=0.0)
-    
+
+    # Canonical risk components (v3)
+    # Semua risk-direction: 0 = tidak berisiko, 100 = maksimum
+    findings_risk = Column(Float, nullable=True)
+    graph_risk = Column(Float, nullable=True)
+    fraud_risk = Column(Float, nullable=True)
+    evidence_risk = Column(Float, nullable=True)
+
+    # Full snapshot for audit/provenance
+    components = Column(JSON, nullable=True)
+    weights = Column(JSON, nullable=True)
+
     # Explanation
     factors = Column(JSON, default=list)  # List of contributing factors
     recommendations = Column(JSON, default=list)  # Actionable recommendations
-    
+
     # Metadata
     calculated_at = Column(DateTime(timezone=True), server_default=func.now())
     expires_at = Column(DateTime(timezone=True), nullable=True)
     calculated_by = Column(String, nullable=True)  # system/user
-    
+
+    # ============================================================
+    # LEGACY COMPONENTS — DEPRECATED
+    # Retained temporarily for backward compatibility.
+    # ============================================================
+
+    anomaly_score = Column(Float, default=0.0)
+    collusion_score = Column(Float, default=0.0)
+    financial_score = Column(Float, default=0.0)
+    temporal_score = Column(Float, default=0.0)
+
     __table_args__ = (
         Index("idx_risk_case_score", "case_id", "overall_score"),
         Index("idx_risk_entity", "entity_id", "entity_type"),

@@ -5,7 +5,7 @@ NEMESIS Madina - Dashboard Query
 """
 
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional, List, Any
 from uuid import UUID
 
 from backend.domain.value_objects.case_id import CaseId
@@ -36,17 +36,21 @@ class DashboardProjection:
     """Materialized view for dashboard."""
     case_id: CaseId
     status: str
+    # ✅ FIXED: Add risk_score field
+    risk_score: float
     fraud_score: float
     risk_level: str
     confidence: float
     last_updated: str
     analysis_count: int
-    # Denormalized fields for performance
-    latest_fraud: Optional[FraudAnalysis]
-    latest_risk: Optional[RiskAssessment]
-    # Aggregated metrics
     total_events: int
     avg_confidence: float
+    # Optional fields (with defaults)
+    latest_fraud: Optional[FraudAnalysis] = None
+    latest_risk: Optional[RiskAssessment] = None
+    latest_graph: Optional[Any] = None
+    latest_evidence: Optional[Any] = None
+    latest_procurement: Optional[Any] = None
 
 
 # ============================================================================

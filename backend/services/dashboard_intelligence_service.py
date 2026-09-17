@@ -1,11 +1,5 @@
 """
 Dashboard Intelligence Service — PURE ORCHESTRATOR.
-
-Architecture Decision:
-- Service adalah pure orchestrator
-- HANYA mengoordinasikan collector melalui registry
-- TIDAK ada business logic (pindah ke Factory)
-- Menggunakan ParallelExecutor existing
 """
 
 import logging
@@ -58,7 +52,6 @@ class DashboardIntelligenceService:
         self._projection_mapper = projection_mapper or DashboardProjectionMapper()
         self._factory = deps.factory if deps else None
 
-    # Update get_case_intelligence to use the new helper
     async def get_case_intelligence(
         self,
         case_id: UUID,
@@ -70,28 +63,28 @@ class DashboardIntelligenceService:
         if self._read_repository and session:
             try:
                 projection = await self._read_repository.get_by_case_id(
-                    CaseId(str(case_id)), session
+                    CaseId(str(case_id))
                 )
                 if projection is not None:
                     logger.info("Using read model for case %s", case_id)
 
                     # 1. Map projection
                     mapping = self._projection_mapper.map(projection)
+                    logger.info("Mapping completed: fraud=%s, graph=%s, procurement=%s", 
+                               mapping.fraud_summary is not None,
+                               mapping.graph_summary is not None,
+                               mapping.procurement_summary is not None)
 
-                    # 2. Get collector results
+                    # 2. Get collector results for evidence only (graph/procurement now from projection)
                     collector_results = await self._get_collector_results(case_id, context)
 
-                    # 3. Use factory to build complete CaseIntelligence
-                    # We need to combine projection data with collector data
-                    # Option: Use factory private methods (temporary) or create snapshot
-
-                    # For now, build snapshot manually (will be refactored later)
+                    # 3. Build snapshot using projection data for graph and procurement
                     snapshot = DashboardSnapshot(
                         fraud_summary=mapping.fraud_summary,
                         risk_summary=mapping.risk_summary,
-                        graph_summary=self._factory._build_graph(collector_results),
+                        graph_summary=mapping.graph_summary or self._factory._build_graph(collector_results),
                         evidence_summary=self._factory._build_evidence(collector_results),
-                        procurement_summary=self._factory._build_procurement(collector_results),
+                        procurement_summary=mapping.procurement_summary or self._factory._build_procurement(collector_results),
                         total_risk_score=mapping.risk_score or 0.0,
                         overall_status=self._status_from_string(mapping.status),
                         has_data=mapping.has_data,
@@ -104,118 +97,54 @@ class DashboardIntelligenceService:
                     )
             except Exception as e:
                 logger.error("Projection error for case %s: %s", case_id, e)
-                raise  # ✅ Re-raise, don't swallow!
+                raise
 
         # ⚠️ Fallback to legacy collectors
         logger.info("Using collector path for case %s", case_id)
         return await self._get_case_intelligence_legacy(case_id, context)
 
-
     async def get_dashboard(self, case_id: str) -> dict:
-        """
-        ⚠️ DEPRECATED - Delegates to get_case_intelligence().
-
-        This method is kept for backward compatibility.
-        Use get_case_intelligence() for new code.
-        """
-        logger.warning(
-            "get_dashboard() is deprecated. "
-            "Use get_case_intelligence() instead."
-        )
-
-        intelligence = await self.get_case_intelligence(
-            UUID(case_id)
-        )
-
-        # ✅ Use Pydantic v2 model_dump()
+        """⚠️ DEPRECATED - Delegates to get_case_intelligence()."""
+        logger.warning("get_dashboard() is deprecated. Use get_case_intelligence() instead.")
+        intelligence = await self.get_case_intelligence(UUID(case_id))
         return intelligence.model_dump()
-
 
     async def _run_collector_pipeline(
         self,
         case_id: UUID,
         context: Optional[ExecutionContext] = None,
     ) -> CaseIntelligence:
-        """
-        Run collector pipeline - single source of truth.
-
-        ✅ Uses factory.create_from_results()
-        """
+        """Run collector pipeline - single source of truth."""
         collector_results = await self._get_collector_results(case_id, context)
-
         return self._factory.create_from_results(
             case_id=case_id,
             results=collector_results,
             context=context or ExecutionContext.create(case_id=case_id),
         )
 
-
     async def _get_collector_results(
         self,
         case_id: UUID,
         context: Optional[ExecutionContext] = None,
     ) -> CollectorResultRegistry:
-        """
-        Execute all registered collectors in parallel.
-
-        ✅ Uses ParallelExecutor.execute()
-        ✅ Returns CollectorResultRegistry
-        """
+        """Execute all registered collectors in parallel."""
         if not self._deps:
             raise RuntimeError("Dashboard dependencies are not initialized")
-
         execution_context = context or ExecutionContext.create(case_id=case_id)
-
-        # ✅ Use ParallelExecutor with verified signature
         return await self._deps.executor.execute(
             collectors=self._deps.registry.get_all(),
             uow_factory=self._deps.uow_factory,
             context=execution_context,
         )
 
-
-        async with self._deps.uow_factory.create() as uow:
-            for collector in self._deps.registry.get_all():
-                collector_name = collector.__class__.__name__
-                key = collector_name.replace("Collector", "").lower()
-
-                try:
-                    result = await collector.collect(
-                        uow,
-                        execution_context,
-                    )
-                    results[key] = result
-                    logger.debug(
-                        "Collector completed: %s case=%s",
-                        key,
-                        case_id,
-                    )
-                except Exception as exc:
-                    logger.exception(
-                        "Collector failed: %s case=%s",
-                        collector_name,
-                        case_id,
-                    )
-                    results[key] = None
-
-        return results
-
-
     async def _get_case_intelligence_legacy(
         self,
         case_id: UUID,
         context: Optional[ExecutionContext] = None,
     ) -> CaseIntelligence:
-        """
-        Backward-compatibility wrapper for legacy callers.
-
-        This method exists solely to maintain the contract expected by
-        the hybrid architecture's fallback path. It delegates to the
-        single source of truth: _run_collector_pipeline.
-        """
+        """Backward-compatibility wrapper for legacy callers."""
         logger.info("Legacy collector path called for case %s", case_id)
         return await self._run_collector_pipeline(case_id, context)
-
 
     def _status_from_string(self, status: str) -> DashboardStatus:
         """Convert string status to DashboardStatus enum."""

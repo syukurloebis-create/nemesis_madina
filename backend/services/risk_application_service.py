@@ -52,56 +52,99 @@ class RiskApplicationService:
         weights: Optional[Dict[str, float]] = None,
         calculated_by: RiskCalculationSource = RiskCalculationSource.API,
     ) -> Dict[str, Any]:
-        """Calculate risk and persist to projection in a single transaction."""
+        """Calculate canonical risk and persist it as a projection."""
 
-        async with self._uow_factory() as uow:
-            # 1. Get aggregate
-            aggregate = await uow.cases.get(CaseId(case_id))
-            case_risk = aggregate.latest_risk.score if aggregate and aggregate.latest_risk else 0
+        async with self._uow_factory.create() as uow:
+            # ============================================================
+            # 1. FINDINGS RISK
+            # ============================================================
+            findings_risk = await self._calculate_findings_risk(
+                uow,
+                case_id,
+            )
 
-            # 2. Get graph → DTO → Calculator → score
-            graph_summary = await self._graph_repo.get_summary(uow, case_id)
+            # ============================================================
+            # 2. GRAPH RISK
+            # ============================================================
+            graph_summary = await self._graph_repo.get_summary(
+                uow,
+                case_id,
+            )
+
             graph_dto = GraphAssembler.assemble(graph_summary)
+
             graph_calc = GraphScoreCalculator.calculate(
                 graph_dto,
-                self._config.get_graph_weights()
+                self._config.get_graph_weights(),
             )
-            graph_risk = graph_calc.score  # ← SEKARANG graph_risk TERDEFINISI
 
-            # 3. Get evidence → DTO → Calculator → trust_score
-            evidence_summary = await self._evidence_repo.get_summary(uow, case_id)
-            evidence_dto = EvidenceAssembler.assemble(evidence_summary)
+            graph_risk = graph_calc.score
+
+            # ============================================================
+            # 3. EVIDENCE RISK
+            # ============================================================
+            evidence_summary = await self._evidence_repo.get_summary(
+                uow,
+                case_id,
+            )
+
+            evidence_dto = EvidenceAssembler.assemble(
+                evidence_summary,
+            )
+
             evidence_calc = EvidenceScoreCalculator.calculate(
                 evidence_dto,
-                self._config.get_evidence_weights()
-            )
-            evidence_trust = evidence_calc.trust_score
-
-            logger.info(
-                "RiskApplicationService: Fetched data for case %s (case=%.2f, graph=%.2f, evidence=%.2f)",
-                case_id,
-                case_risk,
-                graph_risk,
-                evidence_trust,
+                self._config.get_evidence_weights(),
             )
 
-            # 4. Calculate via IntelligenceService
+            # EvidenceScoreCalculator.score = evidence quality/trust.
+            #
+            # Canonical risk uses the opposite direction:
+            # high evidence quality  -> low evidence risk
+            # low evidence quality   -> high evidence risk
+            #
+            # NO_DATA is not automatically treated as maximum risk.
+            if evidence_dto.total > 0:
+                evidence_risk = max(
+                    0.0,
+                    min(
+                        100.0,
+                        100.0 - float(evidence_calc.score),
+                    ),
+                )
+            else:
+                evidence_risk = 0.0
+
+            # ============================================================
+            # 4. CANONICAL RISK ENGINE
+            # ============================================================
             result = IntelligenceService.calculate(
-                case_risk=case_risk,
+                findings_risk=findings_risk,
                 graph_risk=graph_risk,
-                fraud_score=fraud_score,
-                evidence_trust=evidence_trust,
+                fraud_risk=fraud_score,
+                evidence_risk=evidence_risk,
                 weights=weights,
             )
 
             logger.info(
-                "RiskApplicationService: Calculated risk for case %s (score=%.2f, level=%s)",
+                (
+                    "RiskApplicationService: "
+                    "case=%s findings=%.2f graph=%.2f "
+                    "fraud=%.2f evidence=%.2f "
+                    "score=%.2f level=%s"
+                ),
                 case_id,
+                findings_risk,
+                graph_risk,
+                fraud_score,
+                evidence_risk,
                 result.score,
                 result.level,
             )
 
-            # 5. Save via ProjectionService
+            # ============================================================
+            # 5. PERSIST CANONICAL PROJECTION
+            # ============================================================
             await self._projection_service.save_projection(
                 uow=uow,
                 case_id=case_id,
@@ -109,7 +152,62 @@ class RiskApplicationService:
                 calculated_by=calculated_by,
             )
 
-            # 6. SINGLE COMMIT
+            # ============================================================
+            # 6. COMMIT
+            # ============================================================
             await uow.commit()
 
             return result.to_dict()
+
+
+    async def _calculate_findings_risk(
+        self,
+        uow,
+        case_id: UUID,
+    ) -> float:
+        """
+        Calculate case-level findings risk.
+
+        Temporary inline SQL implementation.
+        This can later move into FindingRepository/FindingScoreCalculator
+        without changing the canonical Risk Engine contract.
+        """
+        from sqlalchemy import text
+
+        result = await uow.session.execute(
+            text(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    COUNT(
+                        CASE
+                            WHEN severity = 'CRITICAL' THEN 1
+                        END
+                    ) AS critical,
+                    COUNT(
+                        CASE
+                            WHEN severity = 'HIGH' THEN 1
+                        END
+                    ) AS high
+                FROM findings
+                WHERE case_id = :case_id
+                """
+            ),
+            {"case_id": str(case_id)},
+        )
+
+        row = result.fetchone()
+
+        total = int(row[0]) if row and row[0] else 0
+        critical = int(row[1]) if row and row[1] else 0
+        high = int(row[2]) if row and row[2] else 0
+
+        if total == 0:
+            return 0.0
+
+        return float(
+            min(
+                100,
+                (critical * 30) + (high * 15),
+            )
+        )
