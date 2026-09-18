@@ -8,22 +8,44 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.9.0",
+    "@tanstack/react-query": "^5.102.8",
     "axios": "^1.7.2",
+    "cytoscape": "^3.34.2",
+    "cytoscape-dagre": "^4.0.1",
+    "echarts": "^6.1.0",
+    "framer-motion": "^13.2.0",
+    "i18next": "^26.4.2",
+    "i18next-browser-languagedetector": "^8.2.1",
     "lucide-react": "^0.400.0",
     "react": "^18.3.1",
+    "react-cytoscapejs": "^2.0.0",
     "react-dom": "^18.3.1",
+    "react-dropzone": "^19.3.0",
+    "react-hot-toast": "^2.6.0",
+    "react-i18next": "^17.0.13",
     "react-router-dom": "^6.23.0",
     "react-toastify": "^10.0.6",
     "recharts": "^2.12.7",
+    "xlsx": "^0.18.5",
+    "zod": "^4.5.4",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/cytoscape": "^3.21.9",
+    "@types/node": "^26.6.1",
     "@types/react": "^18.3.3",
+    "@types/react-cytoscapejs": "^1.2.6",
     "@types/react-dom": "^18.3.0",
+    "@types/react-dropzone": "^4.2.2",
+    "@types/xlsx": "^0.0.35",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.18",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.17",
-    "vite": "^5.4.21"
+    "vite": "^5.4.21",
+    "vitest": "^4.1.11"
   }
 }
