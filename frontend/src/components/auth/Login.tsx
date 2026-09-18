@@ -1,100 +1,127 @@
-// src/components/auth/Login.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../../services/api';
-import toast from 'react-hot-toast';
+import { toast } from 'react-toastify';
+import authService from '../../services/auth';
 
-const Login: React.FC = () => {
+export default function Login() {
   const navigate = useNavigate();
   const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin123');
+  const [password, setPassword] = useState('Admin123!');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
     try {
-      const response = await api.login(username, password);
-      const { access_token } = response.data;
+      console.log('🔄 Attempting login...');
       
-      // Simpan token ke localStorage
-      localStorage.setItem('access_token', access_token);
+      // Get fresh instance of auth service
+      const service = authService;
       
-      toast.success('Login successful!');
+      // Login - this returns the LoginResponse
+      const response = await service.login(username, password);
+      console.log('✅ Login response received:', response);
       
-      // Redirect ke dashboard
-      window.location.href = '/';
-    } catch (error: any) {
-      console.error('Login error:', error);
-      toast.error(error.response?.data?.detail || 'Login failed');
+      // Store tokens explicitly
+      if (response.access_token) {
+        service.setTokens(response.access_token, response.refresh_token);
+        console.log('✅ Tokens stored:', {
+          access_token: response.access_token.substring(0, 30) + '...',
+          refresh_token: response.refresh_token ? response.refresh_token.substring(0, 30) + '...' : 'none'
+        });
+      } else {
+        console.error('❌ No access_token in response:', response);
+        setError('No access token received');
+        setLoading(false);
+        return;
+      }
+      
+      // Store user data
+      if (response.user) {
+        service.setUser(response.user);
+        console.log('✅ User stored:', response.user.username);
+      }
+      
+      // Verify token was stored
+      const storedToken = localStorage.getItem('access_token');
+      console.log('🔑 Stored token after login:', storedToken ? storedToken.substring(0, 30) + '...' : 'null');
+      
+      if (storedToken) {
+        toast.success('Login successful!');
+        navigate('/dashboard', { replace: true });
+      } else {
+        console.error('❌ Token not stored properly');
+        setError('Login failed - token storage issue');
+      }
+      
+    } catch (err: any) {
+      console.error('❌ Login error:', err);
+      setError(err.response?.data?.detail || 'Invalid username or password');
+      toast.error(err.response?.data?.detail || 'Login failed');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900">
-      <div className="max-w-md w-full space-y-8 p-8 bg-gray-800 rounded-lg shadow">
-        <div>
-          <h2 className="text-center text-3xl font-bold text-cyan-400">
-            NEMESIS V8+
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-400">
-            Digital Evidence Platform
-          </p>
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white">NEMESIS V8+</h1>
+          <p className="text-gray-400 mt-2">Intelligence Dashboard</p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-300">
-                Username
-              </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-cyan-500 focus:border-cyan-500"
-                placeholder="Enter your username"
-              />
-            </div>
+        {error && (
+          <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-2 rounded-lg mb-4 text-sm">
+            {error}
+          </div>
+        )}
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-cyan-500 focus:border-cyan-500"
-                placeholder="Enter your password"
-              />
-            </div>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              Username
+            </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+              placeholder="Enter username"
+              required
+            />
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+              placeholder="Enter password"
+              required
+            />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50"
+            className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Logging in...' : 'Sign in'}
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-        
-        <p className="text-center text-gray-500 text-xs mt-4">
-          Default: admin / admin123
-        </p>
+
+        <div className="mt-4 text-center text-sm text-gray-400">
+          Default: admin / Admin123!
+        </div>
       </div>
     </div>
   );
-};
-
-export default Login;
+}
