@@ -118,7 +118,7 @@ export const api = {
   createCase: casesApi.createCase.bind(casesApi),
   updateCase: casesApi.updateCase.bind(casesApi),
   getCaseStats: casesApi.getStats.bind(casesApi),
-  getRiskExplanations: casesApi.getRiskExplanations.bind(casesApi),
+  getRiskExplanations: (caseId: string) => riskApi.getExplanations(caseId),
   deleteCase: (id: string) => apiClient.delete(`/api/v1/cases/${id}`),
   assignCase: (id: string, userId: string) => apiClient.post(`/api/v1/cases/${id}/assign`, { user_id: userId }),
 
@@ -158,7 +158,7 @@ export const api = {
   getFraudPatterns: fraudApi.getPatterns.bind(fraudApi),
 
   // RISK
-  getRiskStats: riskApi.getTrend.bind(riskApi),
+  getRiskStats: () => riskApi.getStats(),
 
   // INVESTIGATIONS
   getInvestigations: investigationsApi.getByCase.bind(investigationsApi),

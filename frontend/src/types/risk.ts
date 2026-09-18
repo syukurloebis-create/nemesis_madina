@@ -52,6 +52,7 @@ export interface RiskExplanation {
   collusion_score?: number;
   financial_score?: number;
   temporal_score?: number;
+  evidence_risk?: number;
 
   // Backend-provided context
   factors: string[];
