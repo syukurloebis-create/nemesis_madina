@@ -1,97 +1,541 @@
-import React, { useState } from 'react';
-import GraphVisualization from '../components/graph/GraphVisualization';
-import { useAuthStore } from '../stores/authStore';
+import React, { useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import {
+  useGraphSummary,
+  useGraphMetrics,
+  useGraphKeyActors,
+  useGraphFull,
+} from '../hooks/useGraphQueries';
 
 const GraphIntelligence: React.FC = () => {
-  const [selectedCaseId, setSelectedCaseId] = useState<string>('');
-  const [showGraph, setShowGraph] = useState(false);
-  const { token } = useAuthStore();
+  const { caseId } = useParams<{ caseId: string }>();
 
-  const patterns = [
-    { id: 1, name: 'Vendor Address Collusion', severity: 'high', confidence: 92, entities: ['PT. Maju Jaya', 'CV. Karya Mandiri'] },
-    { id: 2, name: 'Bid Rigging Pattern', severity: 'critical', confidence: 88, entities: ['PT. Maju Jaya', 'PT. Bangun Nusantara'] },
-    { id: 3, name: 'Subcontractor Loop', severity: 'medium', confidence: 75, entities: ['CV. Karya Mandiri', 'PT. Bangun Nusantara'] },
-    { id: 4, name: 'Conflict of Interest', severity: 'high', confidence: 85, entities: ['Dr. Ahmad Fauzi', 'Kementerian PUPR'] },
-  ];
+  const [fullGraphEnabled, setFullGraphEnabled] = useState(false);
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'critical': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'high': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
-      case 'medium': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      default: return 'bg-gray-500/20 text-gray-400';
-    }
-  };
+  // ============================================================
+  // INITIAL QUERIES
+  // Summary + metrics + key actors only.
+  // Full graph is intentionally excluded from initial load.
+  // ============================================================
+
+  const summaryQuery = useGraphSummary(caseId);
+  const metricsQuery = useGraphMetrics(caseId);
+  const actorsQuery = useGraphKeyActors(caseId, 20);
+
+  // ============================================================
+  // ON-DEMAND FULL GRAPH
+  // ============================================================
+
+  const fullGraphQuery = useGraphFull(caseId, fullGraphEnabled);
+
+  // ============================================================
+  // DERIVED STATE
+  // ============================================================
+
+  if (!caseId) {
+    return (
+      <div style={{ padding: 24 }}>
+        <h2>Graph Intelligence</h2>
+        <p>No case selected.</p>
+      </div>
+    );
+  }
+
+  const isInitialLoading =
+    summaryQuery.isPending ||
+    metricsQuery.isPending ||
+    actorsQuery.isPending;
+
+  const initialError =
+    summaryQuery.error?.message ||
+    metricsQuery.error?.message ||
+    actorsQuery.error?.message ||
+    null;
+
+  const isInitialError =
+    summaryQuery.isError ||
+    metricsQuery.isError ||
+    actorsQuery.isError;
+
+  const summary = summaryQuery.data;
+  const metrics = metricsQuery.data;
+  const actors = actorsQuery.data?.actors ?? [];
+
+  const entityBars = useMemo(() => {
+    if (!summary) return [];
+
+    return Object.entries(summary.entity_types).sort(
+      (a, b) => b[1] - a[1],
+    );
+  }, [summary]);
+
+  const relBars = useMemo(() => {
+    if (!summary) return [];
+
+    return Object.entries(summary.relationship_types).sort(
+      (a, b) => b[1] - a[1],
+    );
+  }, [summary]);
+
+  // ============================================================
+  // LOADING
+  // ============================================================
+
+  if (isInitialLoading) {
+    return (
+      <div style={{ padding: 24 }}>
+        <h2>Graph Intelligence</h2>
+        <p>Loading graph intelligence…</p>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // ERROR
+  // ============================================================
+
+  if (isInitialError) {
+    return (
+      <div style={{ padding: 24 }}>
+        <h2>Graph Intelligence</h2>
+        <div
+          style={{
+            marginTop: 16,
+            padding: 16,
+            border: '1px solid #ef4444',
+            borderRadius: 8,
+            color: '#b91c1c',
+          }}
+        >
+          <strong>Unable to load graph intelligence.</strong>
+          <div style={{ marginTop: 8 }}>
+            {initialError ?? 'Unknown graph API error.'}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // NO DATA / EMPTY
+  // ============================================================
+
+  if (
+    !summary ||
+    summary.total_entities === 0 ||
+    summary.total_relationships === 0
+  ) {
+    return (
+      <div style={{ padding: 24 }}>
+        <h2>Graph Intelligence</h2>
+
+        <div
+          style={{
+            marginTop: 16,
+            padding: 20,
+            border: '1px solid #ddd',
+            borderRadius: 8,
+          }}
+        >
+          <strong>No graph data.</strong>
+          <p style={{ marginBottom: 0, color: '#666' }}>
+            Case ini belum memiliki graph yang dapat dianalisis.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // SUCCESS
+  // ============================================================
 
   return (
-    <div className="space-y-6">
-      <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
-        <h1 className="text-2xl font-bold text-white">Graph Intelligence</h1>
-        <p className="text-gray-400 text-sm mt-1">Collusion detection, influence mapping, and relationship analysis</p>
+    <div style={{ padding: 24 }}>
+      <h2>Graph Intelligence</h2>
+
+      <p style={{ color: '#666' }}>
+        Case: {caseId}
+      </p>
+
+      {/* ========================================================
+          KPI
+          ======================================================== */}
+
+      <div
+        style={{
+          display: 'flex',
+          gap: 16,
+          margin: '16px 0',
+          flexWrap: 'wrap',
+        }}
+      >
+        <KPI
+          label="Nodes"
+          value={summary.total_entities}
+        />
+
+        <KPI
+          label="Edges"
+          value={summary.total_relationships}
+        />
+
+        <KPI
+          label="Entity Types"
+          value={entityBars.length}
+        />
+
+        <KPI
+          label="Relationship Types"
+          value={relBars.length}
+        />
+
+        <KPI
+          label="Density"
+          value={metrics?.density ?? 0}
+          precision={6}
+        />
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <p className="text-gray-400 text-sm">Total Patterns</p>
-          <p className="text-3xl font-bold text-white">{patterns.length}</p>
-        </div>
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <p className="text-gray-400 text-sm">Critical</p>
-          <p className="text-3xl font-bold text-red-500">
-            {patterns.filter(p => p.severity === 'critical').length}
-          </p>
-        </div>
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <p className="text-gray-400 text-sm">High Risk</p>
-          <p className="text-3xl font-bold text-orange-500">
-            {patterns.filter(p => p.severity === 'high').length}
-          </p>
-        </div>
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <p className="text-gray-400 text-sm">Avg Confidence</p>
-          <p className="text-3xl font-bold text-yellow-500">85%</p>
-        </div>
-      </div>
+      {/* ========================================================
+          DISTRIBUTION
+          ======================================================== */}
 
-      {/* Collusion Patterns List */}
-      <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-700">
-          <h2 className="text-lg font-semibold text-white">Collusion Patterns</h2>
-        </div>
-        <div className="divide-y divide-gray-700">
-          {patterns.map((pattern) => (
-            <div key={pattern.id} className={`p-4 border-l-4 ${getSeverityColor(pattern.severity)}`}>
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-semibold text-white">{pattern.name}</h3>
-                  <div className="flex gap-2 mt-2">
-                    {pattern.entities.map((entity, idx) => (
-                      <span key={idx} className="text-xs px-2 py-1 bg-gray-700 rounded-lg text-gray-300">
-                        {entity}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="text-sm text-gray-400">Confidence: <span className="text-white font-bold">{pattern.confidence}%</span></span>
-                  <p className="text-xs text-gray-500 mt-1">2 related cases</p>
-                </div>
-              </div>
-            </div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: 24,
+        }}
+      >
+        <Panel title="Entity Distribution">
+          {entityBars.map(([key, value]) => (
+            <Bar
+              key={key}
+              label={key}
+              value={value}
+              max={summary.total_entities}
+            />
           ))}
-        </div>
+        </Panel>
+
+        <Panel title="Relationship Distribution">
+          {relBars.map(([key, value]) => (
+            <Bar
+              key={key}
+              label={key}
+              value={value}
+              max={summary.total_relationships}
+            />
+          ))}
+        </Panel>
       </div>
 
-      {/* Graph Visualization */}
-      <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-700">
-          <h2 className="text-lg font-semibold text-white">Network Analysis</h2>
-          <p className="text-xs text-gray-500 mt-1">Click on any node to see details</p>
-        </div>
-        <div className="p-4">
-          <GraphVisualization />
-        </div>
+      {/* ========================================================
+          KEY ACTORS
+          ======================================================== */}
+
+      <Panel
+        title={`Key Actors — top ${actors.length} — ranked by degree`}
+      >
+        {actors.length === 0 ? (
+          <p style={{ color: '#666' }}>
+            No key actors returned by Graph API.
+          </p>
+        ) : (
+          <table
+            style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+            }}
+          >
+            <thead>
+              <tr
+                style={{
+                  textAlign: 'left',
+                  borderBottom: '1px solid #ddd',
+                }}
+              >
+                <th style={{ padding: '10px 8px' }}>
+                  Name
+                </th>
+
+                <th style={{ padding: '10px 8px' }}>
+                  Type
+                </th>
+
+                <th style={{ padding: '10px 8px' }}>
+                  Degree
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {actors.map((actor) => (
+                <tr
+                  key={actor.business_key}
+                  style={{
+                    borderBottom: '1px solid #f0f0f0',
+                  }}
+                >
+                  <td style={{ padding: '10px 8px' }}>
+                    {actor.name}
+                  </td>
+
+                  <td style={{ padding: '10px 8px' }}>
+                    {actor.entity_type}
+                  </td>
+
+                  <td style={{ padding: '10px 8px' }}>
+                    {actor.degree}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Panel>
+
+      {/* ========================================================
+          FULL GRAPH — ON DEMAND
+          ======================================================== */}
+
+      <Panel title="Full Graph">
+        <p style={{ color: '#666', marginTop: 0 }}>
+          Full graph tidak dimuat pada initial page load.
+          Muat hanya saat diperlukan untuk eksplorasi jaringan.
+        </p>
+
+        {!fullGraphEnabled && (
+          <button
+            type="button"
+            onClick={() => setFullGraphEnabled(true)}
+            style={{
+              border: '1px solid #2563eb',
+              background: '#2563eb',
+              color: '#fff',
+              borderRadius: 8,
+              padding: '10px 16px',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            Load Full Graph
+          </button>
+        )}
+
+        {fullGraphEnabled && fullGraphQuery.isPending && (
+          <div style={{ marginTop: 12 }}>
+            Loading full graph…
+          </div>
+        )}
+
+        {fullGraphEnabled && fullGraphQuery.isError && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: 12,
+              border: '1px solid #ef4444',
+              borderRadius: 8,
+              color: '#b91c1c',
+            }}
+          >
+            {fullGraphQuery.error?.message ||
+              'Failed to load full graph.'}
+          </div>
+        )}
+
+        {fullGraphEnabled &&
+          fullGraphQuery.isSuccess &&
+          fullGraphQuery.data && (
+            <div
+              style={{
+                marginTop: 16,
+                padding: 16,
+                border: '1px solid #ddd',
+                borderRadius: 8,
+              }}
+            >
+              <strong>Full graph loaded.</strong>
+
+              <div style={{ marginTop: 12 }}>
+                Nodes:{' '}
+                {fullGraphQuery.data.nodes.length.toLocaleString()}
+              </div>
+
+              <div>
+                Edges:{' '}
+                {fullGraphQuery.data.edges.length.toLocaleString()}
+              </div>
+
+              <div>
+                Has data:{' '}
+                {fullGraphQuery.data.has_data ? 'YES' : 'NO'}
+              </div>
+
+              {fullGraphQuery.data.version != null && (
+                <div>
+                  Version: {fullGraphQuery.data.version}
+                </div>
+              )}
+
+              {fullGraphQuery.data.checksum && (
+                <div
+                  style={{
+                    marginTop: 8,
+                    fontSize: 12,
+                    color: '#666',
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  Checksum: {fullGraphQuery.data.checksum}
+                </div>
+              )}
+
+              <p
+                style={{
+                  marginBottom: 0,
+                  marginTop: 12,
+                  fontSize: 12,
+                  color: '#777',
+                }}
+              >
+                Visualisasi jaringan penuh akan menjadi tahap
+                berikutnya; FE-4C hanya memastikan loading
+                dilakukan secara on-demand.
+              </p>
+            </div>
+          )}
+      </Panel>
+
+      {/* ========================================================
+          CONTRACT FOOTER
+          ======================================================== */}
+
+      <p
+        style={{
+          marginTop: 24,
+          fontSize: 12,
+          color: '#999',
+        }}
+      >
+        Source: /api/v1/graph/cases/{caseId} · Contract F3.3 v1
+        (LOCKED) · Actor ranking is structural (degree) ·
+        Risk semantics belong to Risk Engine v3.
+      </p>
+    </div>
+  );
+};
+
+const KPI: React.FC<{
+  label: string;
+  value: number;
+  precision?: number;
+}> = ({
+  label,
+  value,
+  precision,
+}) => (
+  <div
+    style={{
+      border: '1px solid #ddd',
+      borderRadius: 8,
+      padding: 16,
+      minWidth: 140,
+    }}
+  >
+    <div
+      style={{
+        fontSize: 12,
+        color: '#666',
+      }}
+    >
+      {label}
+    </div>
+
+    <div
+      style={{
+        fontSize: 24,
+        fontWeight: 600,
+        marginTop: 4,
+      }}
+    >
+      {precision !== undefined
+        ? value.toFixed(precision)
+        : value.toLocaleString()}
+    </div>
+  </div>
+);
+
+const Panel: React.FC<{
+  title: string;
+  children: React.ReactNode;
+}> = ({
+  title,
+  children,
+}) => (
+  <div
+    style={{
+      border: '1px solid #ddd',
+      borderRadius: 8,
+      padding: 16,
+      marginTop: 16,
+    }}
+  >
+    <h3 style={{ marginTop: 0 }}>
+      {title}
+    </h3>
+
+    {children}
+  </div>
+);
+
+const Bar: React.FC<{
+  label: string;
+  value: number;
+  max: number;
+}> = ({
+  label,
+  value,
+  max,
+}) => {
+  const pct =
+    max > 0
+      ? Math.round((value / max) * 100)
+      : 0;
+
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          fontSize: 12,
+        }}
+      >
+        <span>{label}</span>
+        <span>
+          {value.toLocaleString()} ({pct}%)
+        </span>
+      </div>
+
+      <div
+        style={{
+          background: '#eee',
+          height: 8,
+          borderRadius: 4,
+          overflow: 'hidden',
+          marginTop: 4,
+        }}
+      >
+        <div
+          style={{
+            width: `${pct}%`,
+            background: '#3b82f6',
+            height: '100%',
+            borderRadius: 4,
+          }}
+        />
       </div>
     </div>
   );
