@@ -230,7 +230,7 @@ GraphReadService [:limit]
 |--------|------|-------|------:|--------|
 | A | `dfa4ebe` | F16.3 Graph Entity Identity | 20 | ✅ DONE |
 | B | `0e4ffca` | Risk Engine v3 Canonical (backend) | 15 | ✅ DONE |
-| **C** | `<pending>` | **F3 Graph Intelligence Read** | **7** | ⏸️ NEXT |
+| **C** | `579e020` | **F3 Graph Intelligence Read (TAGGED)** | **7** | ✅ DONE |
 | D | — | Runtime Hardening | 2 | ⏸️ PENDING |
 | E | — | Risk v3 Frontend UI (deferred) | 74 | ⏸️ PENDING |
 
@@ -277,6 +277,75 @@ Tag:        f3-graph-intelligence-v1
 Depends:    Commit A (F16.3) + Commit B (Risk v3)
 ```
 
+### 12 Commits Done
+
+| Fase | Commit | TS Errors | Description |
+|------|--------|----------:|-------------|
+| FE-1 | `ab1a7d8` | 15 | Typed contracts (types/risk.ts, types/graph.ts) |
+| FE-2 | `cc32a97` | 15 | Executive Header + React Query |
+| FE-4A | `25b03e7` | 8 | Dead code retirement (4 files, −431 lines) |
+| FE-4C | `b31ea9d` | 8 | Graph Intelligence page + React Query lazy |
+| FE-3 | `00737f7` | 8 | Risk Reasoning Panel (−872 lines) |
+| FE-0 | `b05257e` | 8 | Toolchain stabilization (vite.config.ts) |
+| FE-4B-next | `8b95fe7` | 6 | Login uses singleton instance |
+| FE-4D | `9b9c430` | 3 | Overview + integrity adapters |
+| FE-3-ext | `bdbe810` | 2 | InvestigationTimeline prop fix ⚠️ |
+| FE-3-ext-followup | `30ba6f5` | 2 | OverviewTab action IDs align with new tab IDs |
+| FE-4B | `61d050c` | 1 | IntegratedForensicDashboard retired |
+| Sprint C | `513b294` | **0** | Legacy CollusionGraph retired 🎉 |
+
+**Error trend: 51 → 0 (−100%)** 🎉
+
+### Sprint A — CANCELLED
+
+**Reason:** OverviewTab.tsx sudah menggunakan new IDs (`fraud`, `graph`) sebelum Sprint A dimulai. Tidak ada legacy IDs (`signals`, `network`) ditemukan.
+
+**Discovery:** Silent regression yang di-address di `bdbe810` ternyata sudah di-resolve via `30ba6f5` (FE-3-ext-followup).
+
+### FE-4B — DONE (Retire)
+
+**Commit:** `61d050c`
+
+**Action:**
+- Removed: `import IntegratedForensicDashboard` from routes
+- Deleted: `src/pages/integrated/IntegratedForensicDashboard.tsx`
+- Backup: `/tmp/nemesis_backup/IntegratedForensicDashboard.tsx.<ts>`
+
+**Reason:**
+- Page adalah redundant aggregator (Cases + Entities + Procurement)
+- No canonical `/api/v1/entities` endpoint exists (HTTP 404)
+- Contract mismatch: page expects `Entity[]`, gets `GraphNodeDTO[]`
+- No external navigation links
+
+### Sprint C — DONE (Retire)
+
+**Commit:** `513b294`
+
+**Action:**
+- Removed: `import CollusionGraph` from ProcurementIntelligence.tsx
+- Removed: `<CollusionGraph />` section
+- Deleted: `src/components/CollusionGraph.tsx`
+- Backup: `/tmp/nemesis_backup/CollusionGraph.tsx.20260919_142619`
+
+**Reason:**
+- Legacy component (Aug 24) with self-fetching anti-pattern
+- Requires `caseId` for `getGraphStats()` + `getGraphCollusion()`, not passed
+- Superseded by canonical `/collusion-graph` route
+- No external navigation links
+
+### Boundary Intact
+
+- Risk Engine v3 FROZEN (47.58 MEDIUM)
+- Graph F3 FROZEN (4177 / 2424)
+- GraphNodeDTO FROZEN
+- Tag f3-graph-intelligence-v1 FROZEN
+
+### Sprint C — NEXT
+CollusionGraph.tsx(34,9) args mismatch.
+Scope: Procurement domain.
+Target: TS errors 1 → 0.
+
+**Error trend: 51 → 0 (−100%)** 🎉
 ---
 
 ## BAGIAN VI — INFRASTRUCTURE
@@ -346,6 +415,77 @@ E:  43.12 GB free (OK)
 
 ---
 
+┌─────────────────────────────────────────────────────────────────┐
+│  POST-CP2.5.1 CLEANUP SPRINT (OPTIONAL)                         │
+│  ─────────────────────────────────────────────────────────────  │
+│                                                                  │
+│  PRIORITY 1 — Dead Code Removal:                                │
+│  • backend/routers/entities.py (MOCK, unregistered)             │
+│  • backend/routers/entity.py (unregistered)                     │
+│  • frontend/src/components/graph/CollusionGraph.tsx (orphan)    │
+│  • frontend/src/components/procurement/CollusionGraph.tsx (orphan)
+│                                                                  │
+│  PRIORITY 2 — Canonical Entity API:                             │
+│  • Design: GET /api/v1/entities + GET /api/v1/entities/{id}     │
+│  • Contract: EntityDTO with risk_score, confidence, first_seen  │
+│  • Frontend: entityApi.ts                                       │
+│  • DO NOT modify GraphNodeDTO                                   │
+│                                                                  │
+│  PRIORITY 3 — Type Safety:                                      │
+│  • IntelligenceTabId union type                                 │
+│  • ESLint rules for case-scoped API calls                       │
+│  • OpenAPI → TypeScript codegen                                 │
+│                                                                  │
+│  PRIORITY 4 — Infrastructure:                                   │
+│  • Docker Desktop auto-start                                    │
+│  • Comprehensive DB health check                                │
+│  • Disk C: > 5 GB cleanup                                       │
+└─────────────────────────────────────────────────────────────────┘
+
+// Proposed: src/domains/ structure
+src/
+├── domains/
+│   ├── entity/
+│   │   ├── types.ts       (EntityDTO)
+│   │   ├── api.ts         (entityApi)
+│   │   └── components/
+│   ├── graph/
+│   │   ├── types.ts       (GraphNodeDTO, GraphEdgeDTO)
+│   │   ├── api.ts         (graphApi)
+│   │   └── components/
+│   ├── procurement/
+│   │   ├── types.ts       (ProcurementSummary, CollusionPattern)
+│   │   ├── api.ts         (procurementApi)
+│   │   └── components/
+│   └── case/
+│       ├── types.ts       (CaseDTO)
+│       ├── api.ts         (caseApi)
+│       └── components/
+
+// src/domains/entity/api.contract.test.ts
+import { entityApi } from './api';
+import { EntityDTOSchema } from './types';
+
+describe('Entity API Contract', () => {
+  it('should match EntityDTO schema', async () => {
+    const entities = await entityApi.list();
+    entities.forEach(e => {
+      expect(() => EntityDTOSchema.parse(e)).not.toThrow();
+    });
+  });
+});
+
+// src/types/navigation.ts
+export type IntelligenceTabId = 
+  | 'overview' | 'risk' | 'graph' | 'fraud'
+  | 'evidence' | 'timeline' | 'investigation' | 'recovery';
+
+export type AppRouteId =
+  | 'alerts' | 'investigation' | 'recovery'
+  | 'procurement' | 'decisions';
+
+
+
 ## BAGIAN VII — ENVIRONMENT QUIRKS
 
 ### PostgreSQL Credentials
@@ -398,7 +538,7 @@ Password: Admin123!
 | `backend/intelligence/service.py` | `IntelligenceService.calculate()` |
 | `backend/intelligence/models.py` | `RiskScore` ORM |
 
-### Graph Layer (F3, Committed `<hash-C>`)
+### Graph Layer (F3, Committed `579e020`, tag: f3-graph-intelligence-v1)
 
 | File | Purpose |
 |------|---------|
@@ -440,6 +580,26 @@ Password: Admin123!
 | `scripts/F3.6_regression.sh` | Regression verification |
 | `scripts/F3.7_commit.sh` | Freeze script (safe-stop default) |
 
+### Current HEAD
+513b294 (HEAD -> cp2.5.1-stabilization, origin/cp2.5.1-stabilization)
+feat(frontend/sprint-c): retire legacy CollusionGraph
+
+Commits:
+513b294 Sprint C (CollusionGraph retired)
+61d050c FE-4B (IntegratedForensicDashboard retired)
+30ba6f5 FE-3-ext-followup (OverviewTab action IDs)
+bdbe810 FE-3-ext (prop fix + refactor)
+9b9c430 FE-4D (overview + integrity adapters)
+8b95fe7 FE-4B-next (Login singleton)
+b05257e FE-0 (toolchain stabilization)
+00737f7 FE-3 (Risk Reasoning Panel)
+b31ea9d FE-4C (Graph Intelligence RQ)
+25b03e7 FE-4A (dead code retirement)
+cc32a97 FE-2 (React Query + Exec Header)
+ab1a7d8 FE-1 (typed contracts)
+579e020 freeze(f3): Graph Intelligence v1 — TAG
+0e4ffca feat(risk): Risk Engine v3 canonical
+dfa4ebe feat(f16.3): Graph entity identity
 ---
 
 ## BAGIAN IX — COMMANDS REFERENCE
@@ -514,8 +674,47 @@ bash scripts/F3.6_regression.sh   # regression
 bash scripts/F3.7_commit.sh    # freeze (safe-stop default)
 ```
 
+### Sprint Status
+
+| Sprint | Status | Commit | Notes |
+|--------|--------|--------|-------|
+| Sprint A | ✅ CANCELLED | — | OverviewTab already uses new IDs |
+| Sprint B | ✅ DONE | `61d050c` | FE-4B retire IntegratedForensicDashboard |
+| Sprint C | ✅ DONE | `513b294` | Retire legacy CollusionGraph |
+| **All FE Sprints** | ✅ **COMPLETE** | — | **TS errors: 0** 🎉 |
+
+### Post-CP2.5.1 Backlog (Prioritized)
+
+| # | Item | Priority | Notes |
+|---|------|----------|-------|
+| 1 | Consolidate orphan CollusionGraph variants | P2 | graph/, procurement/ |
+| 2 | Build canonical Entity API | P1 | `/api/v1/entities` |
+| 3 | Delete dead backend code | P1 | entities.py, entity.py |
+| 4 | Type-safe tab navigation | P2 | IntelligenceTabId union |
+| 5 | API contract tests | P2 | Prevent DTO drift |
+| 6 | Docker Desktop auto-start | P1 | Infra |
+| 7 | Comprehensive DB health check | P1 | Infra |
+| 8 | Disk C: > 5 GB | P1 | Infra |
+| 9 | Event bus fragmentation | P2 | Refactor |
+| 10 | OpenAPI → TS codegen | P2 | Tooling |
+
+### Sprint B — DONE (FE-4B)
+IntegratedForensicDashboard retired.
+- No canonical Entity API exists
+- Page is redundant aggregator
+- TS errors: 2 → 1
+- Commit: <hash>
+
 ---
 
+### Sprint A — CANCELLED (Already Done)
+OverviewTab.tsx already uses new IDs (fraud, graph).
+Legacy IDs (signals, network) not found in codebase.
+→ No action needed.
+
+### Sprint A-New — OPTIONAL (Post-CP2.5.1)
+Issue: handleAction does not handle tab IDs (fraud, graph, etc.)
+Fix: Update handleAction to route tab IDs → setActiveTab
 ## BAGIAN X — DO'S & DON'TS
 
 ### ✅ DO
@@ -657,3 +856,20 @@ cat F3.3_GRAPH_CONTRACT.md | head -100
 
 **Baseline 47.58 MEDIUM tetap FROZEN. Risk Engine v3 tidak disentuh. Graph layer read-only.**
 ```
+
+## BAGIAN XIV — Current Metrics
+
+TS errors:          0 (from 51, -100%)
+FE commits:         12 (pushed)
+Build:              SUCCESS (1676 modules, ~5.4s)
+Dist:               371 KB (compressed: 109 KB)
+Frontend status:    100% clean
+Behavioral status:  All verified
+
+Backend:            FROZEN
+Risk:               47.58 MEDIUM
+Graph:              4177 / 2424
+Tag:                f3-graph-intelligence-v1 (annotated)
+                    -> 579e020
+
+Remote:             origin/cp2.5.1-stabilization = 513b294
