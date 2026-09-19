@@ -1,22 +1,53 @@
-#!/bin/bash
-# NEMESIS Health Check Script
+#!/usr/bin/env bash
+# NEMESIS — Health Check
+set -euo pipefail
 
-echo "=== NEMESIS V8+ Health Check ==="
+API_URL="${API_URL:-http://127.0.0.1:8000}"
+CASE_ID="b4897392-87ab-4e7a-84b6-90228f3d1eb9"
 
-# Check API
-echo -n "API Health: "
-curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health
+echo "═══════════════════════════════════════════════════════════════"
+echo " NEMESIS CP2.5.1 — HEALTH CHECK"
+echo "═══════════════════════════════════════════════════════════════"
 
-# Check Database
-echo -n "Database: "
-docker exec nemesis_madina-postgres-1 pg_isready -U nemesis -d nemesis_db
+echo
+echo "───── Containers ─────"
+docker compose ps | head -10
 
-# Check Events Count
-echo -n "Total Events: "
-docker exec nemesis_madina-postgres-1 psql -U nemesis -d nemesis_db -t -c "SELECT COUNT(*) FROM events;" | tr -d ' '
+echo
+echo "───── Health Endpoints ─────"
+for ep in /health /health/live /health/ready; do
+  printf "  %-20s → " "$ep"
+  status=$(curl -s -o /dev/null -w "%{http_code}" "$API_URL$ep" || echo "000")
+  if [ "$status" = "200" ]; then
+    echo "HTTP $status ✅"
+  else
+    echo "HTTP $status ⚠️"
+  fi
+done
 
-# Check Integrity
-echo -n "Integrity Status: "
-curl -s http://localhost:8000/integrity/verify-all | python -c "import sys,json; d=json.load(sys.stdin); print(f\"{d['passed_cases']}/{d['total_cases']} cases passed\")" 2>/dev/null || echo "N/A"
+echo
+echo "───── /health/ready detail ─────"
+curl -s "$API_URL/health/ready" | jq . 2>/dev/null || echo "  (no JSON)"
 
-echo "=== Health Check Complete ==="
+echo
+echo "───── Baseline ─────"
+FRESH_TOKEN=$(curl -s -X POST "$API_URL/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"Admin123!"}' | jq -r '.access_token // empty')
+
+if [ -z "$FRESH_TOKEN" ]; then
+  echo "  ❌ Auth failed"
+  exit 1
+fi
+
+echo "  Auth: ✅"
+echo -n "  Risk:  "
+curl -s "$API_URL/api/v1/risk/explanations/$CASE_ID" \
+  -H "Authorization: Bearer $FRESH_TOKEN" | jq -c '{score, risk_level}'
+
+echo -n "  Graph: "
+curl -s "$API_URL/api/v1/graph/cases/$CASE_ID/summary" \
+  -H "Authorization: Bearer $FRESH_TOKEN" | jq -c '{total_entities, total_relationships}'
+
+echo
+echo "═══════════════════════════════════════════════════════════════"
