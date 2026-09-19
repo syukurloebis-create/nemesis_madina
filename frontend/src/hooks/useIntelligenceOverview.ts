@@ -9,7 +9,7 @@ import {
     fetchIntelligenceOverview,
     IntelligenceOverviewResponse
 }
-from "../services/dashboardIntelligenceApi";
+from "../services/dashboardOverviewApi";
 
 
 

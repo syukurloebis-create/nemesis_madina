@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getChainIntegrity } from '../services/api';
+import { api } from '../services/api';
 
 interface ChainIntegrityData {
   total_agregat: number;
@@ -26,7 +26,7 @@ export default function ChainIntegrity() {
     setLoading(true);
     setError(null);
     try {
-      const response = await getChainIntegrity();
+      const response = await api.verifyAll();
       console.log('Chain Integrity Data:', response.data);
       setData(response.data);
     } catch (err: any) {
