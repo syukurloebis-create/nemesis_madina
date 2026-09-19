@@ -8,15 +8,19 @@ import EvidenceHealthPanel from './EvidenceHealthPanel';
 import InvestigationTimeline from './InvestigationTimeline';
 import InvestigationWorkspace from '../investigation/InvestigationWorkspace';
 import RecoveryIntelligence from '../../pages/RecoveryIntelligence';
+import type {
+  DashboardActionId,
+  IntelligenceTabId,
+} from '../../types/navigation';
 // import DecisionCenter from '../decision/DecisionCenter';
 
 interface Props {
   intelligence: IntelligenceModel;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
+  activeTab: IntelligenceTabId;
+  setActiveTab: (tab: IntelligenceTabId) => void;
   caseId: string;
   userId?: string;
-  onAction?: (action: string) => void;
+  onAction?: (action: DashboardActionId) => void;
 }
 
 export default function IntelligenceTabs({ 
@@ -27,7 +31,7 @@ export default function IntelligenceTabs({
   userId = '',
   onAction 
 }: Props) {
-  const tabs = [
+  const tabs: Array<{ id: IntelligenceTabId; label: string }> = [
     { id: 'overview', label: 'Overview' },
     { id: 'risk', label: 'Risk Reasoning' },
     { id: 'graph', label: 'Graph Intelligence' },
