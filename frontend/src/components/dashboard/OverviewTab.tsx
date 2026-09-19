@@ -613,7 +613,7 @@ intelligence.fraud.high_confidence
 
 <button
 
-onClick={()=>onAction?.("signals")}
+onClick={()=>onAction?.("fraud")}
 
 className="
 mt-4
@@ -742,7 +742,7 @@ relations
 
 <button
 
-onClick={()=>onAction?.("network")}
+onClick={()=>onAction?.("graph")}
 
 className="
 mt-4
