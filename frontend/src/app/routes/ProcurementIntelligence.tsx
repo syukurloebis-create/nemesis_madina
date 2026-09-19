@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import CollusionGraph from '../../components/CollusionGraph';
 import { getProcurementStats, getProcurementVendors } from '../../services/api';
 
 interface Vendor {
@@ -24,8 +23,8 @@ export default function ProcurementIntelligence() {
     setError(null);
     try {
       const [statsRes, vendorsRes] = await Promise.all([
-        getProcurementStats({ case_id: undefined }),
-        getProcurementVendors(50)
+        getProcurementStats(),
+        getProcurementVendors()
       ]);
       setStats(statsRes.data);
       setVendors(vendorsRes.data?.vendors || []);
@@ -125,9 +124,6 @@ export default function ProcurementIntelligence() {
           </div>
         )}
       </div>
-
-      {/* Collusion Graph Section */}
-      <CollusionGraph />
 
       {/* Footer */}
       <div className="mt-6 text-right text-gray-500 text-sm">
