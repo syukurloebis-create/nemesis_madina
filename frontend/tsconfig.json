@@ -27,7 +27,6 @@
     "dist",
     "src/backup",
     "src/unused_components",
-    "src/**/__tests__",
     "src/**/*.bak",
     "src/**/*.bak_*"
   ]
