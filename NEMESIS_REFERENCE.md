@@ -860,11 +860,16 @@ cat F3.3_GRAPH_CONTRACT.md | head -100
 ## BAGIAN XIV — Current Metrics
 
 TS errors:          0 (from 51, -100%)
-FE commits:         12 (pushed)
-Build:              SUCCESS (1676 modules, ~5.4s)
-Dist:               371 KB (compressed: 109 KB)
+FE commits:         18 (session total)
+Build:              SUCCESS
 Frontend status:    100% clean
 Behavioral status:  All verified
+
+Contract Tests:
+  Files:            3 (baseline, graph, risk)
+  Tests:            28 passing
+  Coverage:         graphApi, riskApi
+  Baseline:         47.58 / 4177 / 2424 / 4 collusion
 
 Backend:            FROZEN
 Risk:               47.58 MEDIUM
@@ -872,4 +877,16 @@ Graph:              4177 / 2424
 Tag:                f3-graph-intelligence-v1 (annotated)
                     -> 579e020
 
-Remote:             origin/cp2.5.1-stabilization = 513b294
+Remote:             origin/cp2.5.1-stabilization = 6418770
+
+### Track Completion Status
+
+| Track | Status | Commit |
+|-------|--------|--------|
+| Track 1: Documentation Sync | DONE | bb70c29 |
+| Track 2: Cleanup Sprint | DONE | 708c040 |
+| Track 4: Type-Safe Navigation | DONE | a724d51 |
+| Track 5: API Contract Tests | DONE | 6418770 |
+| Track 6: Infrastructure Hardening | DONE | 796aacc |
+| Track 7: Behavioral Changelog | DONE | f5316f8 |
+| Track 3: Canonical Entity API | PENDING | - |
