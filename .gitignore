@@ -111,3 +111,19 @@ storage/
 coverage.xml
 *.log
 .env
+
+# F3.7 cleanup — typo artifacts
+-Headers
+-Method
+* - Salin.*
+*.backup_*
+*.original
+.nemesis_env
+*.nemesis_env
+
+# Backup and temp files (forensic evidence preservation)
+*.bak_*
+*.old_*
+nginx.conf.bak_*
+nginx.conf.old_*
+docker-compose.yml.bak_*
