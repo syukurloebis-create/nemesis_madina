@@ -1,10 +1,57 @@
+// frontend/src/services/api/client.ts
+
 import axios from 'axios';
 import authService from '../auth';
 
-// Use environment variable with fallback
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+// ────────────────────────────────────────────────────────────────
+// Base URL resolution
+//
+// Production runtime (browser):
+//   VITE_API_URL=/api → relative → nginx handles routing
+//
+// Node.js test environment:
+//   Cannot resolve relative URL → use absolute URL for tests
+//
+// Priority:
+//   1. VITE_API_URL if absolute (http://...)
+//   2. Node test fallback (absolute)
+//   3. Browser fallback (relative /api)
+// ────────────────────────────────────────────────────────────────
 
-console.log(`🔗 API Base URL: ${API_BASE_URL} (${import.meta.env.PROD ? 'production' : 'development'})`);
+const isAbsoluteUrl = (url: string | undefined): boolean =>
+  !!url && (url.startsWith('http://') || url.startsWith('https://'));
+
+const isNodeEnv = 
+  typeof window === 'undefined' && 
+  typeof process !== 'undefined';
+
+const resolveBaseUrl = (): string => {
+  const envUrl = import.meta.env.VITE_API_URL;
+
+  // 1. Absolute URL from env → use as-is
+  if (isAbsoluteUrl(envUrl)) {
+    return envUrl;
+  }
+
+  // 2. Node.js test env → absolute fallback
+  if (isNodeEnv) {
+    return (
+      process.env.NEMESIS_TEST_API_URL ||
+      'http://127.0.0.1:8000/api'
+    );
+  }
+
+  // 3. Browser runtime → relative (nginx)
+  return envUrl || '/api';
+};
+
+const API_BASE_URL = resolveBaseUrl();
+
+console.log(
+  `🔗 API Base URL: ${API_BASE_URL} ` +
+  `(${import.meta.env.PROD ? 'production' : 'development'}, ` +
+  `${isNodeEnv ? 'node' : 'browser'})`
+);
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
