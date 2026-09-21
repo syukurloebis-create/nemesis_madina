@@ -1,28 +1,14 @@
-﻿/**
- * Login Page
- */
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import authService from '../services/auth';
+import { toast } from 'react-toastify';
 
-export const LoginPage: React.FC = () => {
+const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  
-  const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      const from = (location.state as any)?.from?.pathname || '/dashboard';
-      navigate(from, { replace: true });
-    }
-  }, [isAuthenticated, isLoading, navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,9 +16,44 @@ export const LoginPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      await login(username, password);
+      console.log('🔄 Attempting login...');
+      
+      // Use authService to login
+      const response = await authService.login(username, password);
+      console.log('✅ Login response:', response);
+      
+      // Explicitly store tokens
+      if (response.access_token) {
+        // Use localStorage directly to ensure it's stored
+        localStorage.setItem('access_token', response.access_token);
+        if (response.refresh_token) {
+          localStorage.setItem('refresh_token', response.refresh_token);
+        }
+        console.log('✅ Tokens stored via localStorage');
+      }
+      
+      // Store user data
+      if (response.user) {
+        localStorage.setItem('user_data', JSON.stringify(response.user));
+        console.log('✅ User data stored');
+      }
+      
+      // Verify token was stored
+      const storedToken = localStorage.getItem('access_token');
+      console.log('🔑 Stored token:', storedToken ? storedToken.substring(0, 30) + '...' : 'null');
+      
+      if (storedToken) {
+        toast.success('Login successful!');
+        navigate('/dashboard', { replace: true });
+      } else {
+        console.error('❌ Token not stored properly');
+        setError('Login failed - token storage issue');
+      }
+      
     } catch (err: any) {
+      console.error('❌ Login error:', err);
       setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
+      toast.error(err.response?.data?.detail || 'Login failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -73,26 +94,16 @@ export const LoginPage: React.FC = () => {
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Password
             </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition pr-12"
-                placeholder="Enter your password"
-                required
-                autoComplete="current-password"
-                disabled={isSubmitting}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition"
-                tabIndex={-1}
-              >
-                {showPassword ? '👁️' : '👁️‍🗨️'}
-              </button>
-            </div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              placeholder="Enter your password"
+              required
+              autoComplete="current-password"
+              disabled={isSubmitting}
+            />
           </div>
 
           <button
@@ -100,34 +111,16 @@ export const LoginPage: React.FC = () => {
             disabled={isSubmitting}
             className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-lg transition duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-                Logging in...
-              </span>
-            ) : (
-              'Sign In'
-            )}
+            {isSubmitting ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <Link
-            to="/forgot-password"
-            className="text-sm text-blue-400 hover:text-blue-300 transition"
-          >
-            Forgot password?
-          </Link>
-        </div>
-
-        <div className="mt-8 pt-6 border-t border-white/10">
-          <p className="text-xs text-center text-gray-500">
-            Secure login powered by JWT authentication
-          </p>
+        <div className="mt-6 text-center text-sm text-gray-400">
+          Enter your credentials
         </div>
       </div>
     </div>
   );
 };
 
-export default LoginPage;
+export default Login;

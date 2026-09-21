@@ -5,8 +5,8 @@ import authService from '../../services/auth';
 
 export default function Login() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('Admin123!');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -119,7 +119,7 @@ export default function Login() {
         </form>
 
         <div className="mt-4 text-center text-sm text-gray-400">
-          Default: admin / Admin123!
+          Enter your credentials
         </div>
       </div>
     </div>
