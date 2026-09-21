@@ -2,19 +2,37 @@
 
 **Replace seluruh isi file dengan konten di bawah:**
 
-```markdown
-# 📘 NEMESIS CP2.5.1 — Graph Intelligence Sprint Reference
+## Security Incident Log
 
-**Dokumen Referensi Lengkap untuk Melanjutkan di Percakapan Baru**
+### 2026-09-21 — Admin Credential Exposure (P0)
 
-**Status:** F3 CLOSED — Graph Intelligence v1 (HYBRID — LOCKED)
-**Tanggal:** 2026-09-18
-**Branch:** `cp2.5.1-stabilization`
-**HEAD (rencana):** `<commit-C-hash>`
-**Tag (rencana):** `f3-graph-intelligence-v1`
+**Type:** Credential exposure in tracked source + production bundle
+**Status:** ✅ RESOLVED
 
----
+**Timeline:**
+- Detection: Forensic audit of bundle contents
+- Remediation: 5 focused commits (7bd39ea, 11a7359, ca1a79f, da9cb33, 494cb41)
+- Password rotation: Executed (old 'Admin123!' invalid)
+- Bundle rebuilt: index-CP96eShg.js (0 credential strings)
 
+**Scope:**
+- Frontend source: 2 files
+- Production bundle: index-C7OarUre.js (pre-fix)
+- Docs/scripts/backend: 10 files
+- Dead code: components/auth/Login.tsx removed
+
+**Root cause:**
+- Hardcoded default credentials in Login component
+- Working tree refactor regressed pages/Login.tsx
+
+**Verification:**
+- Source map trace: definitive (0 credential files in bundle)
+- Baseline: 47.58 MEDIUM intact
+- Container health: 6/6 up
+
+**Boundary:**
+- Independent of Track 9 (401 investigation)
+- Nginx cache defect resolved separately (commit 11a7359)
 ## BAGIAN I — KONTEKS PROYEK
 
 ### NEMESIS Overview
