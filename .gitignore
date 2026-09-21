@@ -2,7 +2,6 @@
 
 # ============================================
 # Python
-# ============================================
 __pycache__/
 *.py[cod]
 *$py.class
@@ -15,9 +14,7 @@ env/
 .env
 .venv
 
-# ============================================
 # IDE
-# ============================================
 .vscode/
 .idea/
 *.swp
@@ -27,17 +24,13 @@ env/
 .classpath
 .settings/
 
-# ============================================
 # Database
-# ============================================
 *.db
 *.sqlite
 *.sqlite3
 *.pgsql
 
-# ============================================
 # Logs & Reports
-# ============================================
 *.log
 *.pid
 *.seed
@@ -57,16 +50,12 @@ coverage.xml
 .ruff_cache/
 .mypy_cache/
 
-# ============================================
 # Docker
-# ============================================
 *.tar
 *.tar.gz
 *.zip
 
-# ============================================
 # Secrets
-# ============================================
 .env.local
 .env.*.local
 *.pem
@@ -74,18 +63,14 @@ coverage.xml
 *.crt
 secrets/
 
-# ============================================
 # Build outputs
-# ============================================
 dist/
 build/
 *.egg-info/
 *.egg
 .eggs/
 
-# ============================================
 # Frontend
-# ============================================
 node_modules/
 frontend/node_modules/
 frontend/.next/
@@ -94,9 +79,7 @@ frontend/build/
 frontend/dist/
 frontend/.env.local
 
-# ============================================
 # Misc
-# ============================================
 .DS_Store
 Thumbs.db
 *.bak
@@ -107,10 +90,6 @@ Thumbs.db
 # Storage
 storage/
 *.sql
-*.db
-coverage.xml
-*.log
-.env
 
 # F3.7 cleanup — typo artifacts
 -Headers
@@ -127,3 +106,5 @@ coverage.xml
 nginx.conf.bak_*
 nginx.conf.old_*
 docker-compose.yml.bak_*
+
+# Backup and temp files
