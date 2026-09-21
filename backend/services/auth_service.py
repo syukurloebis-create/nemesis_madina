@@ -43,6 +43,10 @@ class AuthService:
     @staticmethod
     async def authenticate_user(db: AsyncSession, username: str, password: str) -> Optional[User]:
         """Authenticate user with username and password."""
+        # Defense-in-depth: reject empty credentials before DB lookup
+        if not username or not password:
+            return None
+        
         result = await db.execute(
             select(User).where(User.username == username)
         )
