@@ -1,5 +1,6 @@
 ﻿# backend/scripts/seed_users.py - FIXED
 
+import os
 import asyncio
 import uuid
 from sqlalchemy import text
@@ -28,7 +29,7 @@ async def seed_users():
         
         # Users with canonical roles
         users = [
-            {"username": "admin", "email": "admin@nemesis.go.id", "full_name": "System Administrator", "password": "Admin123!", "role": "ADMIN", "institution_code": "ITJEN"},
+            {"username": "admin", "email": "admin@nemesis.go.id", "full_name": "System Administrator", "password": os.environ.get("NEMESIS_BOOTSTRAP_PASSWORD", "CHANGE_ME_BEFORE_USE"), "role": "ADMIN", "institution_code": "ITJEN"},
             {"username": "investigator1", "email": "investigator@kpk.go.id", "full_name": "KPK Investigator", "password": "Investigator123!", "role": "INVESTIGATOR", "institution_code": "KPK"},
             {"username": "investigator2", "email": "investigator@kejaksaan.go.id", "full_name": "Kejaksaan Investigator", "password": "Investigator123!", "role": "INVESTIGATOR", "institution_code": "KEJAGUNG"},
             {"username": "viewer", "email": "viewer@bpkp.go.id", "full_name": "BPKP Viewer", "password": "Viewer123!", "role": "VIEWER", "institution_code": "BPKP"}

@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+: "${NEMESIS_TEST_USERNAME:?NEMESIS_TEST_USERNAME is required}"
+: "${NEMESIS_TEST_PASSWORD:?NEMESIS_TEST_PASSWORD is required}"
 # scripts/F3.5_verify.sh
 # F3.5 — Runtime Verification for Graph Intelligence
 # Baseline case: b4897392-87ab-4e7a-84b6-90228f3d1eb9
@@ -27,7 +30,7 @@ echo
 echo "▶ [2/7] Login"
 TOKEN=$(curl -s -X POST "$API/api/v1/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"Admin123!"}' | jq -r '.access_token')
+  -d "{\"username\":\"$NEMESIS_TEST_USERNAME\",\"password\":\"$NEMESIS_TEST_PASSWORD\"}" | jq -r '.access_token')
 
 [ -n "$TOKEN" ] && [ "$TOKEN" != "null" ] || { echo "  ✗ FAIL"; exit 1; }
 echo "  ✓ Token acquired"

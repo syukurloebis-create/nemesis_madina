@@ -502,7 +502,7 @@ Database: nemesis_db
 
 ```
 Username: admin
-Password: Admin123!
+Password: <see .env / NEMESIS_TEST_PASSWORD>
 ```
 
 ### Container External Ports
@@ -609,7 +609,7 @@ dfa4ebe feat(f16.3): Graph entity identity
 ```bash
 FRESH_TOKEN=$(curl -s -X POST "http://127.0.0.1:8000/api/v1/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"Admin123!"}' | jq -r '.access_token')
+  -d '{"username":"admin","password":"$NEMESIS_TEST_PASSWORD"}' | jq -r '.access_token')
 ```
 
 ### Test Baseline
@@ -785,7 +785,7 @@ curl -s http://127.0.0.1:8000/health
 ```bash
 FRESH_TOKEN=$(curl -s -X POST "http://127.0.0.1:8000/api/v1/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"Admin123!"}' | jq -r '.access_token')
+  -d '{"username":"admin","password":"$NEMESIS_TEST_PASSWORD"}' | jq -r '.access_token')
 
 CASE=b4897392-87ab-4e7a-84b6-90228f3d1eb9
 

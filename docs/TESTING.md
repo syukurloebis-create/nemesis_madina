@@ -31,7 +31,7 @@ Run:
   export VITE_API_URL=http://127.0.0.1:8000/api
   export NEMESIS_TEST_API_URL=http://127.0.0.1:8000/api
   export NEMESIS_TEST_USERNAME=admin
-  export NEMESIS_TEST_PASSWORD=Admin123!
+  export NEMESIS_TEST_PASSWORD=<your-rotated-password>
   npm run test:contract
 
 Expected:

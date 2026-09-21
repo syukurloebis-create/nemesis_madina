@@ -34,7 +34,7 @@ All navigate targets verified:
 
 ### Manual Test
 1. Open http://localhost
-2. Login: admin / Admin123!
+2. Login: admin / <see .env>
 3. Click "fraud" → Fraud tab active
 4. Click "graph" → Graph tab active
 5. Click "investigation" → /investigation

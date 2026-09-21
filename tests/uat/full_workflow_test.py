@@ -1,4 +1,5 @@
 # tests/uat/full_workflow_test.py
+import os
 import asyncio
 import httpx
 import json
@@ -12,7 +13,7 @@ async def test_full_investigation_workflow():
         # 1. Login
         resp = await client.post(f"{base_url}/auth/login", json={
             "username": "admin",
-            "password": "Admin123!"
+            "password": os.environ.get("NEMESIS_TEST_PASSWORD", "CHANGE_ME")
         })
         assert resp.status_code == 200
         token = resp.json()['access_token']

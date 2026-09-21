@@ -159,6 +159,7 @@ class PasswordValidator:
             password123
             Password123!
             admin123
+            # WARNING: this is a KNOWN-BAD example (was default credential)
             Admin123!
             qwerty123
             welcome2026!

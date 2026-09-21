@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+: "${NEMESIS_TEST_USERNAME:?NEMESIS_TEST_USERNAME is required}"
+: "${NEMESIS_TEST_PASSWORD:?NEMESIS_TEST_PASSWORD is required}"
 # scripts/F3.6_regression.sh
 # F3.6 — Regression Verification
 # Baseline: 47.58 MEDIUM (FROZEN)
@@ -19,7 +22,7 @@ echo
 # ─── Login ────────────────────────────────────────────────────────
 TOKEN=$(curl -s -X POST "$API/api/v1/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"Admin123!"}' | jq -r '.access_token')
+  -d "{\"username\":\"$NEMESIS_TEST_USERNAME\",\"password\":\"$NEMESIS_TEST_PASSWORD\"}" | jq -r '.access_token')
 
 [ -n "$TOKEN" ] && [ "$TOKEN" != "null" ] || { echo "✗ Login FAILED"; exit 1; }
 AUTH="Authorization: Bearer $TOKEN"

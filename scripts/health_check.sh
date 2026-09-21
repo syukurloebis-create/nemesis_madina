@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+: "${NEMESIS_TEST_USERNAME:?NEMESIS_TEST_USERNAME is required}"
+: "${NEMESIS_TEST_PASSWORD:?NEMESIS_TEST_PASSWORD is required}"
 # NEMESIS — Health Check
 set -euo pipefail
 
@@ -33,7 +36,7 @@ echo
 echo "───── Baseline ─────"
 FRESH_TOKEN=$(curl -s -X POST "$API_URL/api/v1/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"Admin123!"}' | jq -r '.access_token // empty')
+  -d "{\"username\":\"$NEMESIS_TEST_USERNAME\",\"password\":\"$NEMESIS_TEST_PASSWORD\"}" | jq -r '.access_token // empty')
 
 if [ -z "$FRESH_TOKEN" ]; then
   echo "  ❌ Auth failed"

@@ -1,4 +1,5 @@
 ﻿from sqlalchemy import select
+import os
 from passlib.context import CryptContext
 
 from backend.security.models import User
@@ -28,7 +29,7 @@ async def ensure_admin():
             username="admin",
             email="admin@nemesis.local",
             full_name="System Administrator",
-            password_hash=pwd.hash("Admin123!"),
+            password_hash=pwd.hash(os.environ["NEMESIS_BOOTSTRAP_PASSWORD"]),
             role="ADMIN",
             is_active=True,
         )
