@@ -1114,8 +1114,19 @@ Remote:             origin/cp2.5.1-stabilization = 6418770
 
 ### Boundary Status
 
+### Next: Phase C — UX / Actionability
 
-```text
+- Last calculated timestamp
+- Delta indicators
+- Empty state CTAs
+- Cross-tab actions
+- Case selector integration
+
+HEAD:    8f3b897 (test(frontend/graph): add component tests for Phase B)
+REMOTE:  8f3b897 (synced)
+Branch:  cp2.5.1-stabilization
+TAG:     579e020 (f3-graph-intelligence-v1)
+
 🔒 Risk Engine v3        NOT TOUCHED
 🔒 Baseline 47.58 MEDIUM  FROZEN
 🔒 Graph F3 contract     NOT TOUCHED
@@ -1124,14 +1135,35 @@ Remote:             origin/cp2.5.1-stabilization = 6418770
 🔒 Backend               UNTOUCHED
 🔒 Legacy graph API      REMOVED
 🔒 Fabricated fields     NONE
-```
 
-### Next: Phase C — UX / Actionability
+## BAGIAN XVI — PHASE C COMPLETION (2026-09-22)
 
-- Header: Last calculated + freshness
-- Overview: timestamp display
-- Evidence: explicit NO_DATA + CTA
-- Investigation: empty state + CTA
-- Recovery: engine vs case state
+### Phase C — UX / Actionability
 
-**End of BAGIAN XV**
+**Commits:**
+- `73eb9fb` — C.1: ExecutiveHeader metadata
+- `8b8e467` — C.1a: extract format helpers
+- `c84c12a` — Nginx IPv6 routing fix
+- `55667bb` — C.2: OverviewTab metadata
+- `233d266` — C.3: Evidence NO_DATA + CTA
+- `208ae1f` — C.4: Investigation empty state CTA
+- `4d79fbf` — C.5: Recovery engine/case split
+- `8d8cc22` — C.6: remove dead RecoveryWidget
+
+**Deliverables:**
+- Metadata display (Last calculated + freshness + req ID):
+  - `ExecutiveHeader.tsx`
+  - `OverviewTab.tsx`
+- Shared utils: `src/utils/format.ts`
+- Explicit empty states with CTAs:
+  - EvidenceHealthPanel (NO_DATA + honest CTA)
+  - InvestigationWorkspace (empty CTA)
+  - RecoveryIntelligence (engine vs case)
+- Dead code removal:
+  - `Intelligence/RecoveryWidget.tsx` (416B)
+  - `recovery/RecoveryWidget.tsx` (1112B)
+  - Empty `recovery/` folder
+
+**Tests:** 78 → 118 (+40)
+**TypeScript:** 0 errors
+**Boundary:** INTACT
