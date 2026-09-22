@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExecutiveData, StatsData } from '@/types/dashboard';
+import { ExecutiveData, StatsData } from '../../../types/dashboard-v8';
 
 interface ExecutiveOverviewProps {
   data: ExecutiveData;
