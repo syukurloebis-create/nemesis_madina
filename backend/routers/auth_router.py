@@ -11,6 +11,7 @@ Contract:
 - Route prefix handled by main.py (/api/v1/auth)
 """
 
+import os
 from datetime import datetime
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Request
@@ -29,12 +30,22 @@ from backend.services.jwt_service import JWTService
 from backend.dependencies.auth import get_current_user, require_admin
 from backend.middleware.rate_limit import rate_limit
 
+# ─────────────────────────────────────────
+# Rate limit configuration
+# Production default: 5/60
+# Override via env var for test/CI:
+#   NEMESIS_LOGIN_RATE_LIMIT=30
+#   NEMESIS_LOGIN_RATE_WINDOW=60
+# ─────────────────────────────────────────
+LOGIN_RATE_LIMIT = int(os.getenv("NEMESIS_LOGIN_RATE_LIMIT", "5"))
+LOGIN_RATE_WINDOW = int(os.getenv("NEMESIS_LOGIN_RATE_WINDOW", "60"))
+
 # Prefix is added in main.py: /api/v1/auth
 router = APIRouter(tags=["authentication"])
 
 
 @router.post("/login", response_model=LoginResponse)
-@rate_limit(limit=5, window=60)
+@rate_limit(limit=LOGIN_RATE_LIMIT, window=LOGIN_RATE_WINDOW)
 async def login(
     request: Request,
     login_data: LoginRequest,

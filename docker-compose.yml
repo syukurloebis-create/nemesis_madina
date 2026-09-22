@@ -39,6 +39,8 @@ services:
       ENV: development
       DEBUG: "false"
       SQL_ECHO: "false"
+      NEMESIS_LOGIN_RATE_LIMIT: ${NEMESIS_LOGIN_RATE_LIMIT:-5}
+      NEMESIS_LOGIN_RATE_WINDOW: ${NEMESIS_LOGIN_RATE_WINDOW:-60}
     volumes:
       # Development only: bind-mount backend for hot reload
       # Do NOT use in production
