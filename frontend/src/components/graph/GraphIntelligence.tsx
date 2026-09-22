@@ -1,32 +1,37 @@
 // src/components/graph/GraphIntelligence.tsx
 //
-// Graph Intelligence — Canonical F3 (Read-only Summary)
+// Graph Intelligence — Canonical F3 (B.3a Integration)
 //
-// Sources:
-//   intelligence.graph.entities        (from /dashboard/intelligence)
-//   intelligence.graph.relationships   (from /dashboard/intelligence)
+// Layout:
+//   1. Summary card (entities / relationships / structural hubs)
+//   2. GraphVisualization (Cytoscape render, canonical F3)
+//   3. GraphEntityExplorer (structural hubs, canonical F3)
 //
 // Boundary:
-//   - GraphNodeDTO is FROZEN. Do NOT add risk_score / risk_level / hub list.
-//   - Structural hubs are computed from canonical F3 API
-//     (see GraphEntityExplorer / Phase B visualization).
+//   - GraphNodeDTO FROZEN. No risk_score / confidence / hub list.
+//   - Structural ranking is degree-based.
 //   - No fabricated "High Risk Hubs" concept.
+//
+// Props:
+//   - caseId: required (drives canonical F3 fetch)
+//   - intelligence: optional (for summary card if parent passes)
 
-import React from "react";
-import { Network, GitBranch, GitBranchPlus } from "lucide-react";
-import { IntelligenceModel } from "../../services/intelligenceAdapter";
-import GraphEntityExplorer from "./GraphEntityExplorer";
+import React, { useState } from 'react';
+import { Network, GitBranch, GitBranchPlus } from 'lucide-react';
+import { IntelligenceModel } from '../../services/intelligenceAdapter';
+import GraphVisualization from './GraphVisualization';
+import GraphEntityExplorer from './GraphEntityExplorer';
 
 interface Props {
-  intelligence: IntelligenceModel;
+  caseId: string;
+  intelligence?: IntelligenceModel | null;
 }
 
-export default function GraphIntelligence({ intelligence }: Props) {
+export default function GraphIntelligence({ caseId, intelligence }: Props) {
   const entities = intelligence?.graph?.entities ?? 0;
   const relationships = intelligence?.graph?.relationships ?? 0;
 
-  const hubsAvailability =
-    intelligence?.graph?.structuralHubs?.availability ?? 'NOT_AVAILABLE';
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   return (
     <div className="space-y-6">
@@ -45,7 +50,6 @@ export default function GraphIntelligence({ intelligence }: Props) {
         </div>
 
         <div className="grid grid-cols-3 gap-4">
-          {/* Entities */}
           <div className="bg-gray-900 rounded-xl p-5">
             <div className="flex gap-2 items-center text-gray-400 text-sm">
               <Network className="w-4 h-4" />
@@ -56,7 +60,6 @@ export default function GraphIntelligence({ intelligence }: Props) {
             </p>
           </div>
 
-          {/* Relationships */}
           <div className="bg-gray-900 rounded-xl p-5">
             <div className="flex gap-2 items-center text-gray-400 text-sm">
               <GitBranch className="w-4 h-4" />
@@ -67,24 +70,20 @@ export default function GraphIntelligence({ intelligence }: Props) {
             </p>
           </div>
 
-          {/* Structural Hubs (honest state) */}
           <div className="bg-gray-900 rounded-xl p-5">
             <div className="flex gap-2 items-center text-gray-400 text-sm">
               <GitBranchPlus className="w-4 h-4" />
               Structural Hubs
             </div>
-            <p className="text-3xl font-bold text-gray-400 mt-2">
-              —
+            <p className="text-3xl font-bold text-cyan-400 mt-2">
+              ↓
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              {hubsAvailability === 'NOT_AVAILABLE'
-                ? 'See Entity Explorer below'
-                : 'Available'}
+              Ranked below by degree
             </p>
           </div>
         </div>
 
-        {/* Honest note about structural ranking */}
         <div className="mt-6 bg-gray-900/40 border border-gray-700 rounded-lg p-3">
           <p className="text-xs text-gray-400">
             <span className="text-gray-300 font-medium">
@@ -97,8 +96,23 @@ export default function GraphIntelligence({ intelligence }: Props) {
         </div>
       </div>
 
-      {/* ENTITY DRILL DOWN */}
-      <GraphEntityExplorer intelligence={intelligence} />
+      {/* VISUALIZATION */}
+      <div className="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
+        <GraphVisualization
+          caseId={caseId}
+          onNodeSelect={(node) => {
+            setSelectedNodeId(node?.business_key ?? null);
+          }}
+        />
+      </div>
+
+      {/* STRUCTURAL HUBS */}
+      <GraphEntityExplorer
+        caseId={caseId}
+        onNodeSelect={(nodeId) => setSelectedNodeId(nodeId)}
+        selectedNodeId={selectedNodeId}
+        limit={25}
+      />
     </div>
   );
 }

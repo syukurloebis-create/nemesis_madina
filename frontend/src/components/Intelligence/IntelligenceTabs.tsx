@@ -71,7 +71,7 @@ export default function IntelligenceTabs({
           <RiskReasoningPanel caseId={caseId} />
         )}
         {activeTab === 'graph' && (
-          <GraphIntelligence intelligence={intelligence} />
+          <GraphIntelligence caseId={caseId} intelligence={intelligence} />
         )}
         {activeTab === 'fraud' && (
           <FraudSignalExplorer intelligence={intelligence} />

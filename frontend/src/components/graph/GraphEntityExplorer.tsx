@@ -1,90 +1,229 @@
-// src/components/graph/GraphEntityExplorer.tsx
-//
-// Graph Entity Explorer — Phase A.6 (Deferred Migration)
-//
-// Phase A.6 status:
-//   This component will be migrated to canonical F3 graph service
-//   (src/services/api/graph.ts) in Phase B, together with the
-//   graph visualization work.
-//
-// Phase A.6 scope:
-//   - Remove legacy `fraud.signals.*` references (not in backend).
-//   - Remove legacy `graphIntelligenceApi` import.
-//   - Show honest "not yet implemented" state.
-//
-// Boundary:
-//   - GraphNodeDTO is FROZEN.
-//   - No fabricated hub entities, no risk_score/risk_level.
-//   - No client-side risk ranking.
+import React, { useEffect, useMemo, useState } from 'react';
+import { AlertCircle, Network, Search } from 'lucide-react';
+import graphApi, { KeyActor } from '../../services/api/graph';
 
-import React from "react";
-import { Search, Network } from "lucide-react";
-import { IntelligenceModel } from "../../services/intelligenceAdapter";
-
-interface Props {
-  intelligence: IntelligenceModel;
+export interface GraphEntityExplorerProps {
+  caseId: string;
+  onNodeSelect?: (nodeId: string) => void;
+  selectedNodeId?: string | null;
+  limit?: number;
 }
 
-export default function GraphEntityExplorer({ intelligence }: Props) {
-  const entities = intelligence?.graph?.entities ?? 0;
-  const relationships = intelligence?.graph?.relationships ?? 0;
+// Deterministic comparator (Amendment 2):
+//   1. entity_type priority (alphabetical for now)
+//   2. degree DESC
+//   3. name ASC (case-insensitive)
+//   4. business_key ASC (case-insensitive)
+function compareActors(a: KeyActor, b: KeyActor): number {
+  const entityTypeCompare = a.entity_type.localeCompare(
+    b.entity_type,
+    undefined,
+    { sensitivity: 'base' },
+  );
 
-  return (
-    <div className="bg-dark-card border border-dark-border rounded-xl p-6 space-y-6">
-      {/* HEADER */}
-      <div className="flex justify-between items-start">
-        <div>
-          <div className="flex gap-2 items-center">
-            <Network className="text-purple-400 w-5 h-5" />
-            <h2 className="text-xl font-bold text-white">
-              Entity Relationship Explorer
-            </h2>
-          </div>
-          <p className="text-sm text-gray-400 mt-1">
-            Hub entity investigation from Graph Intelligence
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs text-gray-400">Hub Entities</p>
-          <p className="text-2xl font-bold text-gray-500">—</p>
-        </div>
-      </div>
+  if (entityTypeCompare !== 0) return entityTypeCompare;
 
-      {/* Search (disabled placeholder) */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-        <input
-          type="text"
-          disabled
-          placeholder="Search vendor / entity... (coming in Phase B)"
-          className="w-full pl-10 pr-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-500 cursor-not-allowed"
-        />
-      </div>
+  if (a.degree !== b.degree) {
+    return b.degree - a.degree;
+  }
 
-      {/* Status panel */}
-      <div className="bg-gray-900/60 border border-gray-700 rounded-lg p-5">
-        <div className="flex items-start gap-3">
-          <Network className="w-5 h-5 text-gray-500 mt-0.5 shrink-0" />
-          <div className="flex-1">
-            <p className="text-gray-300 font-medium">
-              Structural hub ranking is not yet available in this view.
-            </p>
-            <p className="text-sm text-gray-500 mt-2">
-              The canonical graph exposes{' '}
-              <span className="text-white font-mono">{entities}</span>{' '}
-              entities and{' '}
-              <span className="text-white font-mono">{relationships}</span>{' '}
-              relationships for this case. Structural hub detection
-              (degree-based ranking) will be implemented in Phase B
-              alongside graph visualization.
-            </p>
-            <p className="text-xs text-gray-600 mt-3">
-              Boundary: GraphNodeDTO is FROZEN. No risk_score,
-              confidence, or fabricated hub list will be introduced.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+  const nameCompare = a.name.localeCompare(
+    b.name,
+    undefined,
+    { sensitivity: 'base' },
+  );
+
+  if (nameCompare !== 0) return nameCompare;
+
+  return a.business_key.localeCompare(
+    b.business_key,
+    undefined,
+    { sensitivity: 'base' },
   );
 }
+
+export const GraphEntityExplorer: React.FC<GraphEntityExplorerProps> = ({
+  caseId,
+  onNodeSelect,
+  selectedNodeId,
+  limit = 25,
+}) => {
+  const [actors, setActors] = useState<KeyActor[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadActors() {
+      if (!caseId) {
+        setActors([]);
+        setError('Case ID tidak tersedia.');
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        // graphApi.getKeyActors returns { case_id, actors, count }
+        // (already unwrapped from axios response by .then(r => r.data))
+        const response = await graphApi.getKeyActors(caseId, limit);
+
+        if (cancelled) return;
+
+        const data = response?.actors ?? [];
+        setActors(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (cancelled) return;
+
+        setActors([]);
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Gagal memuat key actors dari Graph API.',
+        );
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadActors();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [caseId, limit]);
+
+  const sortedActors = useMemo(
+    () => [...actors].sort(compareActors),
+    [actors],
+  );
+
+  const filteredActors = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+
+    if (!query) return sortedActors;
+
+    return sortedActors.filter((actor) => {
+      return [
+        actor.entity_type,
+        actor.name,
+        actor.business_key,
+      ].some((value) =>
+        value.toLocaleLowerCase().includes(query),
+      );
+    });
+  }, [search, sortedActors]);
+
+  const handleSelect = (actor: KeyActor) => {
+    onNodeSelect?.(actor.business_key);
+  };
+
+  return (
+    <section className="rounded-xl border border-gray-700/60 bg-dark-card">
+      <div className="border-b border-gray-700/60 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Network className="h-4 w-4 text-cyan-400" />
+          <div>
+            <h3 className="text-sm font-semibold text-white">
+              Structural Hubs
+            </h3>
+            <p className="text-xs text-gray-500">
+              Key actors ranked by graph degree
+            </p>
+          </div>
+        </div>
+
+        <div className="relative mt-3">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+          <input
+            type="text"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search name, entity type, or business key..."
+            className="w-full rounded-lg border border-gray-700 bg-gray-900/60 py-2 pl-9 pr-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-cyan-500/60"
+          />
+        </div>
+      </div>
+
+      <div className="px-4 py-3">
+        {loading && (
+          <div className="py-8 text-center text-sm text-gray-500">
+            Memuat key actors...
+          </div>
+        )}
+
+        {!loading && error && (
+          <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-sm text-red-300">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {!loading && !error && filteredActors.length === 0 && (
+          <div className="py-8 text-center">
+            <Network className="mx-auto mb-2 h-8 w-8 text-gray-600" />
+            <p className="text-sm text-gray-400">
+              {search.trim()
+                ? 'Tidak ada key actor yang cocok.'
+                : 'Tidak ada key actor yang dikembalikan Graph API.'}
+            </p>
+          </div>
+        )}
+
+        {!loading && !error && filteredActors.length > 0 && (
+          <div className="space-y-2">
+            {filteredActors.map((actor) => {
+              const isSelected =
+                selectedNodeId === actor.business_key;
+
+              return (
+                <button
+                  key={actor.business_key}
+                  type="button"
+                  onClick={() => handleSelect(actor)}
+                  className={`w-full rounded-lg border px-3 py-3 text-left transition ${
+                    isSelected
+                      ? 'border-cyan-500/70 bg-cyan-500/10'
+                      : 'border-gray-700/60 bg-gray-900/30 hover:border-gray-600 hover:bg-gray-900/60'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium text-white">
+                        {actor.name}
+                      </div>
+
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                        <span>{actor.entity_type}</span>
+                        <span>•</span>
+                        <span className="truncate">
+                          {actor.business_key}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 text-right">
+                      <div className="text-lg font-semibold text-white">
+                        {actor.degree}
+                      </div>
+                      <div className="text-[11px] uppercase tracking-wide text-gray-500">
+                        degree
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};
+
+export default GraphEntityExplorer;
