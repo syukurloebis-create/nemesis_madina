@@ -41,6 +41,8 @@ import {
 import type { IntelligenceModel } from '../../services/intelligenceAdapter';
 import { riskApi } from '../../services/api/risk';
 import type { RiskExplanation } from '../../types/risk';
+import type { Freshness } from '../../types/semantic';
+import { displayFreshness } from '../../types/semantic';
 
 interface Props {
   intelligence: IntelligenceModel;
@@ -59,6 +61,38 @@ const WEIGHTS = {
   fraud: 0.30,
   evidence: 0.15,
 } as const;
+
+/**
+ * Format ISO timestamp to "YYYY-MM-DD HH:MM:SS UTC".
+ * Returns "—" for null/invalid values.
+ */
+function formatTimestamp(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  try {
+    const date = new Date(iso);
+    if (isNaN(date.getTime())) return '—';
+    return (
+      date.toISOString().replace('T', ' ').slice(0, 19) + ' UTC'
+    );
+  } catch {
+    return '—';
+  }
+}
+
+/**
+ * Tone class for freshness badge.
+ */
+function freshnessStyle(freshness: Freshness): string {
+  switch (freshness) {
+    case 'FRESH':
+      return 'text-green-400 border-green-500/30 bg-green-500/10';
+    case 'STALE':
+      return 'text-yellow-400 border-yellow-500/30 bg-yellow-500/10';
+    case 'UNKNOWN':
+    default:
+      return 'text-gray-400 border-gray-500/30 bg-gray-500/10';
+  }
+}
 
 /**
  * Map backend legacy fields → canonical component names.
@@ -88,6 +122,11 @@ function extractComponents(data: RiskExplanation | undefined): CanonicalComponen
 
 export default function ExecutiveHeader({ intelligence }: Props) {
   const caseId = intelligence?.case_id;
+
+  // ─── Phase C.1: Metadata ────────────────────────────────────────
+  const generatedAt = intelligence?.generatedAt ?? null;
+  const freshness: Freshness = intelligence?.freshness ?? 'UNKNOWN';
+  const requestId = intelligence?.requestId ?? null;
 
   // ─── Typed query via React Query ────────────────────────────────
   const {
@@ -138,6 +177,25 @@ export default function ExecutiveHeader({ intelligence }: Props) {
             <p className="text-sm text-gray-400">
               Case: {caseId ?? '—'}
             </p>
+            <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+              <span>
+                Last calculated: {formatTimestamp(generatedAt)}
+              </span>
+              <span className="text-gray-600">·</span>
+              <span
+                className={`px-1.5 py-0.5 rounded border text-[10px] uppercase tracking-wide ${freshnessStyle(freshness)}`}
+              >
+                {displayFreshness(freshness)}
+              </span>
+              {requestId && (
+                <>
+                  <span className="text-gray-600">·</span>
+                  <span className="font-mono" title={requestId}>
+                    req: {requestId.slice(0, 8)}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
