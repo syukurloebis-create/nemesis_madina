@@ -2,15 +2,19 @@ import React from 'react';
 
 interface MainLayoutProps {
   children: React.ReactNode;
-  activeTab?: string;
-  onTabChange?: (tab: string) => void;
 }
 
-export const MainLayout: React.FC<MainLayoutProps> = ({ 
-  children, 
-  activeTab = 'overview',
-  onTabChange 
-}) => {
+/**
+ * MainLayout — pure shell.
+ *
+ * Tab navigation is handled exclusively by IntelligenceTabs
+ * (rendered by Dashboard as a child). This component only
+ * provides the header + content container.
+ *
+ * Phase D.5: removed duplicate 9-tab navigation block that was
+ * non-functional (no activeTab/onTabChange props passed by Dashboard).
+ */
+export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-900">
       {/* Header */}
@@ -28,35 +32,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           </div>
         </div>
       </header>
-
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-700 px-6">
-        <div className="flex gap-1 overflow-x-auto">
-          {['overview', 'risk-reasoning', 'investigation', 'recommendations', 'decisions', 'alerts', 'procurement', 'vendors', 'recovery'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => onTabChange?.(tab)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab
-                  ? 'border-blue-500 text-white'
-                  : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'
-              }`}
-            >
-              {{
-                overview: 'Overview',
-                'risk-reasoning': 'Risk Reasoning',
-                investigation: 'Investigation',
-                recommendations: 'Recommendations',
-                decisions: 'Decisions',
-                alerts: 'Alerts',
-                procurement: 'Procurement Intelligence',
-                vendors: 'Vendor Intelligence',
-                recovery: 'Recovery Intelligence'
-              }[tab]}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Content */}
       <main className="p-6">
