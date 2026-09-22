@@ -16,6 +16,9 @@ import {
 import {
   IntelligenceModel
 } from "../../services/intelligenceAdapter";
+import type { Freshness } from "../../types/semantic";
+import { displayFreshness } from "../../types/semantic";
+import { formatTimestamp, freshnessStyle } from "../../utils/format";
 
 
 
@@ -198,6 +201,26 @@ mt-1
 Real-time investigation posture from intelligence engine
 
 </p>
+
+            <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+              <span>
+                Last calculated: {formatTimestamp(intelligence.generatedAt)}
+              </span>
+              <span className="text-gray-600">·</span>
+              <span
+                className={`px-1.5 py-0.5 rounded border text-[10px] uppercase tracking-wide ${freshnessStyle(intelligence.freshness)}`}
+              >
+                {displayFreshness(intelligence.freshness)}
+              </span>
+              {intelligence.requestId && (
+                <>
+                  <span className="text-gray-600">·</span>
+                  <span className="font-mono" title={intelligence.requestId}>
+                    req: {intelligence.requestId.slice(0, 8)}
+                  </span>
+                </>
+              )}
+            </div>
 
 
 </div>
