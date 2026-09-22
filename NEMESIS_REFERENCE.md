@@ -33,6 +33,161 @@
 **Boundary:**
 - Independent of Track 9 (401 investigation)
 - Nginx cache defect resolved separately (commit 11a7359)
+
+## NEMESIS CP2.5.1 — Session Context
+
+**Last session:** 2026-09-21
+**Status:** Security incident RESOLVED, Track 9 CLOSED
+
+**Current HEAD:** b580266
+**Remote:** origin/cp2.5.1-stabilization (synced)
+
+**Baseline (FROZEN):**
+- Risk: 47.58 MEDIUM
+- Graph: 4177 / 2424
+- Case ID: b4897392-87ab-4e7a-84b6-90228f3d1eb9
+
+**Recent commits (11):**
+- b580266 docs: add SECURITY.md
+- 5c478a2 security(auth): reject empty credentials
+- 3e56542 security: remove hardcoded credential from verify_deploy.sh
+- ee84dab docs: update NEMESIS_REFERENCE.md
+- a641e94 chore(F3.7): cleanup backup files
+- 494cb41 fix(docker-compose)
+- da9cb33 chore: remove dead code
+- ca1a79f security: remove hardcoded credentials
+- 11a7359 fix(nginx): Cache-Control
+- 7bd39ea security(frontend/auth)
+- afc592b fix(frontend/api)
+
+**Password:** Stored in `~/.nemesis_env` (chmod 600, not in git)
+
+**Next priorities:**
+1. Auth code consolidation (5 `login` + multiple `verify_password`)
+2. Build-manifest hook (content-based)
+3. NEMESIS_REFERENCE.md full update
+
+**Boundary:** INTACT — Risk Engine v3 untouched.
+
+## NEMESIS CP2.5.1 — Session Context (2026-09-21 CLOSED)
+
+**HEAD:** b580266 (origin synced)
+**Status:** All incidents resolved, Track 9 closed, baseline intact
+
+**Baseline (FROZEN):**
+- Risk: 47.58 MEDIUM
+- Graph: 4177 / 2424
+- Case ID: b4897392-87ab-4e7a-84b6-90228f3d1eb9
+
+**Password:** ~/.nemesis_env (chmod 600, not in git)
+
+**Environment:**
+- 6/6 containers healthy
+- Bundle: index-CP96eShg.js (0 credentials)
+- Nginx: cache policy correct
+
+**Recent commits (11):**
+b580266 docs: add SECURITY.md
+5c478a2 security(auth): reject empty credentials
+3e56542 security: remove hardcoded credential
+ee84dab docs: update NEMESIS_REFERENCE.md
+a641e94 chore(F3.7): cleanup backup files
+494cb41 fix(docker-compose)
+da9cb33 chore: remove dead code
+ca1a79f security: remove hardcoded credentials
+11a7359 fix(nginx): Cache-Control
+7bd39ea security(frontend/auth)
+afc592b fix(frontend/api)
+
+**Backlog (P3, non-blocking):**
+1. Auth code consolidation (5 login + multiple verify_password)
+2. Build-manifest hook (content-based fingerprint)
+3. NEMESIS_REFERENCE.md full session update
+4. Frontend TS errors (sisa dari session lama)
+
+**Boundary:** INTACT — Risk Engine v3 untouched, Graph FROZEN.
+
+## Security Incident 2026-09-21 — Full Timeline
+
+### Incident 1: Credential Exposure (P0)
+- Hardcoded 'Admin123!' in 12 tracked files
+- Bundled into production artifact index-C7OarUre.js
+- Root cause: working tree refactor regressed pages/Login.tsx
+- Fix: commit 7bd39ea, ca1a79f, da9cb33, 3e56542
+
+### Incident 2: Broken Password Rotation
+- Rotation script failed silently (shell escaping !@#)
+- Empty password saved to ~/.nemesis_env
+- Hash from empty string saved to DB
+- Fix: re-rotation with alphanumeric password
+
+### Incident 3: Empty Password Accepted
+- Consequence of Incident 2 (hash from empty string)
+- Not a vulnerability (bcrypt correct behavior)
+- Fix: defense-in-depth (commit 5c478a2)
+
+### Track 9 Resolution
+- Root cause: stale browser token (from rotation failure)
+- Fix chain:
+  1. Password rotation verified
+  2. Bundle rebuilt (index-CP96eShg.js)
+  3. Nginx cache policy (11a7359)
+  4. Defense-in-depth (5c478a2)
+  5. Browser storage clear + re-login
+
+### Baseline Verification
+- Risk: 47.58 MEDIUM ✅
+- Graph: 4177 entities / 2424 relationships ✅
+- Evidence: 0.0 NO_DATA ✅
+- All components FROZEN intact
+
+## Phase A Complete (2026-09-22)
+
+### Commits
+- a13eeb0 — semantic adapter + tests
+- 113095c — component semantic alignment
+
+### Deliverables
+- DataAvailability/Freshness types
+- Strongly typed intelligenceAdapter (652 lines)
+- FraudSignalExplorer `pattern_type` → `type` fix
+- Removed fabricated "High Risk Hubs"
+- InvestigationTimeline rewrite
+- Code reduction: ~2,931 lines dead code removed
+
+## Phase B Complete (2026-09-22)
+
+### Commits
+- 5c8bcb4 — B.1: Cytoscape graph visualization
+- 227c924 — B.2+B.3a: GraphEntityExplorer + GraphIntelligence
+- bc66e2e — B.3b: CollusionGraphVisualization canonical F3
+- [B.4] — component tests
+
+### Deliverables
+- GraphVisualization (bounded Cytoscape, deterministic)
+- GraphControls (filters, search, layout)
+- EntityDetails (canonical GraphNodeDTO)
+- GraphEntityExplorer (structural hubs, getKeyActors)
+- GraphIntelligence (composition)
+- CollusionGraphVisualization (canonical F3)
+- constants.ts (FROZEN_CASE_ID)
+
+### Legacy Removed
+- api.getEntities
+- graphIntelligenceApi
+- riskScore / confidence / risk_level / trustScore
+- Demo fallback nodes
+
+### Tests
+- Total: 78 (28 API + 26 adapter/semantic + 24 component)
+
+### Boundary
+- Risk Engine v3 UNTOUCHED
+- Baseline 47.58 MEDIUM FROZEN
+- Graph F3 contract UNTOUCHED
+- GraphNodeDTO UNTOUCHED
+- Graph 4177/2424 FROZEN
+
 ## BAGIAN I — KONTEKS PROYEK
 
 ### NEMESIS Overview
@@ -908,3 +1063,54 @@ Remote:             origin/cp2.5.1-stabilization = 6418770
 | Track 6: Infrastructure Hardening | DONE | 796aacc |
 | Track 7: Behavioral Changelog | DONE | f5316f8 |
 | Track 3: Canonical Entity API | PENDING | - |
+
+## BAGIAN XV — PHASE A & B COMPLETION (2026-09-22)
+
+### Phase A — Semantic Adapter & Component Alignment
+
+**Commits:**
+- `a13eeb0` — feat(frontend/intelligence): semantic adapter + tests
+- `113095c` — fix(frontend/intelligence): align components with canonical adapter
+
+**Deliverables:**
+- `src/types/semantic.ts` — DataAvailability, Freshness
+- `src/services/intelligenceAdapter.ts` — extended with strong typing (652 lines)
+- Adapter tests (17) + semantic tests (9)
+- `FraudSignalExplorer` — fixed `pattern_type` → `type` bug
+- `GraphIntelligence` — removed fabricated "High Risk Hubs"
+- `InvestigationTimeline` — rewritten with correct field mapping
+- Code reduction: ~2,931 lines dead code removed
+
+### Phase B — Graph Visualization (Canonical F3)
+
+**Commits:**
+- `5c8bcb4` — B.1: Cytoscape graph visualization
+- `227c924` — B.2+B.3a: GraphEntityExplorer + GraphIntelligence integration
+- `bc66e2e` — B.3b: CollusionGraphVisualization canonical F3
+- `8f3b897` — B.4: component tests
+
+**Deliverables:**
+- `GraphVisualization` — Cytoscape render (bounded 200/500 nodes)
+- `GraphControls` — filters (entity_type, relationship_type), search, layout
+- `EntityDetails` — canonical GraphNodeDTO panel
+- `GraphEntityExplorer` — structural hubs via `getKeyActors`
+- `GraphIntelligence` — composition (summary + viz + explorer)
+- `CollusionGraphVisualization` — canonical F3 (getCollusion + getCaseGraph)
+- `constants.ts` — FROZEN_CASE_ID
+- `cytoscapeStyles.ts` — shared styles
+
+**Legacy Removed:**
+- `api.getEntities` (legacy graph service)
+- `graphIntelligenceApi` (legacy)
+- `fraud.signals.*` (nonexistent)
+- `riskScore` / `confidence` / `risk_level` / `trustScore`
+- Demo/fallback fake nodes
+
+**Tests (Phase A + B):**
+- API contract: 28/28
+- Adapter/semantic: 26/26
+- Component: 24/24
+- **Total: 78/78**
+
+### Boundary Status
+
