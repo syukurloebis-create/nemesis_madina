@@ -7,7 +7,6 @@ import {
 
 import Dashboard from './pages/Dashboard';
 import Risk from './pages/Risk';
-import ComingSoon from './pages/ComingSoon';
 
 import LiveAlerts from './pages/LiveAlerts';
 import VendorList from './pages/VendorList';
