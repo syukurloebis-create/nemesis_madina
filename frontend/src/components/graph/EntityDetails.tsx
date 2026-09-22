@@ -1,91 +1,153 @@
 import React from 'react';
-import { X, Shield, ExternalLink } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+
+import type { GraphNodeDTO } from '../../services/api/graph';
 
 interface EntityDetailsProps {
-  entity: {
-    id: string;
-    label: string;
-    type: string;
-    trustScore: number;
-    riskLevel: string;
-  } | null;
+  entity: GraphNodeDTO;
+  degree?: number;
   onClose: () => void;
 }
 
-export const EntityDetails: React.FC<EntityDetailsProps> = ({ entity, onClose }) => {
-  const navigate = useNavigate();
+function formatValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return '—';
+  }
 
-  if (!entity) return null;
+  if (typeof value === 'string') {
+    return value;
+  }
 
-  const handleViewDetails = () => {
-    navigate(`/entity/${entity.id}`);
-    onClose();
-  };
+  if (
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  ) {
+    return String(value);
+  }
+
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+}
+
+function formatEntityType(value: string): string {
+  switch (value) {
+    case 'vendor':
+      return 'Vendor';
+
+    case 'procurement_record':
+      return 'Procurement Record';
+
+    default:
+      return value.replace(/_/g, ' ');
+  }
+}
+
+const EntityDetails: React.FC<EntityDetailsProps> = ({
+  entity,
+  degree = 0,
+  onClose,
+}) => {
+  const sourceData =
+    entity.extra_data &&
+    typeof entity.extra_data === 'object' &&
+    'source' in entity.extra_data
+      ? (
+          entity.extra_data as {
+            source?: unknown;
+          }
+        ).source
+      : undefined;
 
   return (
-    <AnimatePresence>
-      {entity && (
-        <motion.div
-          initial={{ x: 300, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: 300, opacity: 0 }}
-          className="absolute top-0 right-0 w-80 h-full bg-gray-900/95 backdrop-blur border-l border-purple-500/30 shadow-xl z-20"
+    <aside className="absolute top-0 right-0 z-30 h-full w-full max-w-[420px] border-l border-gray-700 bg-gray-950/98 shadow-2xl overflow-y-auto">
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-800 bg-gray-950 px-5 py-4">
+        <div>
+          <div className="text-xs uppercase tracking-wide text-gray-500">
+            Entity Details
+          </div>
+
+          <div className="mt-1 text-lg font-semibold text-white">
+            {entity.name}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-lg px-3 py-2 text-gray-500 hover:text-white hover:bg-gray-800"
+          aria-label="Tutup detail entity"
         >
-          <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-purple-400">Entity Details</h3>
-            <button onClick={onClose} className="p-1 hover:bg-gray-800 rounded-lg">
-              <X className="w-5 h-5 text-gray-400" />
-            </button>
+          ✕
+        </button>
+      </div>
+
+      <div className="p-5 space-y-5">
+        <section>
+          <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">
+            Identity
           </div>
 
-          <div className="p-4 space-y-4">
-            <div>
-              <div className="text-xs text-gray-500 mb-1">Entity ID</div>
-              <div className="font-mono text-sm text-white break-all">{entity.id}</div>
-            </div>
+          <div className="space-y-3">
+            <DetailRow
+              label="Name"
+              value={entity.name}
+            />
 
-            <div>
-              <div className="text-xs text-gray-500 mb-1">Type</div>
-              <div className="text-sm text-white">{entity.type?.toUpperCase() || 'ENTITY'}</div>
-            </div>
+            <DetailRow
+              label="Entity type"
+              value={formatEntityType(entity.entity_type)}
+            />
 
-            <div>
-              <div className="text-xs text-gray-500 mb-1">Trust Score</div>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-cyan-400">{(entity.trustScore * 100).toFixed(1)}%</span>
-                <Shield className="w-4 h-4 text-cyan-400" />
-              </div>
-              <div className="mt-2 h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                <div className="h-full bg-cyan-500 rounded-full" style={{ width: `${entity.trustScore * 100}%` }} />
-              </div>
-            </div>
+            <DetailRow
+              label="Business key"
+              value={entity.business_key}
+            />
 
-            <div>
-              <div className="text-xs text-gray-500 mb-1">Risk Level</div>
-              <div className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
-                entity.riskLevel === 'critical' ? 'bg-red-500/20 text-red-400' :
-                entity.riskLevel === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                entity.riskLevel === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                'bg-green-500/20 text-green-400'
-              }`}>
-                {entity.riskLevel?.toUpperCase() || 'LOW'}
-              </div>
-            </div>
+            <DetailRow
+              label="Source ID"
+              value={formatValue(entity.source_id)}
+            />
 
-            <div className="pt-4">
-              <button
-                onClick={handleViewDetails}
-                className="w-full py-2 bg-cyan-600/20 text-cyan-400 rounded-lg text-sm font-medium hover:bg-cyan-600/30 transition flex items-center justify-center gap-2"
-              >
-                <ExternalLink className="w-4 h-4" />
-                View Full Profile
-              </button>
-            </div>
+            <DetailRow
+              label="Structural degree"
+              value={String(degree)}
+            />
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        </section>
+
+        <section>
+          <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">
+            Source Data
+          </div>
+
+          <pre className="rounded-xl border border-gray-800 bg-gray-900 p-4 text-xs text-gray-300 overflow-x-auto whitespace-pre-wrap break-words">
+            {formatValue(sourceData ?? entity.extra_data)}
+          </pre>
+        </section>
+      </div>
+    </aside>
   );
 };
+
+function DetailRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-lg border border-gray-800 bg-gray-900/60 p-3">
+      <div className="text-[11px] uppercase tracking-wide text-gray-600">
+        {label}
+      </div>
+      <div className="mt-1 text-sm text-white break-words">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+export default EntityDetails;
