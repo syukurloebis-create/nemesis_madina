@@ -81,9 +81,6 @@ export default function Dashboard() {
         navigate("/procurement");
         return;
 
-      case "decisions":
-        navigate("/decisions");
-        return;
     }
   }, [navigate]);
 
