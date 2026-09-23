@@ -1022,6 +1022,7 @@ cat F3.3_GRAPH_CONTRACT.md | head -100
 | CP2.5.1 | 2026-09-18 | F16.3 committed (dfa4ebe) |
 | CP2.5.1 | 2026-09-18 | Risk v3 backend committed (0e4ffca) |
 | CP2.5.1 | 2026-09-18 | F3 + tag pending (commit C) |
+| CP2.5.1 | 2026-09-22 | Phase D complete (D.1-D.8): 4 new commits (c6099c4, 0386e84, 19f971d, 935183f) |
 
 ---
 
@@ -1051,6 +1052,30 @@ Tag:                f3-graph-intelligence-v1 (annotated)
                     -> 579e020
 
 Remote:             origin/cp2.5.1-stabilization = 6418770
+
+### Phase D Session Update (2026-09-22)
+
+HEAD:                        935183f (D.7)
+Branch:                      cp2.5.1-stabilization
+Remote sync:                 origin/cp2.5.1-stabilization (synced)
+
+TS errors:                   0
+Full test suite:             118/118 PASS
+  - API contract:            28/28
+  - Adapter/semantic:        26/26
+  - Component tests:         64/64
+
+Frontend status:             98% clean (Phase A-D done)
+Boundary:                    INTACT
+
+Phase D commits this session: 4 (D.4, D.5, D.6, D.7)
+Lines removed this session:   ~200
+
+Backend:                     FROZEN
+Risk:                        47.58 MEDIUM
+Graph:                       4177 / 2424
+Tag:                         f3-graph-intelligence-v1
+
 
 ### Track Completion Status
 
@@ -1167,3 +1192,95 @@ TAG:     579e020 (f3-graph-intelligence-v1)
 **Tests:** 78 → 118 (+40)
 **TypeScript:** 0 errors
 **Boundary:** INTACT
+
+## BAGIAN XVII — PHASE D COMPLETION (2026-09-22)
+
+**Status:** COMPLETE
+
+### Sprint: Command Center Consolidation
+
+Frontend cleanup focused on eliminating dead code, dead UI, and
+ambiguous file naming. Zero backend changes, zero boundary drift.
+
+### Commits (Chronological)
+
+| # | Commit | Scope | Lines Changed |
+|---|--------|-------|---------------|
+| D.1 | `2101fb8` | Route repair (Phase B pages to active router) | small |
+| D.2 | `c141dd5` | Delete `frontend/src/app/routes/` (never mounted) | -1028 |
+| D.3 | `fe150cd` | Delete 5 orphan components + broken hook | -798 |
+| D.4 | `c6099c4` | Rename `types/dashboard.tsx` to `dashboard-v8.tsx` | 1 |
+| D.5 | `19f971d` | MainLayout: remove 9-tab dead UI block | -36 +11 |
+| D.6 | `0386e84` | Remove `ComingSoon.tsx` + unused import | -28 |
+| D.7 | `935183f` | Remove orphan `nemesisApi.ts` + zombie `nemesisApi.js` | -51 |
+| D.8 | (verified) | Cross-tab actions already wired via `a724d51` | 0 |
+
+### Files Removed
+
+frontend/src/app/routes/              (5 files, ~38.9 KB)     [D.2]
+frontend/src/components/dashboard/
+  CommandCenter.tsx                   (7,883 B)               [D.3]
+frontend/src/components/ErrorPage.tsx (3,991 B)               [D.3]
+frontend/src/components/GovernanceCenter.tsx (8,643 B)        [D.3]
+frontend/src/components/layout/Sidebar.tsx (2,062 B)          [D.3]
+frontend/src/hooks/useDashboardData.tsx (957 B)               [D.3]
+frontend/src/pages/ComingSoon.tsx     (405 B)                 [D.6]
+frontend/src/api/nemesisApi.ts        (892 B)                 [D.7]
+frontend/src/api/nemesisApi.js        (533 B)                 [D.7]
+
+**Total removed:** ~9 files, ~2,000+ lines, ~65 KB.
+
+### Verification Gates (Per Commit)
+
+| Gate | Baseline | Post-Commit |
+|------|----------|-------------|
+| TypeScript errors | 0 | 0 |
+| Test suite | 118/118 | 118/118 |
+| Risk score | 47.58 MEDIUM | 47.58 MEDIUM |
+| Graph entities | 4177 | 4177 |
+| Graph relationships | 2424 | 2424 |
+
+**Zero drift across 4 commits in this session.**
+
+### Lessons Learned
+
+1. **Pre-flight data mandatory before cleanup.**
+   D.5 hypothesis (dead props) vs actual (dead UI visible to user).
+   Data > hypothesis.
+
+2. **Sibling extension hazard.**
+   .js + .ts same basename = latent module resolution target.
+   Always check for siblings before delete (D.7 lesson).
+
+3. **Reference doc predictions can drift.**
+   D.8 was already wired via a724d51 before D-phase started.
+   Always verify before edit.
+
+4. **Safe commit pattern validated across 4 commits:**
+   - Backup to /tmp/nemesis_backup/
+   - Stage selective (never git add .)
+   - Verify staged count before commit
+   - Commit via -F message_file (never multiline -m)
+   - Post-commit verification (TS, tests, baseline)
+
+5. **Handoff snapshot vs live file.**
+   Chat handoff documents may diverge from repo files.
+   Always cross-check with git ls-files + git log.
+
+6. **Heredoc is unsafe for critical file operations.**
+   See BAGIAN VII.4.
+
+### Boundary Status
+
+Backend:                     FROZEN
+Risk Engine v3:              FROZEN
+Baseline 47.58 MEDIUM:       FROZEN
+Graph F3 contract:           FROZEN
+GraphNodeDTO:                FROZEN
+Graph 4177/2424:             FROZEN
+Tag f3-graph-intelligence-v1: INTACT
+
+### Outstanding (Next Session)
+
+- Security incident 2026-09-22 -- see SECURITY_INCIDENT_2026-09-22.md
+  (~60 tracked files with credential-like strings; needs dedicated sprint)
