@@ -5,13 +5,7 @@ import psycopg2
 from typing import Dict, Any, List
 from datetime import datetime, timedelta
 
-DB_CONFIG = {
-    'host': 'postgres',
-    'port': 5432,
-    'database': 'nemesis_db',
-    'user': 'nemesis',
-    'password': 'nemesis123'
-}
+from backend.config.db_helper import DB_CONFIG
 
 class ExecutiveIntelligence:
 

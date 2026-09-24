@@ -9,13 +9,7 @@ import uuid
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-DB_CONFIG = {
-    'host': 'postgres',
-    'port': 5432,
-    'database': 'nemesis_db',
-    'user': 'nemesis',
-    'password': 'nemesis123'
-}
+from backend.config.db_helper import DB_CONFIG
 
 class LoginRequest(BaseModel):
     username: str

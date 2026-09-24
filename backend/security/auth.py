@@ -40,13 +40,7 @@ SECRET_KEY = os.getenv("JWT_SECRET_KEY", "nemesis-secret-key-change-in-productio
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 
-DB_CONFIG = {
-    'host': 'postgres',
-    'port': 5432,
-    'database': 'nemesis_db',
-    'user': 'nemesis',
-    'password': 'nemesis123'
-}
+from backend.config.db_helper import DB_CONFIG
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

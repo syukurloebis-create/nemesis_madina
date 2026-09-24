@@ -6,13 +6,7 @@ from typing import Dict, Any, List
 import json
 import re
 
-DB_CONFIG = {
-    'host': 'postgres',
-    'port': 5432,
-    'database': 'nemesis_db',
-    'user': 'nemesis',
-    'password': 'nemesis123'
-}
+from backend.config.db_helper import DB_CONFIG
 
 class InvestigationCopilot:
     """AI Assistant for investigators"""

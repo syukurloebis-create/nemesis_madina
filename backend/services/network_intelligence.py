@@ -4,13 +4,7 @@ Network Intelligence Service - Sederhana
 import psycopg2
 from typing import Dict, Any, List
 
-DB_CONFIG = {
-    'host': 'postgres',
-    'port': 5432,
-    'database': 'nemesis_db',
-    'user': 'nemesis',
-    'password': 'nemesis123'
-}
+from backend.config.db_helper import DB_CONFIG
 
 def get_key_actors():
     """Get key actors from graph"""
