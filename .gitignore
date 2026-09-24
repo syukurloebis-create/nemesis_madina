@@ -108,3 +108,8 @@ nginx.conf.old_*
 docker-compose.yml.bak_*
 
 # Backup and temp files
+
+# Environment files with secrets (untracked)
+.env.development
+.env.production
+.env.staging

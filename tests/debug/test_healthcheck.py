@@ -58,11 +58,14 @@ def test_db_connection():
     # Fix: Define script as a multi-line string properly
     script = """
 import asyncio
+import os
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import text
 
 async def test():
-    engine = create_async_engine('postgresql+asyncpg://nemesis:nemesis123@postgres:5432/nemesis_db')
+    # Container already has DATABASE_URL from docker-compose env
+    dsn = os.environ['DATABASE_URL']
+    engine = create_async_engine(dsn)
     async with engine.connect() as conn:
         result = await conn.execute(text('SELECT 1 as test'))
         return result.first()[0]

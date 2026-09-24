@@ -3,13 +3,18 @@ Debug test untuk database integrity dan schema
 Mengidentifikasi missing tables atau schema mismatch
 """
 
+import os
 import subprocess
 import json
 import asyncio
 from sqlalchemy import create_engine, inspect, text
 
-# Database connection
-DB_URL = "postgresql+psycopg2://nemesis:nemesis123@localhost:5432/nemesis_db"
+# Database connection — from environment (no hardcoded credentials)
+# Uses TEST_DB_URL, falls back to DATABASE_SYNC_URL, or empty (fails fast)
+DB_URL = os.getenv(
+    "TEST_DB_URL",
+    os.getenv("DATABASE_SYNC_URL", "postgresql+psycopg2://nemesis@localhost:5432/nemesis_db")
+)
 
 def get_db_tables():
     """Get all tables in database"""
