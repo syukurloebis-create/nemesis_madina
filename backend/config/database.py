@@ -3,7 +3,7 @@ Database Configuration - Single Source of Truth.
 """
 
 from pydantic_settings import BaseSettings
-from pydantic import Field, ConfigDict
+from pydantic import Field, ConfigDict, model_validator
 from typing import Optional
 
 
@@ -27,7 +27,7 @@ class DatabaseSettings(BaseSettings):
     port: int = Field(5432, alias="DB_PORT")
     name: str = Field("nemesis_db", alias="DB_NAME")
     user: str = Field("nemesis", alias="DB_USER")
-    password: str = Field("nemesis", alias="DB_PASSWORD")
+    password: str = Field("", alias="DB_PASSWORD")  # no default credential
     
     pool_size: int = Field(20, alias="DB_POOL_SIZE")
     max_overflow: int = Field(10, alias="DB_MAX_OVERFLOW")
@@ -35,6 +35,18 @@ class DatabaseSettings(BaseSettings):
     pool_recycle: int = Field(3600, alias="DB_POOL_RECYCLE")
     echo: bool = Field(False, alias="SQL_ECHO")
     
+    @model_validator(mode="after")
+    def _require_credentials(self):
+        """Require either DSN URL or complete DB_* credentials."""
+        has_url = bool(self.database_url or self.database_sync_url)
+        has_password = bool(self.password)
+        if not has_url and not has_password:
+            raise ValueError(
+                "Database credentials missing: "
+                "set DATABASE_URL/DATABASE_SYNC_URL or DB_PASSWORD"
+            )
+        return self
+
     @property
     def url(self) -> str:
         """Get async database URL."""
