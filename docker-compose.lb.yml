@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: nemesis_db
       POSTGRES_USER: nemesis
-      POSTGRES_PASSWORD: nemesis123
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?}
     ports:
       - "5432:5432"
     volumes:
@@ -45,7 +45,7 @@ services:
       dockerfile: Dockerfile
     container_name: nemesis_madina-api1-1
     environment:
-      DATABASE_URL: postgresql+asyncpg://nemesis:nemesis123@postgres:5432/nemesis_db
+      DATABASE_URL: postgresql+asyncpg://nemesis:${DB_PASSWORD:?}@postgres:5432/nemesis_db
       REDIS_URL: redis://redis:6379
       SECRET_KEY: "nemesis-secret-key"
       API_ID: "api1"
@@ -74,7 +74,7 @@ services:
       dockerfile: Dockerfile
     container_name: nemesis_madina-api2-1
     environment:
-      DATABASE_URL: postgresql+asyncpg://nemesis:nemesis123@postgres:5432/nemesis_db
+      DATABASE_URL: postgresql+asyncpg://nemesis:${DB_PASSWORD:?}@postgres:5432/nemesis_db
       REDIS_URL: redis://redis:6379
       SECRET_KEY: "nemesis-secret-key"
       API_ID: "api2"
@@ -103,7 +103,7 @@ services:
       dockerfile: Dockerfile
     container_name: nemesis_madina-api3-1
     environment:
-      DATABASE_URL: postgresql+asyncpg://nemesis:nemesis123@postgres:5432/nemesis_db
+      DATABASE_URL: postgresql+asyncpg://nemesis:${DB_PASSWORD:?}@postgres:5432/nemesis_db
       REDIS_URL: redis://redis:6379
       SECRET_KEY: "nemesis-secret-key"
       API_ID: "api3"

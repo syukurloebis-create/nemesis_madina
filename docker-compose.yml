@@ -3,7 +3,7 @@ services:
     image: postgres:15
     environment:
       POSTGRES_USER: nemesis
-      POSTGRES_PASSWORD: nemesis123
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD required}
       POSTGRES_DB: nemesis_db
     ports:
       - "5432:5432"
@@ -34,8 +34,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_SYNC_URL: postgresql://nemesis:${DB_PASSWORD:-nemesis123}@postgres:5432/nemesis_db
-      DATABASE_URL: postgresql+asyncpg://nemesis:${DB_PASSWORD:-nemesis123}@postgres:5432/nemesis_db
+      DATABASE_SYNC_URL: postgresql://nemesis:${DB_PASSWORD:?}@postgres:5432/nemesis_db
+      DATABASE_URL: postgresql+asyncpg://nemesis:${DB_PASSWORD:?}@postgres:5432/nemesis_db
       ENV: development
       DEBUG: "false"
       SQL_ECHO: "false"
