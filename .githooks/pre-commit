@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ============================================================
+# NEMESIS Pre-Commit Hook
+# 1. Frontend build freshness check
+# 2. Credential pattern guard
+# ============================================================
+
+# --- 1. Frontend build freshness ---
+FRONTEND_CHANGES=$(git diff --cached --name-only | grep -E "^frontend/src/" || true)
+if [ -n "$FRONTEND_CHANGES" ]; then
+    echo "📝 Frontend source changed: $(echo "$FRONTEND_CHANGES" | wc -l) files"
+    DIST_TIME=$(stat -c "%Y" frontend/dist/index.html 2>/dev/null || echo "0")
+    SRC_TIME=$(find frontend/src -type f \( -name "*.ts" -o -name "*.tsx" \) -printf "%T@\n" 2>/dev/null | sort -rn | head -1 | cut -d. -f1)
+    if [ -n "$SRC_TIME" ] && [ "$SRC_TIME" -gt "$DIST_TIME" ]; then
+        echo "⚠️  Frontend source newer than dist build!"
+        echo "   → Run: cd frontend && npm run build"
+    fi
+fi
+
+# --- 2. Credential guard ---
+CRED_PATTERNS="Admin123!|nemesis123"
+WHITELIST_PATHS="(SECURITY\.md|SECURITY_INCIDENT.*\.md|NEMESIS_REFERENCE\.md|password_validator\.py|\.env\.example$|\.env\.development\.example$|\.env\.production\.example$)"
+
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+VIOLATIONS=""
+for file in $STAGED_FILES; do
+    if echo "$file" | grep -qE "$WHITELIST_PATHS"; then
+        continue
+    fi
+    if ! file "$file" 2>/dev/null | grep -qE "text|ASCII|UTF-8|empty"; then
+        continue
+    fi
+    if git show ":$file" 2>/dev/null | grep -qE "$CRED_PATTERNS"; then
+        VIOLATIONS="$VIOLATIONS\n  - $file"
+    fi
+done
+
+if [ -n "$VIOLATIONS" ]; then
+    echo "❌ BLOCKED: Credential patterns detected in staged files:"
+    printf "%b\n" "$VIOLATIONS"
+    echo ""
+    echo "If intentional (docs/examples), add path to WHITELIST_PATHS."
+    exit 1
+fi
+
+exit 0
