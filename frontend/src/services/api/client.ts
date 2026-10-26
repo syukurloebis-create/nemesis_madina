@@ -65,20 +65,21 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     const token = authService.getAccessToken();
-    console.log('🔑 Token from authService:', token ? token.substring(0, 30) + '...' : 'null');
+
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('✅ Added Authorization header');
+      if (import.meta.env.DEV) console.log('✅ Added Authorization header');
     } else {
-      console.log('❌ No token found');
+      if (import.meta.env.DEV) console.log('❌ No token found');
     }
     
-    console.log('📤 Request:', {
-      url: config.url,
-      method: config.method,
-      headers: config.headers,
-    });
+    if (import.meta.env.DEV) {
+      console.log('📤 Request:', {
+        url: config.url,
+        method: config.method,
+      });
+    }
     
     return config;
   },
@@ -90,7 +91,7 @@ apiClient.interceptors.request.use(
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
   (response) => {
-    console.log(`✅ Response: ${response.status} ${response.config.url}`);
+    if (import.meta.env.DEV) console.log(`✅ Response: ${response.status} ${response.config.url}`);
     return response;
   },
   async (error) => {
@@ -114,7 +115,7 @@ apiClient.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${response.data.access_token}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
-        console.error('❌ Token refresh failed:', refreshError);
+        console.error('❌ Token refresh failed');
         authService.clearTokens();
         // Guard for non-browser environments (e.g. contract tests)
         if (typeof window !== 'undefined' && window.location) {
